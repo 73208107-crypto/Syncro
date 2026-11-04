@@ -5,9 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="theme-color" content="#0B132B" />
 <title>SYNCRO · Enfócate hoy, transforma tu mente y reforesta el futuro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+
+<!-- Cinta superior de sesión activa -->
+<div id="focusTopRibbon" class="focus-top-ribbon hidden" role="status">
+  <span>🛡️ <strong>ESCUDO SYNCRO ACTIVO:</strong> sesión en curso (<span id="ribbonTimer">25:00</span>)</span>
+  <span id="ribbonGuardian">🦙 Tu guardián protege tu semilla</span>
+  <button class="btn sm ghost" style="height:26px; padding:0 10px; color:#fff; border-color:rgba(255,255,255,0.4);" id="ribbonTriggerAlertBtn">Probar alerta de salida</button>
+</div>
 
 <!-- ============ MODALES / OVERLAYS ============ -->
 
@@ -17,6 +27,8 @@
     <div class="steps"><span class="dot active"></span><span class="dot"></span><span class="dot"></span></div>
 
     <div class="onb-step" data-step="1">
+      <label class="field-label" for="nameInput">¿Cómo te llamas?</label>
+      <input class="input" id="nameInput" maxlength="24" placeholder="Tu nombre" autocomplete="given-name" />
       <h2>¿Qué te hace procrastinar más?</h2>
       <p class="muted">Elige el gatillo que más reconozcas en ti.</p>
       <div class="option-list" id="triggersList">
@@ -66,15 +78,46 @@
   </div>
 </div>
 
-<!-- Intercepción del Escudo -->
-<div id="blockModal" class="overlay hidden" role="dialog" aria-modal="true">
-  <div class="modal block-modal">
-    <div class="guardian">🦙</div>
-    <h2>¿Seguro que quieres abandonar tu sesión?</h2>
-    <p class="muted">A tu flor de cantuta le faltan <strong id="blockMinutesLeft">8</strong> minutos para florecer y sumar puntos para la reforestación.</p>
-    <div class="row">
-      <button class="btn primary" id="stayFocused">Seguir enfocado</button>
-      <button class="btn ghost" id="leaveAnyway">Salir igual</button>
+<!-- Alerta de fuga / intercepción del Escudo -->
+<div id="blockModal" class="emergency-overlay hidden" role="alertdialog" aria-modal="true" aria-labelledby="alertTitle">
+  <div class="emergency-modal">
+    <div class="hazard-bar"></div>
+    <div class="row" style="justify-content: space-between; margin-bottom: 6px;">
+      <div class="siren-badge" style="margin-bottom:0;"><span>🚨</span><span id="alertReasonBadge">ALERTA DE FUGA DETECTADA</span></div>
+      <button type="button" class="btn ghost sm" id="muteAlertSoundBtn" style="height:28px; font-size:11px;">🔊 Alarma activa</button>
+    </div>
+    <h2 id="alertTitle" style="font-size: 24px; color: #FFFFFF; margin-bottom: 6px;">
+      ¡Espera, <span id="alertUserName">estudiante</span>! ¡Tu <span id="alertSeedTitleInline">cantuta</span> se está marchitando!
+    </h2>
+    <p class="muted" style="font-size: 14px; margin-bottom: 10px;">
+      Tu guardián <strong id="alertGuardianName">Alpaca Andina</strong> interceptó tu salida. Si abandonas ahora, el bloque actual se reinicia.
+    </p>
+    <div class="guardian-rescue-stage">
+      <div class="guardian-avatar-huge" id="alertGuardianEmoji" title="Tu Guardián">🦙</div>
+      <div style="text-align: left; flex: 1;">
+        <div class="seed-danger-transfer">
+          <span id="alertHealthySeed">🌺</span>
+          <span class="wilt-arrow">⚡ ➔</span>
+          <span title="En riesgo de marchitarse">🥀</span>
+        </div>
+        <div class="row" style="justify-content: space-between; margin-top: 4px;">
+          <span class="small" style="color: #FCA5A5; font-weight: 700; font-size: 11px;">⚠️ SALUD DE TU PLANTA: CRÍTICA</span>
+          <span class="small muted" style="font-size: 11px;">Riego detenido</span>
+        </div>
+        <div class="plant-health-bar"><div class="plant-health-fill"></div></div>
+      </div>
+    </div>
+    <div class="risk-metrics-grid">
+      <div class="risk-box"><strong id="blockMinutesLeft">18:45</strong><span>Para florecer</span></div>
+      <div class="risk-box"><strong id="alertReward">+25 XP · +5 💧</strong><span>Recompensa en juego</span></div>
+      <div class="risk-box"><strong id="alertStreakRisk">🔥 12 días</strong><span>Tu racha</span></div>
+    </div>
+    <p class="small muted" style="margin-bottom: 14px;">
+      💡 <em>El impulso de distraerte dura menos de 30 segundos. Respira hondo y quédate: cada bloque suma para reforestar.</em>
+    </p>
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <button class="btn-save-seed" id="stayFocused">🛡️ ¡Volver al enfoque y salvar mi planta!</button>
+      <button class="btn danger sm block" id="leaveAnyway">🥀 Abandonar sesión de todos modos (se reinicia el bloque)</button>
     </div>
   </div>
 </div>
@@ -82,12 +125,22 @@
 <!-- Misión completada -->
 <div id="missionModal" class="overlay hidden" role="dialog" aria-modal="true">
   <div class="modal celebration-modal">
-    <div class="celebration">🎉</div>
-    <h2>¡Misión completada!</h2>
+    <div class="celebration" id="celebEmoji">🎉</div>
+    <h2 id="missionModalTitle">¡Misión completada!</h2>
     <p class="muted" id="missionModalText">+50 XP · +15 Gotas de Riego</p>
     <button class="btn primary" id="closeMissionModal">Continuar</button>
   </div>
 </div>
+
+<!-- Info genérico -->
+<div id="infoModal" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+  <div class="modal">
+    <h2 id="infoTitle"></h2>
+    <div id="infoBody"></div>
+    <button class="btn primary" id="closeInfo">Entendido</button>
+  </div>
+</div>
+<div id="toast" class="toast-single" role="status" aria-live="polite"></div>
 
 <!-- ============ APP ============ -->
 
@@ -95,15 +148,20 @@
 
   <!-- Sidebar -->
   <aside class="sidebar" aria-label="Navegación principal">
-    <div class="logo"><span class="logo-mark">◉</span> SYNCRO</div>
+    <div class="logo">
+      <a class="logo-left" href="index.html" title="Volver al inicio" style="color:inherit;text-decoration:none"><span class="logo-mark">🌱</span><span>SYNCRO</span></a>
+      <span class="uc-badge">DEMO</span>
+    </div>
     <nav class="nav" id="sidebarNav">
       <button class="nav-item active" data-view="dashboard">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>
         <span>Dashboard</span>
+        <span class="nav-lock-badge" aria-hidden="true" title="Bloqueado durante el enfoque">🔒</span>
       </button>
       <button class="nav-item" data-view="plan">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M9 11h6M9 15h4"/></svg>
         <span>SincroPlan</span>
+        <span class="nav-lock-badge" aria-hidden="true" title="Bloqueado durante el enfoque">🔒</span>
       </button>
       <button class="nav-item" data-view="focus">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>
@@ -112,23 +170,28 @@
       <button class="nav-item" data-view="biome">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V12M12 12c0-3-2-5-5-5 0 3 2 5 5 5zM12 12c0-3 2-5 5-5 0 3-2 5-5 5z"/></svg>
         <span>Bioma</span>
+        <span class="nav-lock-badge" aria-hidden="true" title="Bloqueado durante el enfoque">🔒</span>
       </button>
       <button class="nav-item" data-view="community">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2M15 21v-2a3 3 0 0 1 3-3h1a3 3 0 0 1 3 3v2"/></svg>
         <span>Comunidad</span>
+        <span class="nav-lock-badge" aria-hidden="true" title="Bloqueado durante el enfoque">🔒</span>
       </button>
       <button class="nav-item" data-view="progress">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V3M3 21h18M7 15l4-4 3 3 5-6"/></svg>
         <span>Progreso</span>
+        <span class="nav-lock-badge" aria-hidden="true" title="Bloqueado durante el enfoque">🔒</span>
       </button>
     </nav>
     <div class="sidebar-footer">
-      <div class="avatar-lg" id="sidebarAvatar">G</div>
-      <div class="sidebar-user">
-        <strong id="sidebarName">Guillermo</strong>
-        <span id="sidebarLevel" class="muted">Nivel 12</span>
+      <div class="sidebar-user-row">
+        <div class="avatar-lg"><span id="sidebarAvatar">G</span><span class="avatar-guardian-mini" id="sidebarGuardianMini">🦙</span></div>
+        <div class="sidebar-user">
+          <strong id="sidebarName">Estudiante</strong>
+          <span id="sidebarLevel" class="muted">Nivel 12</span>
+        </div>
+        <button class="icon-btn" id="resetDemo" title="Reiniciar demo" aria-label="Reiniciar demo">↺</button>
       </div>
-      <button class="icon-btn" id="resetDemo" title="Reiniciar demo">↺</button>
     </div>
   </aside>
 
@@ -141,6 +204,7 @@
         <div class="dash-title">
           <h1 id="greeting">¡Hola, Guillermo!</h1>
           <p class="muted">Enfócate hoy, construye tu futuro.</p>
+          <p class="muted small" id="scheduleTip"></p>
         </div>
         <div class="dash-meta">
           <div class="streak">
@@ -176,9 +240,7 @@
             <button class="chip" data-mood="cansado">Cansado</button>
           </div>
           <button class="btn primary block" id="saveCheckIn">Guardar check-in</button>
-          <div id="checkInBanner" class="banner hidden">
-            <strong>Modo ligero activado.</strong> Ajustamos tus bloques a 15 min y priorizamos respiración.
-          </div>
+          <div id="checkInBanner" class="banner hidden" role="status"></div>
         </div>
 
         <!-- Misiones -->
@@ -202,7 +264,7 @@
             <div class="hill hill-1"></div>
             <div class="hill hill-2"></div>
             <div class="flower" id="previewFlower">🌺</div>
-            <div class="alpaca">🦙</div>
+            <div class="alpaca" id="previewGuardian">🦙</div>
             <div class="tree">🌳</div>
           </div>
         </div>
@@ -229,8 +291,8 @@
       <div class="card">
         <h3>1. Desglosador automático con IA</h3>
         <div class="row gap">
-          <input class="input" id="taskInput" placeholder="Ej. Hacer proyecto final de Ingeniería" />
-          <input class="input" id="dateInput" type="number" min="1" max="60" value="10" style="max-width:120px" />
+          <input class="input" id="taskInput" aria-label="Tarea a desglosar" placeholder="Ej. Hacer proyecto final de Ingeniería" />
+          <input class="input" id="dateInput" type="number" min="1" max="60" value="10" aria-label="Días disponibles" style="max-width:90px" /><span class="muted">días</span>
           <button class="btn primary" id="breakdownBtn">Desglosar con IA</button>
         </div>
         <div id="subtasksList" class="subtasks"></div>
@@ -239,14 +301,14 @@
       <div class="plan-grid">
         <div class="card">
           <h3>2. Ilusión de tiempo libre</h3>
-          <p class="muted">Horas reales vs. estimadas</p>
-          <div class="time-row">
-            <span>Reales: <strong>6 h/sem</strong></span>
-            <span>Estimadas: <strong>9 h</strong></span>
+          <p class="muted">Compara lo que crees tener con lo que realmente tienes.</p>
+          <div class="row gap">
+            <label class="small muted">Crees tener (h/sem)<input class="input" id="estHours" type="number" min="1" max="80" value="9" /></label>
+            <label class="small muted">Reales (h/sem)<input class="input" id="realHours" type="number" min="0" max="80" value="6" /></label>
           </div>
-          <div class="bar"><div class="bar-fill coral" style="width:100%"></div></div>
-          <p class="pill coral" style="margin-top:12px">🔴 Prioridad crítica</p>
-          <p class="muted" style="margin-top:8px">Importante/Urgente: 3 · Importante/No urgente: 2</p>
+          <div class="bar"><div class="bar-fill coral" id="illusionFill" style="width:67%"></div></div>
+          <p class="pill coral" id="illusionPill" style="margin-top:8px"></p>
+          <p class="muted" id="illusionText"></p>
         </div>
 
         <div class="card">
@@ -271,11 +333,14 @@
           <div class="seed" id="seedVisual">🌱</div>
         </div>
         <div class="timer" id="timerDisplay">25:00</div>
+        <div class="bar timer-bar"><div class="bar-fill violet" id="timerFill" style="width:0%"></div></div>
         <div class="timer-mode muted" id="timerModeLabel">Enfoque clásico · 25 / 5</div>
+        <div class="active-mission" id="activeMissionLabel"></div>
         <div class="timer-controls">
           <button class="btn secondary" id="startPauseBtn">Iniciar</button>
           <button class="btn ghost" id="resetBtn">Reiniciar</button>
           <button class="btn ghost" id="addFiveBtn">+5 min</button>
+          <button class="btn ghost" id="fsToggle" aria-pressed="false">⛶ Pantalla completa</button>
         </div>
       </div>
 
@@ -285,21 +350,26 @@
           <label class="option"><input type="radio" name="mode" value="classic" checked> <span>Clásico 25 / 5</span></label>
           <label class="option"><input type="radio" name="mode" value="deep"> <span>Profundo 50 / 10</span></label>
           <label class="option"><input type="radio" name="mode" value="noPerfection"> <span>Avance sin perfección 5 min</span></label>
+          <label class="option" style="border-top:1px solid var(--border-subtle); margin-top:6px"><input type="checkbox" id="autoFs" checked> <span>Pantalla completa al iniciar</span></label>
         </div>
 
         <div class="card">
           <h3>Escudo Web <span class="pill emerald" id="shieldStatus">ACTIVO</span></h3>
-          <p class="muted">Bloqueando:</p>
-          <ul class="blocked-list">
-            <li>WhatsApp Web</li>
-            <li>Instagram</li>
-            <li>TikTok</li>
+          <p class="muted">Si cambias de pestaña durante un bloque, el Guardián te lo recordará. Toca un sitio para ver la alerta:</p>
+          <ul class="blocked-list" id="blockedSitesList">
+            <li data-site="WhatsApp Web" tabindex="0" role="button"><span>💬 WhatsApp Web</span><span class="pill coral">Bloqueado</span></li>
+            <li data-site="Instagram" tabindex="0" role="button"><span>📸 Instagram</span><span class="pill coral">Bloqueado</span></li>
+            <li data-site="TikTok" tabindex="0" role="button"><span>🎵 TikTok</span><span class="pill coral">Bloqueado</span></li>
+            <li data-site="YouTube Entretenimiento" tabindex="0" role="button"><span>▶️ YouTube Entretenimiento</span><span class="pill coral">Bloqueado</span></li>
           </ul>
-          <button class="btn ghost" id="simulateDistraction">Simular distracción</button>
+          <div class="row"><button class="btn ghost" id="toggleShield">Desactivar escudo</button>
+          <button class="btn ghost" id="simulateDistraction">Simular distracción</button></div>
         </div>
 
         <div class="card">
           <h3>Burbuja sonora</h3>
+          <button class="btn ghost sm" id="soundToggle" aria-pressed="false">🔇 Sonido apagado</button>
+          <p class="muted small" style="margin:8px 0">Suena mientras el temporizador corre.</p>
           <div class="sound-list" id="soundList">
             <button class="sound-item active" data-sound="rain">🌧 Lluvia Valle Sagrado</button>
             <button class="sound-item" data-sound="wind">🍃 Viento andino</button>
@@ -311,13 +381,14 @@
       </div>
 
       <div class="card guided-break hidden" id="guidedBreak">
-        <h2>Pausa guiada — 05:00</h2>
+        <h2>Pausa guiada — <span id="breakClock">05:00</span></h2>
         <div class="row gap">
-          <button class="chip active">Respiración 4-4-4-4</button>
-          <button class="chip">Regla 20-20-20</button>
-          <button class="chip">Estiramiento</button>
+          <button class="chip active" data-break="breath">Respiración 4-4-4-4</button>
+          <button class="chip" data-break="twenty">Regla 20-20-20</button>
+          <button class="chip" data-break="stretch">Estiramiento</button>
         </div>
-        <p class="guided-text">Inhala 4, sostén 4, exhala 4, espera 4. Suelta los hombros.</p>
+        <div class="breath" id="breathCircle" data-phase="0" aria-hidden="true"></div>
+        <p class="guided-text" id="guidedText">Inhala 4, sostén 4, exhala 4, espera 4. Suelta los hombros.</p>
         <button class="btn primary" id="endBreak">Terminar pausa</button>
       </div>
     </section>
@@ -332,8 +403,8 @@
       <div class="biome-metrics">
         <div class="metric-card"><span class="muted">Gotas de riego</span><strong id="biomeDrops">1240</strong></div>
         <div class="metric-card"><span class="muted">Puntos Tierra</span><strong id="biomeEarth">320</strong></div>
-        <div class="metric-card"><span class="muted">Árboles apadrinados</span><strong>48</strong></div>
-        <div class="metric-card"><span class="muted">m² verdes</span><strong>320</strong></div>
+        <div class="metric-card"><span class="muted">Árboles apadrinados (comunidad)</span><strong>412</strong></div>
+        <div class="metric-card"><span class="muted">m² verdes (comunidad)</span><strong>3,200</strong></div>
       </div>
 
       <div class="zones-grid">
@@ -341,28 +412,28 @@
           <div class="zone-art">🌺</div>
           <h3>Zona botánica andina</h3>
           <p class="muted">Cantuta · Queñual · Chachacoma</p>
-          <button class="btn ghost sm">Ver fichas</button>
+          <button class="btn ghost sm" data-fichas="flora">Ver fichas</button>
         </div>
         <div class="card zone">
           <div class="zone-art">🦙</div>
           <h3>Refugio de fauna local</h3>
           <p class="muted">Alpaca · Vicuña · Cóndor · Oso de Anteojos</p>
-          <button class="btn ghost sm">Ver fichas</button>
+          <button class="btn ghost sm" data-fichas="fauna">Ver fichas</button>
         </div>
         <div class="card zone">
           <div class="zone-art">🌳</div>
           <h3>Infraestructura sostenible</h3>
           <p class="muted">Parques · Ciclovías · Captación de agua</p>
-          <button class="btn ghost sm">Ver fichas</button>
+          <button class="btn ghost sm" data-fichas="infra">Ver fichas</button>
         </div>
       </div>
 
       <div class="card">
         <div class="card-header">
           <h3>Meta colectiva mensual</h3>
-          <span class="muted">8,420 / 12,000 h</span>
+          <span class="muted" id="collectiveText">8,420 / 12,000 h</span>
         </div>
-        <div class="bar"><div class="bar-fill emerald" style="width:70%"></div></div>
+        <div class="bar"><div class="bar-fill emerald" id="collectiveFill" style="width:70%"></div></div>
         <p class="muted" style="margin-top:8px">Próximo hito: 10,000 h → 2 hectáreas apadrinadas en la Amazonía.</p>
       </div>
 
@@ -386,11 +457,8 @@
       <div class="community-grid">
         <div class="card">
           <h3>Mis cuadrillas</h3>
-          <ul class="squad-list">
-            <li class="active"><strong>Código Andino</strong> <span class="muted">4 / 4</span></li>
-            <li><strong>Los Incas</strong> <span class="muted">3 / 4</span></li>
-          </ul>
-          <button class="btn ghost sm">Unirse con código</button>
+          <ul class="squad-list" id="squadList"></ul>
+          <button class="btn ghost sm" id="joinSquad">Unirse con código</button>
         </div>
 
         <div class="card">
@@ -408,12 +476,9 @@
 
         <div class="card">
           <h3>Tutores pares</h3>
-          <input class="input" placeholder="Buscar por curso..." />
-          <ul class="tutor-list">
-            <li><strong>Ana</strong> · Cálculo II</li>
-            <li><strong>Luis</strong> · Programación</li>
-          </ul>
-          <button class="btn ghost sm">Solicitar orientación</button>
+          <input class="input" id="tutorSearch" aria-label="Buscar tutor por curso" placeholder="Buscar por curso..." />
+          <ul class="tutor-list" id="tutorList"></ul>
+          <button class="btn ghost sm" id="askTutor">Solicitar orientación</button>
         </div>
 
         <div class="card">
@@ -439,7 +504,7 @@
       <div class="card">
         <div class="card-header">
           <h3>Progreso semanal</h3>
-          <span class="muted"><strong>15 h 30 m</strong> · +20% vs. semana pasada</span>
+          <span class="muted" id="weeklyTotal"></span>
         </div>
         <div class="chart" id="weeklyChart"></div>
         <div class="chart-labels"><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span></div>
@@ -447,22 +512,22 @@
 
       <div class="progress-grid">
         <div>
-          <div class="card insight">
+          <div class="card insight" id="insightCard">
             <span class="label-cyan">INSIGHT DE IA</span>
             <p>Notamos que los miércoles después de las 6:00 PM sueles sentirte más agotado y aumentan tus intentos de abrir redes sociales. Te sugerimos tareas ligeras de lectura en ese horario y dejar los cálculos complejos para jueves a las 9:00 AM, donde tu tasa de enfoque es del 95%.</p>
             <div class="row gap">
-              <button class="btn primary sm">Aceptar sugerencia</button>
-              <button class="btn ghost sm">Ignorar por ahora</button>
+              <button class="btn primary sm" id="acceptInsight">Aceptar sugerencia</button>
+              <button class="btn ghost sm" id="ignoreInsight">Ignorar por ahora</button>
             </div>
           </div>
 
           <div class="card">
             <h3>Logros</h3>
             <div class="achievements">
-              <div class="ach"><span>🏅</span><p>Constante</p></div>
-              <div class="ach"><span>🎯</span><p>Enfocado</p></div>
-              <div class="ach"><span>🌺</span><p>Guardián de la Cantuta</p></div>
-              <div class="ach"><span>🚀</span><p>Cero Perfeccionismo</p></div>
+              <div class="ach" data-ach="streak"><span>🏅</span><p>Constante</p></div>
+              <div class="ach" data-ach="blocks"><span>🎯</span><p>Enfocado</p></div>
+              <div class="ach" data-ach="earth"><span>🌺</span><p id="achSeedName">Guardián de la Cantuta</p></div>
+              <div class="ach" data-ach="noperf"><span>🚀</span><p>Cero Perfeccionismo</p></div>
             </div>
           </div>
         </div>
@@ -470,7 +535,7 @@
         <div class="card wellbeing">
           <h3>Bienestar UC</h3>
           <p class="muted">Si tus ánimos de 1–2/10 se repiten varios días, el sistema te mostrará apoyo privado.</p>
-          <button class="btn secondary">Agendar con Bienestar UC</button>
+          <button class="btn secondary" id="bienestarBtn">Agendar con Bienestar UC</button>
           <p class="muted small">100% privado y confidencial.</p>
         </div>
       </div>
