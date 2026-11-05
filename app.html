@@ -9,6 +9,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css" />
+<script>
+// Sin sesión iniciada => volver a la página de inicio para crear cuenta o ingresar
+try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'); } catch (e) { }
+</script>
 </head>
 <body>
 
@@ -21,35 +25,69 @@
 
 <!-- ============ MODALES / OVERLAYS ============ -->
 
-<!-- Onboarding -->
-<div id="onboarding" class="overlay hidden" role="dialog" aria-modal="true">
+<!-- Onboarding (5 pasos) -->
+<div id="onboarding" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="onbTitle">
   <div class="modal onboarding-modal">
-    <div class="steps"><span class="dot active"></span><span class="dot"></span><span class="dot"></span></div>
+    <div class="steps" id="onbDots" aria-hidden="true"></div>
+    <p class="small muted onb-count" id="onbCount" aria-live="polite"></p>
 
+    <!-- 1 · Sobre ti -->
     <div class="onb-step" data-step="1">
+      <h2 id="onbTitle">Cuéntanos sobre ti</h2>
+      <p class="muted">SYNCRO se adapta a tu situación. Son 5 preguntas rápidas.</p>
+
       <label class="field-label" for="nameInput">¿Cómo te llamas?</label>
       <input class="input" id="nameInput" maxlength="24" placeholder="Tu nombre" autocomplete="given-name" />
-      <h2>¿Qué te hace procrastinar más?</h2>
-      <p class="muted">Elige el gatillo que más reconozcas en ti.</p>
-      <div class="option-list" id="triggersList">
-        <label class="option"><input type="radio" name="trigger" value="redes"> <span>Redes sociales / notificaciones</span></label>
-        <label class="option"><input type="radio" name="trigger" value="perfeccionismo"> <span>Miedo a fallar / perfeccionismo</span></label>
-        <label class="option"><input type="radio" name="trigger" value="desorganizacion"> <span>Desorganización / no sé por dónde empezar</span></label>
-        <label class="option"><input type="radio" name="trigger" value="cansancio"> <span>Cansancio / agotamiento</span></label>
+
+      <span class="field-label" id="roleLabel">¿Qué te describe mejor?</span>
+      <div class="option-grid" role="radiogroup" aria-labelledby="roleLabel">
+        <label class="option"><input type="radio" name="role" value="universitario"> <span>🎓 Estudiante universitario</span></label>
+        <label class="option"><input type="radio" name="role" value="remoto"> <span>💻 Trabajador remoto</span></label>
+        <label class="option"><input type="radio" name="role" value="emprendedor"> <span>🚀 Emprendedor/a</span></label>
+        <label class="option"><input type="radio" name="role" value="opositor"> <span>📚 Preparo un examen u oposición</span></label>
+        <label class="option"><input type="radio" name="role" value="mayor"> <span>🌿 Aprendo a mi ritmo (adulto/a mayor)</span></label>
+        <label class="option"><input type="radio" name="role" value="otro"> <span>✨ Otro</span></label>
       </div>
+
+      <div class="onb-two">
+        <div>
+          <label class="field-label" for="ageInput">Rango de edad <span class="muted">(opcional)</span></label>
+          <select class="input" id="ageInput">
+            <option value="">Prefiero no decirlo</option>
+            <option value="17-24">17 a 24 años</option>
+            <option value="25-34">25 a 34 años</option>
+            <option value="35-49">35 a 49 años</option>
+            <option value="50+">50 años o más</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label" for="institutionInput">Universidad, centro o empresa <span class="muted">(opcional)</span></label>
+          <input class="input" id="institutionInput" maxlength="48" placeholder="Ej. UC Cusco" autocomplete="organization" />
+        </div>
+      </div>
+      <p class="onb-error" id="onbError1" role="alert"></p>
+
       <div class="onb-actions">
         <button class="btn ghost" data-skip>Saltar por ahora</button>
         <button class="btn primary" data-next="2">Continuar</button>
       </div>
     </div>
 
+    <!-- 2 · Gatillo -->
     <div class="onb-step hidden" data-step="2">
-      <h2>¿En qué horario tienes más energía?</h2>
-      <p class="muted">Lo usaremos para sugerirte cuándo hacer las tareas difíciles.</p>
-      <div class="option-list" id="scheduleList">
-        <label class="option"><input type="radio" name="schedule" value="manana"> <span>Mañana</span></label>
-        <label class="option"><input type="radio" name="schedule" value="tarde"> <span>Tarde</span></label>
-        <label class="option"><input type="radio" name="schedule" value="noche"> <span>Noche</span></label>
+      <h2>¿Qué te hace procrastinar más?</h2>
+      <p class="muted">No es flojera: es regulación emocional. Elige el gatillo que más reconozcas.</p>
+      <div class="option-list" id="triggersList">
+        <label class="option"><input type="radio" name="trigger" value="redes"> <span>📱 Redes sociales y notificaciones</span></label>
+        <label class="option"><input type="radio" name="trigger" value="perfeccionismo"> <span>🎯 Miedo a fallar o perfeccionismo</span></label>
+        <label class="option"><input type="radio" name="trigger" value="desorganizacion"> <span>🗂️ No sé por dónde empezar o creo que me sobra tiempo</span></label>
+        <label class="option"><input type="radio" name="trigger" value="cansancio"> <span>🔋 Cansancio o estudiar en soledad</span></label>
+      </div>
+      <span class="field-label" id="freqLabel">¿Con qué frecuencia postergas tareas importantes?</span>
+      <div class="option-grid three" role="radiogroup" aria-labelledby="freqLabel">
+        <label class="option"><input type="radio" name="freq" value="aveces"> <span>A veces</span></label>
+        <label class="option"><input type="radio" name="freq" value="seguido"> <span>Seguido</span></label>
+        <label class="option"><input type="radio" name="freq" value="siempre"> <span>Casi siempre</span></label>
       </div>
       <div class="onb-actions">
         <button class="btn ghost" data-back="1">Atrás</button>
@@ -57,9 +95,34 @@
       </div>
     </div>
 
+    <!-- 3 · Energía, bloques y objetivo -->
     <div class="onb-step hidden" data-step="3">
+      <h2>Tu energía y tu objetivo</h2>
+      <p class="muted">La IA usa esto para sugerirte cuándo hacer lo difícil y de qué tamaño son tus bloques.</p>
+      <span class="field-label" id="schedLabel">¿Cuándo tienes más energía?</span>
+      <div class="option-grid three" id="scheduleList" role="radiogroup" aria-labelledby="schedLabel">
+        <label class="option"><input type="radio" name="schedule" value="manana"> <span>🌅 Mañana</span></label>
+        <label class="option"><input type="radio" name="schedule" value="tarde"> <span>☀️ Tarde</span></label>
+        <label class="option"><input type="radio" name="schedule" value="noche"> <span>🌙 Noche</span></label>
+      </div>
+      <span class="field-label" id="blockLabel">¿Con qué tamaño de bloque quieres empezar?</span>
+      <div class="option-list" role="radiogroup" aria-labelledby="blockLabel">
+        <label class="option"><input type="radio" name="blockPref" value="noPerfection"> <span>5 min · Avance sin perfección (si cuesta arrancar)</span></label>
+        <label class="option"><input type="radio" name="blockPref" value="classic" checked> <span>25 min · Clásico, con pausa de 5</span></label>
+        <label class="option"><input type="radio" name="blockPref" value="deep"> <span>50 min · Profundo, con pausa de 10</span></label>
+      </div>
+      <label class="field-label" for="goalInput">Tu objetivo grande de esta semana <span class="muted">(opcional)</span></label>
+      <input class="input" id="goalInput" maxlength="80" placeholder="Ej. Terminar el informe final" />
+      <div class="onb-actions">
+        <button class="btn ghost" data-back="2">Atrás</button>
+        <button class="btn primary" data-next="4">Continuar</button>
+      </div>
+    </div>
+
+    <!-- 4 · Semilla y guardián -->
+    <div class="onb-step hidden" data-step="4">
       <h2>Elige tu Semilla y tu Guardián</h2>
-      <p class="muted">Te acompañarán mientras estudias.</p>
+      <p class="muted">Te acompañarán mientras te enfocas. Tu semilla crece con cada bloque.</p>
       <div class="option-list" id="seedList">
         <label class="option"><input type="radio" name="seed" value="cantuta" checked> <span>🌺 Cantuta</span></label>
         <label class="option"><input type="radio" name="seed" value="queñual"> <span>🌲 Queñual</span></label>
@@ -71,8 +134,23 @@
         <label class="option"><input type="radio" name="guardian" value="condor"> <span>🦅 Cóndor</span></label>
       </div>
       <div class="onb-actions">
-        <button class="btn ghost" data-back="2">Atrás</button>
-        <button class="btn primary" id="finishOnboarding">Entrar al Dashboard</button>
+        <button class="btn ghost" data-back="3">Atrás</button>
+        <button class="btn primary" data-next="5">Continuar</button>
+      </div>
+    </div>
+
+    <!-- 5 · Privacidad -->
+    <div class="onb-step hidden" data-step="5">
+      <h2>Tu privacidad, tú decides</h2>
+      <p class="muted">Tus check-ins, estados de ánimo y notas son privados y cifrados. Puedes cambiar esto cuando quieras.</p>
+      <div class="option-list">
+        <label class="option"><input type="checkbox" id="consentBienestar"> <span><strong>Conectar con Bienestar Universitario</strong><small class="muted block-small">Si detectamos patrones críticos, se envía solo un resumen anónimo y siempre con tu consentimiento.</small></span></label>
+        <label class="option"><input type="checkbox" id="consentReminder" checked> <span><strong>Recordarme el check-in diario</strong><small class="muted block-small">Son 30 segundos y ajustan tus bloques a tu energía.</small></span></label>
+      </div>
+      <p class="muted small">Al terminar, te mostramos un tutorial de 1 minuto con un recorrido por la herramienta.</p>
+      <div class="onb-actions">
+        <button class="btn ghost" data-back="4">Atrás</button>
+        <button class="btn primary" id="finishOnboarding">Entrar y ver el tutorial</button>
       </div>
     </div>
   </div>
@@ -192,6 +270,10 @@
         </div>
         <button class="icon-btn" id="resetDemo" title="Reiniciar demo" aria-label="Reiniciar demo">↺</button>
       </div>
+      <div class="sidebar-actions">
+        <button class="btn ghost sm" data-replay-tour>❔ Tutorial</button>
+        <button class="btn ghost sm" data-logout>Cerrar sesión</button>
+      </div>
     </div>
   </aside>
 
@@ -207,6 +289,7 @@
           <p class="muted small" id="scheduleTip"></p>
         </div>
         <div class="dash-meta">
+          <button class="btn ghost sm" data-replay-tour id="dashTourBtn">❔ Ver tutorial</button>
           <div class="streak">
             <span class="flame">🔥</span>
             <strong id="streakDays">12</strong> días
@@ -532,11 +615,22 @@
           </div>
         </div>
 
+        <div class="side-col">
         <div class="card wellbeing">
           <h3>Bienestar UC</h3>
           <p class="muted">Si tus ánimos de 1–2/10 se repiten varios días, el sistema te mostrará apoyo privado.</p>
           <button class="btn secondary" id="bienestarBtn">Agendar con Bienestar UC</button>
           <p class="muted small">100% privado y confidencial.</p>
+        </div>
+
+        <div class="card account-card">
+          <h3>Tu cuenta</h3>
+          <p class="muted" id="accountInfo">—</p>
+          <div class="row gap">
+            <button class="btn ghost sm" data-replay-tour>❔ Ver tutorial</button>
+            <button class="btn ghost sm" data-logout>Cerrar sesión</button>
+          </div>
+        </div>
         </div>
       </div>
     </section>

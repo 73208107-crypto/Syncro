@@ -5,6 +5,7 @@
 'use strict';
 
 const KEY = 'syncro_state_v3';
+const SESSION_KEY = 'syncro_session'; // la crea index.html al registrarse o iniciar sesión
 const BASE_TITLE = document.title;
 const SEEDS = {
   cantuta: { name: 'flor de cantuta', stages: ['🌱', '🌿', '🌷', '🌺'] },
@@ -45,7 +46,7 @@ const NOPERF_REPLIES = [
 
 const defaultState = {
   user: { name: '', level: 12, xp: 850, xpMax: 1000, streak: 12, shields: 2, drops: 1240, earthPoints: 320 },
-  profile: { trigger: null, schedule: null, seed: 'cantuta', guardian: 'alpaca' },
+  profile: { trigger: null, schedule: null, seed: 'cantuta', guardian: 'alpaca', role: null, ageRange: '', institution: '', freq: null, blockPref: 'classic', goal: '', bienestarConsent: false, reminder: true },
   checkIn: { energy: 5, mood: null, saved: false, lowEnergy: false },
   missions: [
     { id: 'm1', base: true, title: 'Completar 2 sesiones Pomodoro de Estructura de Datos', xp: 50, drops: 15, target: 2, progress: 0, done: false },
@@ -62,6 +63,8 @@ const defaultState = {
   insight: null,
   lastActive: null,
   onboarded: false,
+  tutorialDone: false,
+  accountEmail: null,
 };
 
 // ============ HELPERS ============
@@ -77,6 +80,9 @@ const seed = () => SEEDS[state.profile.seed] || SEEDS.cantuta;
 const guardian = () => GUARDIANS[state.profile.guardian] || '🦙';
 
 // ============ PERSISTENCIA ============
+function getSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch (e) { return null; }
+}
 function loadState() {
   const s = clone(defaultState);
   try {
@@ -88,6 +94,13 @@ function loadState() {
         s[k] = { ...defaultState[k], ...(p[k] || {}) };
     }
   } catch (e) { console.warn('Estado corrupto, reiniciando.'); }
+  // Cada cuenta tiene su propio progreso: si cambió la cuenta, se parte de cero
+  const ses = getSession();
+  if (ses) {
+    if (s.accountEmail && s.accountEmail !== ses.email) Object.assign(s, clone(defaultState));
+    s.accountEmail = ses.email;
+    if (!s.user.name && !s.onboarded) s.user.name = String(ses.name || '').split(' ')[0];
+  }
   return s;
 }
 let state = loadState();
@@ -234,6 +247,7 @@ function renderDashboard() {
   const tips = [];
   if (SCHEDULES[p.schedule]) tips.push(`Tus tareas difíciles rinden más en ${SCHEDULES[p.schedule]}.`);
   if (TRIGGER_TIPS[p.trigger]) tips.push(`Tip: ${TRIGGER_TIPS[p.trigger]}`);
+  if (p.freq === 'siempre') tips.push('Si arrancar cuesta, empieza con 5 minutos: lo difícil es empezar, no seguir.');
   $('#scheduleTip').textContent = tips.join(' ');
 
   const c = state.checkIn;
@@ -789,29 +803,203 @@ $('#ignoreInsight').addEventListener('click', () => { state.insight = 'ignored';
 $('#bienestarBtn').addEventListener('click', () => openInfo('Bienestar UC',
   '<p class="muted">Esta es una versión demo: no se envía ningún dato. En la versión real solo compartiríamos un resumen anónimo y siempre con tu consentimiento previo.</p><p class="muted">Si te sientes mal ahora, busca a alguien de confianza o acude a Bienestar Universitario.</p>'));
 
-// ============ ONBOARDING ============
+// ============ ONBOARDING (5 pasos) ============
+const ONB_STEPS = $$('.onb-step').length;
+let onbCur = 1;
+$('#onbDots').innerHTML = '<span class="dot"></span>'.repeat(ONB_STEPS);
 const stepShow = (n) => {
-  $$('.onb-step').forEach(s => s.classList.toggle('hidden', s.dataset.step !== String(n)));
-  $$('.steps .dot').forEach((d, i) => d.classList.toggle('active', i === n - 1));
+  onbCur = Number(n);
+  $$('.onb-step').forEach(st => st.classList.toggle('hidden', st.dataset.step !== String(n)));
+  $$('#onbDots .dot').forEach((d, i) => d.classList.toggle('active', i === onbCur - 1));
+  $('#onbCount').textContent = `Paso ${onbCur} de ${ONB_STEPS}`;
+  const modal = $('.onboarding-modal');
+  modal.scrollTop = 0;
+  if (onbCur > 1) (modal.querySelector(`.onb-step[data-step="${onbCur}"] input`) || modal).focus?.();
 };
-$$('.onb-step [data-next]').forEach(b => b.addEventListener('click', () => stepShow(b.dataset.next)));
+function validateOnbStep1() {
+  const nameOk = $('#nameInput').value.trim().length > 0;
+  const roleOk = !!$('input[name="role"]:checked');
+  $('#nameInput').setAttribute('aria-invalid', String(!nameOk));
+  $('#onbError1').textContent = !nameOk ? 'Escribe cómo quieres que te llamemos.'
+    : !roleOk ? 'Elige qué te describe mejor para ajustar SYNCRO a ti.' : '';
+  if (!nameOk) $('#nameInput').focus();
+  return nameOk && roleOk;
+}
+$$('.onb-step [data-next]').forEach(b => b.addEventListener('click', () => {
+  if (onbCur === 1 && !validateOnbStep1()) return;
+  stepShow(b.dataset.next);
+}));
 $$('.onb-step [data-back]').forEach(b => b.addEventListener('click', () => stepShow(b.dataset.back)));
+$('#nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('.onb-step[data-step="1"] [data-next]').click(); });
+$$('input[name="role"]').forEach(r => r.addEventListener('change', () => { $('#onbError1').textContent = ''; }));
+$('#nameInput').addEventListener('input', () => { $('#nameInput').setAttribute('aria-invalid', 'false'); $('#onbError1').textContent = ''; });
+
+function afterOnboarding() {
+  closeOverlay($('#onboarding'));
+  renderDashboard(); renderMissions(); renderTimer();
+  setTimeout(() => startTutorial(), 350);
+}
 $$('[data-skip]').forEach(b => b.addEventListener('click', () => {
-  closeOverlay($('#onboarding')); state.onboarded = true; saveState();
+  const ses = getSession();
+  if (!state.user.name && ses) state.user.name = String(ses.name || '').split(' ')[0];
+  state.onboarded = true; saveState();
+  afterOnboarding();
 }));
 $('#finishOnboarding').addEventListener('click', () => {
   const val = (n) => $(`input[name="${n}"]:checked`)?.value || null;
   const name = $('#nameInput').value.trim();
   if (name) state.user.name = name;
+  const goal = $('#goalInput').value.trim();
   Object.assign(state.profile, {
-    trigger: val('trigger'), schedule: val('schedule'),
+    role: val('role'), ageRange: $('#ageInput').value, institution: $('#institutionInput').value.trim(),
+    trigger: val('trigger'), freq: val('freq'), schedule: val('schedule'),
+    blockPref: val('blockPref') || 'classic', goal,
     seed: val('seed') || 'cantuta', guardian: val('guardian') || 'alpaca',
+    bienestarConsent: $('#consentBienestar').checked, reminder: $('#consentReminder').checked,
   });
+  // El tamaño de bloque elegido pasa a ser el modo inicial del temporizador
+  state.focus.mode = state.profile.blockPref;
+  $$('input[name="mode"]').forEach(r => r.checked = r.value === state.focus.mode);
+  updateTimerDuration();
+  // El objetivo grande se convierte en la primera misión del día
+  if (goal) {
+    state.missions = state.missions.filter(m => m.id !== 'goal');
+    state.missions.unshift({ id: 'goal', base: true, title: `Dar el primer paso en: ${goal}`, xp: 40, drops: 10, target: 1, progress: 0, done: false });
+  }
   state.onboarded = true; saveState();
-  closeOverlay($('#onboarding'));
-  renderDashboard(); renderTimer();
-  toast(`¡Bienvenido${name ? ', ' + name : ''}! Empieza con tu check-in 🌱`);
+  afterOnboarding();
+  toast(`¡Bienvenido${name ? ', ' + name : ''}! 🌱`);
 });
+
+// ============ TUTORIAL GUIADO ============
+const TOUR = [
+  { emoji: '🌱', title: 'Así se usa SYNCRO', text: 'Cada día sigues un ciclo corto: check-in, misión, bloque protegido e impacto. Te lo mostramos en menos de un minuto, sobre la herramienta real.', tip: 'Puedes repetirlo cuando quieras con el botón “Tutorial”.' },
+  { view: 'dashboard', target: '#checkInCard', title: '1. Check-in emocional', text: 'Mueve la barra de energía y elige cómo te sientes. Si estás agotado, SYNCRO activa el modo ligero y baja tus bloques a 15 minutos.', tip: 'Guardar el check-in suma +5 XP cada día.' },
+  { view: 'dashboard', target: '.missions-col', title: '2. Misiones de hoy', text: 'Tu objetivo grande se divide en tareas pequeñas. Pulsa “Iniciar” para vincular una misión al temporizador, o ✓ para marcarla como hecha.', tip: 'Si te bloqueas, el botón verde de 5 minutos te ayuda a arrancar sin perfección.' },
+  { view: 'plan', target: '#view-plan .card', title: '3. SincroPlan', text: 'Escribe una tarea grande y los días que tienes: la IA la desglosa en micro-pasos con fecha meta. Añádelos a tus misiones de hoy con un clic.', tip: 'Más abajo compara cuánto tiempo crees tener con el que realmente tienes.' },
+  { view: 'focus', target: '#timerCard', title: '4. Bloque protegido', text: 'Elige Clásico 25/5, Profundo 50/10 o 5 minutos sin perfección, y pulsa Iniciar. Tu semilla crece mientras te concentras.', tip: 'Al terminar, una pausa guiada te ayuda a recuperar energía.' },
+  { view: 'focus', target: '#view-focus .focus-grid .card:nth-child(2)', title: 'Escudo anti-distracción', text: 'Si cambias de pestaña durante un bloque, tu Guardián te intercepta. Si te vas de todos modos, solo se reinicia el bloque: sin castigos.', tip: 'Prueba “Simular distracción” para ver la alerta.' },
+  { view: 'biome', target: '.biome-metrics', title: '5. Impacto verificado', text: 'Cada bloque suma gotas de riego y puntos Tierra. Al alcanzar metas colectivas se planta un árbol real junto a ARBIO Perú.', tip: 'El panel de transparencia muestra certificados y fotos geolocalizadas.' },
+  { view: 'community', target: '.community-grid', title: 'Comunidad', text: 'Únete a una cuadrilla con un código, estudia en sala sincronizada o pide orientación a un tutor par.' },
+  { view: 'progress', target: '#view-progress .card', title: 'Tu progreso', text: 'Mira tus horas de la semana, tus logros y los insights de la IA. Es para conocerte, no para presionarte.', tip: 'Si tu ánimo baja varios días, te mostraremos apoyo privado.' },
+  { emoji: '🚀', title: '¡Todo listo!', text: 'Empieza por lo más simple: tu check-in de hoy. Son 30 segundos y SYNCRO ajusta el resto.', last: true },
+];
+const tour = { i: 0, el: null, active: false };
+const tourVisible = (el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+
+function buildTour() {
+  if (tour.el) return;
+  const el = document.createElement('div');
+  el.className = 'tour-layer hidden';
+  el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-labelledby', 'tourTitle');
+  el.innerHTML = '<div class="tour-block"></div><div class="tour-spot none"></div><div class="tour-pop" id="tourPop"></div>';
+  document.body.appendChild(el);
+  tour.el = el;
+  const stop = (e) => e.preventDefault();
+  el.addEventListener('wheel', stop, { passive: false });
+  el.addEventListener('touchmove', stop, { passive: false });
+  el.addEventListener('click', e => {
+    const b = e.target.closest('[data-tour]'); if (!b) return;
+    if (b.dataset.tour === 'next') tourGo(tour.i + 1);
+    else if (b.dataset.tour === 'prev') tourGo(tour.i - 1);
+    else if (b.dataset.tour === 'skip') endTour(false);
+    else if (b.dataset.tour === 'done') endTour(true);
+  });
+  window.addEventListener('resize', () => tour.active && tourPlace(false));
+  window.addEventListener('scroll', () => tour.active && tourPlace(false), { passive: true });
+  document.addEventListener('keydown', e => {
+    if (!tour.active) return;
+    if (e.key === 'Escape') endTour(false);
+    else if (e.key === 'ArrowRight') { e.preventDefault(); tourGo(tour.i + 1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); tourGo(tour.i - 1); }
+    else if (e.key === 'Tab' && !tour.el.querySelector('#tourPop').contains(document.activeElement)) {
+      e.preventDefault(); tour.el.querySelector('[data-tour="next"], [data-tour="done"]')?.focus();
+    }
+  });
+}
+
+function tourPlace(scroll) {
+  const st = TOUR[tour.i], spot = tour.el.querySelector('.tour-spot'), pop = tour.el.querySelector('#tourPop');
+  const t = st.target ? $$(st.target).find(tourVisible) : null;
+  if (!t) { spot.className = 'tour-spot none'; pop.classList.add('center'); pop.style.top = pop.style.left = ''; return; }
+  pop.classList.remove('center');
+  if (scroll) t.scrollIntoView({ block: 'center', inline: 'nearest' });
+  const r = t.getBoundingClientRect(), pad = 8, vw = innerWidth, vh = innerHeight;
+  const top = Math.max(r.top, 6), bottom = Math.min(r.bottom, vh - 6);
+  spot.className = 'tour-spot';
+  Object.assign(spot.style, { top: `${top - pad}px`, left: `${r.left - pad}px`, width: `${r.width + pad * 2}px`, height: `${Math.max(0, bottom - top) + pad * 2}px` });
+  const pw = pop.offsetWidth, ph = pop.offsetHeight, gap = 14;
+  let y;
+  if (vh - bottom - pad >= ph + gap) y = bottom + pad + gap;          // debajo
+  else if (top - pad >= ph + gap) y = top - pad - gap - ph;           // encima
+  else y = Math.max(12, vh - ph - 12);                                // elemento muy grande: al pie de la pantalla
+  pop.style.top = `${y}px`;
+  pop.style.left = `${Math.min(Math.max(12, r.left + r.width / 2 - pw / 2), vw - pw - 12)}px`;
+}
+
+function tourRender() {
+  const st = TOUR[tour.i], pop = tour.el.querySelector('#tourPop');
+  const first = tour.i === 0, last = !!st.last;
+  pop.innerHTML = `
+    ${st.emoji ? `<div class="tour-emoji" aria-hidden="true">${st.emoji}</div>` : ''}
+    <h3 id="tourTitle">${esc(st.title)}</h3>
+    <p>${esc(st.text)}</p>
+    ${st.tip ? `<p class="tour-tip">💡 ${esc(st.tip)}</p>` : ''}
+    <div class="tour-progress" aria-hidden="true">${TOUR.map((_, i) => `<i class="${i === tour.i ? 'on' : ''}"></i>`).join('')}</div>
+    <div class="tour-foot">
+      ${last ? '<span></span>' : '<button class="tour-skip" data-tour="skip">Saltar tutorial</button>'}
+      <div class="tour-btns">
+        ${first ? '' : '<button class="btn ghost sm" data-tour="prev">Atrás</button>'}
+        ${last ? '<button class="btn primary" data-tour="done">Empezar mi check-in</button>'
+               : `<button class="btn primary sm" data-tour="next">${first ? 'Comenzar recorrido' : 'Siguiente'}</button>`}
+      </div>
+    </div>`;
+  tour.el.querySelector('[data-tour="next"], [data-tour="done"]')?.focus({ preventScroll: true });
+  tourPlace(true);
+  requestAnimationFrame(() => tourPlace(false));
+}
+
+function tourGo(n) {
+  if (n < 0 || n >= TOUR.length) return;
+  tour.i = n;
+  const v = TOUR[n].view;
+  if (v) { switchView(v, true); window.scrollTo({ top: 0, behavior: 'instant' }); }
+  tourRender();
+}
+
+function startTutorial(force = false) {
+  if (!$('#onboarding').classList.contains('hidden')) return;
+  if (T.running) return toast('Pausa o termina tu bloque para ver el tutorial.');
+  buildTour();
+  tour.active = true; tour.i = 0;
+  tour.el.classList.remove('hidden');
+  tourRender();
+}
+function endTour(finished) {
+  tour.active = false;
+  tour.el.classList.add('hidden');
+  state.tutorialDone = true; saveState();
+  switchView('dashboard', true);
+  if (finished) {
+    setTimeout(() => {
+      $('#checkInCard').scrollIntoView({ block: 'center', behavior: 'smooth' });
+      $('#energyRange').focus({ preventScroll: true });
+    }, 120);
+  }
+}
+$$('[data-replay-tour]').forEach(b => b.addEventListener('click', () => startTutorial(true)));
+
+// ============ CUENTA ============
+$$('[data-logout]').forEach(b => b.addEventListener('click', () => {
+  if (T.running && !confirm('Tienes un bloque en curso. ¿Cerrar sesión de todos modos?')) return;
+  try { localStorage.removeItem(SESSION_KEY); } catch (e) { }
+  location.href = 'index.html';
+}));
+(function renderAccount() {
+  const ses = getSession();
+  if (!ses) return;
+  $('#accountInfo').textContent = `${ses.name} · ${ses.email} · ${ses.provider === 'google' ? 'Google (simulado)' : 'usuario @' + ses.username}`;
+})();
 
 // ============ RESET ============
 $('#resetDemo').addEventListener('click', () => {
