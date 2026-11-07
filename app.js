@@ -12,8 +12,8 @@ const SEEDS = {
   queñual: { name: 'queñual', stages: ['🌱', '🌿', '🌳', '🌲'] },
   chachacoma: { name: 'chachacoma', stages: ['🌱', '🌿', '🌾', '🌼'] },
 };
-const GUARDIANS = { alpaca: '🦙', oso: '🐻', condor: '🦅' };
-const GUARDIAN_NAMES = { alpaca: 'Alpaca Andina', oso: 'Oso de Anteojos', condor: 'Cóndor' };
+const GUARDIANS = { alpaca: '🦙', oso: '🐻', condor: '🦅', puma: '🐆', gallito: '🐓' };
+const GUARDIAN_NAMES = { alpaca: 'Alpaca Andina', oso: 'Oso de Anteojos', condor: 'Cóndor', puma: 'Puma', gallito: 'Gallito de las rocas' };
 const LOW_MOODS = ['ansioso', 'agobiado', 'cansado'];
 const TRIGGER_TIPS = {
   redes: 'activa el Escudo antes de empezar cada bloque.',
@@ -57,7 +57,7 @@ const defaultState = {
   weekly: [3, 4.5, 2, 5, 3.5, 1, 0.5],
   weekKey: null,
   daily: { date: null, blocks: 0, minutes: 0, distractions: 0, counted: false, checkInXp: false },
-  stats: { blocks: 0, noPerf: 0 },
+  stats: { blocks: 0, noPerf: 0, minutes: 0, dropsEarned: 0, bestStreak: 0, community: 0 },
   plan: { est: 9, real: 6 },
   squads: [{ name: 'Código Andino', n: 4, active: true }, { name: 'Los Incas', n: 3 }],
   insight: null,
@@ -65,6 +65,12 @@ const defaultState = {
   onboarded: false,
   tutorialDone: false,
   accountEmail: null,
+  heat: {},                                   // 'YYYY-MM-DD' -> minutos de enfoque
+  calendar: { weekStart: null, slots: [] },   // bloques de la semana actual
+  moodLog: [],                                // check-ins: { ts, d, dow, hour, energy, mood, jid? }
+  achievements: {},                           // id -> fecha de desbloqueo
+  rescue: null,
+  gapDays: 0,
 };
 
 // ============ HELPERS ============
@@ -90,7 +96,7 @@ function loadState() {
     if (raw) {
       const p = JSON.parse(raw);
       Object.assign(s, p);
-      for (const k of ['user', 'profile', 'checkIn', 'focus', 'daily', 'stats', 'plan'])
+      for (const k of ['user', 'profile', 'checkIn', 'focus', 'daily', 'stats', 'plan', 'calendar'])
         s[k] = { ...defaultState[k], ...(p[k] || {}) };
     }
   } catch (e) { console.warn('Estado corrupto, reiniciando.'); }
@@ -116,17 +122,22 @@ function rollover() {
   const wk = keyOf(monday);
   if (state.weekKey && state.weekKey !== wk) state.weekly = [0, 0, 0, 0, 0, 0, 0];
   state.weekKey = wk;
+  if (state.calendar.weekStart !== wk) state.calendar = { weekStart: wk, slots: [] };
+  const cutoff = keyOf(new Date(Date.now() - 100 * 864e5));
+  Object.keys(state.heat).forEach(k => { if (k < cutoff) delete state.heat[k]; });
   if (state.daily.date === t) return null;
   if (state.lastActive) {
     const gap = Math.round((new Date(t) - new Date(state.lastActive)) / 864e5);
+    state.gapDays = gap;
+    if (gap >= 3) state.rescue = { daysAway: gap };     // vuelta amable: sin mensajes de racha rota ni XP perdido
     if (gap > 1) {
       const missed = gap - 1;
       if (state.user.shields >= missed) {
         state.user.shields -= missed;
-        msg = `Tu escudo protegió tu racha 🛡 (${missed} día${missed > 1 ? 's' : ''}).`;
+        msg = gap >= 3 ? null : `Tu escudo protegió tu racha 🛡 (${missed} día${missed > 1 ? 's' : ''}).`;
       } else {
         state.user.streak = 0;
-        msg = 'Nueva racha, sin culpa. Hoy empezamos de nuevo 🌱';
+        msg = gap >= 3 ? null : 'Nueva racha, sin culpa. Hoy empezamos de nuevo 🌱';
       }
     }
   }
@@ -138,7 +149,10 @@ function rollover() {
   return msg;
 }
 function markActive() {
-  if (!state.daily.counted) { state.daily.counted = true; state.user.streak += 1; }
+  if (!state.daily.counted) {
+    state.daily.counted = true; state.user.streak += 1;
+    state.stats.bestStreak = Math.max(state.stats.bestStreak || 0, state.user.streak);
+  }
 }
 
 // ============ UI BÁSICA ============
@@ -201,6 +215,11 @@ function switchView(view, force = false) {
     on ? n.setAttribute('aria-current', 'page') : n.removeAttribute('aria-current');
   });
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (view === 'calendar') renderCalendar();
+  else if (view === 'profile') renderProfile();
+  else if (view === 'biome') renderBiomeLive(true);
+  else if (view === 'progress') renderTimeline();
+  else stopGrowth();
 }
 $$('[data-view]').forEach(b => b.addEventListener('click', () => switchView(b.dataset.view)));
 $$('[data-goto]').forEach(b => b.addEventListener('click', () => switchView(b.dataset.goto)));
@@ -214,6 +233,7 @@ function addXP(n) {
 }
 function addDrops(n) {
   state.user.drops += n;
+  state.stats.dropsEarned += n;
   state.user.earthPoints += Math.round(n / 4);
 }
 const levelMsg = (ups) => ups ? ` · ¡Subiste al nivel ${state.user.level}!` : '';
@@ -226,6 +246,7 @@ function renderDashboard() {
   $('#streakDays').textContent = u.streak;
   $('#shieldsCount').textContent = u.shields;
   $('#sidebarName').textContent = u.name || 'Estudiante';
+  $('#sidebarName').title = u.name || 'Estudiante';
   $('#sidebarLevel').textContent = `Nivel ${u.level}`;
   $('#sidebarAvatar').textContent = (u.name || '🌱').charAt(0).toUpperCase();
   $('#levelTag').textContent = `Nivel ${u.level} · ${levelTitle(u.level)}`;
@@ -242,7 +263,7 @@ function renderDashboard() {
   $('#previewGuardian').textContent = guardian();
   $('#sidebarGuardianMini').textContent = guardian();
   $('#ribbonGuardian').textContent = `${guardian()} Tu ${GUARDIAN_NAMES[p.guardian] || 'guardián'} protege tu ${seed().name}`;
-  $('#achSeedName').textContent = `Guardián de ${p.seed === 'cantuta' ? 'la Cantuta' : 'tu ' + seed().name}`;
+  updateWeatherUI();
 
   const tips = [];
   if (SCHEDULES[p.schedule]) tips.push(`Tus tareas difíciles rinden más en ${SCHEDULES[p.schedule]}.`);
@@ -302,7 +323,8 @@ function completeMission(id) {
   if (state.focus.activeMission === id) state.focus.activeMission = null;
   markActive();
   const ups = addXP(m.xp); addDrops(m.drops);
-  saveState(); renderDashboard(); renderMissions(); renderProgress();
+  markSlotsDone(id);
+  saveState(); renderDashboard(); renderMissions(); renderProgress(); checkAchievements();
   celebrate('¡Misión completada!', `+${m.xp} XP · +${m.drops} Gotas de riego${levelMsg(ups)}`);
 }
 
@@ -321,7 +343,17 @@ $('#saveCheckIn').addEventListener('click', () => {
   c.saved = true;
   c.lowEnergy = c.energy <= 3 || LOW_MOODS.includes(c.mood);
   if (!state.daily.checkInXp) { state.daily.checkInXp = true; addXP(5); toast('Check-in guardado · +5 XP'); }
-  saveState(); renderDashboard(); renderMissions(); updateTimerDuration();
+  // Registro para el calendario (horas de baja energía) y la línea de tiempo emocional
+  const now = new Date(), entry = { ts: now.getTime(), d: keyOf(now), dow: dayIdx(), hour: now.getHours(), energy: c.energy, mood: c.mood };
+  state.moodLog.push(entry); if (state.moodLog.length > 300) state.moodLog.splice(0, state.moodLog.length - 300);
+  saveState(); renderDashboard(); renderMissions(); updateTimerDuration(); renderTimeline();
+  const text = $('#journalText').value.trim();
+  if (text) {
+    Journal.add(text, { d: entry.d, dow: entry.dow }).then(id => {
+      if (id) { entry.jid = id; saveState(); $('#journalText').value = ''; renderTimeline(); toast('Nota guardada, cifrada en este dispositivo 🔒'); }
+      else toast('Tu navegador no permite el cifrado: no guardamos la nota.');
+    });
+  }
 });
 
 // ============ SONIDO (WebAudio, sin archivos) ============
@@ -486,7 +518,9 @@ function finishBlock() {
   exitFullscreen();
   const xp = Math.max(10, mins), drops = Math.max(2, Math.round(mins / 5));
   state.daily.blocks++; state.daily.minutes += mins;
-  state.stats.blocks++;
+  state.stats.blocks++; state.stats.minutes += mins;
+  state.heat[keyOf(new Date())] = (state.heat[keyOf(new Date())] || 0) + mins;
+  if (groupSession) { state.stats.community++; groupSession = false; }
   if (state.focus.mode === 'noPerfection') state.stats.noPerf++;
   state.weekly[dayIdx()] = Math.round((state.weekly[dayIdx()] + mins / 60) * 100) / 100;
   markActive();
@@ -500,10 +534,11 @@ function finishBlock() {
       m.done = true; state.focus.activeMission = null;
       ups += addXP(m.xp); addDrops(m.drops);
       extra = ` · Misión lista: +${m.xp} XP`;
+      markSlotsDone(m.id);
     }
   }
   T.remaining = T.duration;
-  saveState(); renderDashboard(); renderMissions(); renderProgress(); renderTimer();
+  saveState(); renderDashboard(); renderMissions(); renderProgress(); renderTimer(); checkAchievements();
   Sound.chime();
   celebrate('¡Bloque completado!', `+${xp} XP · +${drops} Gotas${extra}${levelMsg(ups)}`, '🌺');
   if (state.focus.mode !== 'noPerfection') openBreak();
@@ -741,6 +776,7 @@ document.addEventListener('click', e => {
   openInfo(title, `<div class="fichas">${items.map(([i, n, d]) => `<div class="ficha"><span>${i}</span><div><strong>${n}</strong><p>${d}</p></div></div>`).join('')}</div>`);
 });
 
+let groupSession = false;   // el bloque en curso cuenta como sesión en comunidad
 // ============ COMUNIDAD ============
 function renderSquads() {
   $('#squadList').innerHTML = state.squads.map(s => `<li class="${s.active ? 'active' : ''}"><strong>${esc(s.name)}</strong> <span class="muted">${s.n} / 4</span></li>`).join('');
@@ -775,6 +811,7 @@ $('#askTutor').addEventListener('click', () => {
 $('#groupPomodoro').addEventListener('click', () => {
   switchView('focus');
   if (T.running) return toast('Ya tienes un bloque en curso.');
+  groupSession = true;
   startTimer(); toast('Pomodoro grupal iniciado con Código Andino.');
 });
 
@@ -785,12 +822,7 @@ function renderProgress() {
     `<div class="bar-col ${i === dayIdx() ? 'today' : ''}" style="height:${(h / max) * 100}%" data-hours="${h} h"></div>`).join('');
   const hh = Math.floor(total), mm = Math.round((total - hh) * 60);
   $('#weeklyTotal').innerHTML = `<strong>${hh} h ${mm} m</strong> esta semana · hoy: ${state.daily.minutes} min`;
-  const u = state.user, s = state.stats;
-  const ok = { streak: u.streak >= 7, blocks: s.blocks >= 1, earth: u.earthPoints >= 300, noperf: s.noPerf >= 1 };
-  $$('[data-ach]').forEach(a => {
-    a.classList.toggle('locked', !ok[a.dataset.ach]);
-    a.title = ok[a.dataset.ach] ? 'Desbloqueado' : 'Aún bloqueado';
-  });
+  renderAchievements();
   $('#insightCard').classList.toggle('hidden', state.insight === 'ignored');
   const accepted = state.insight === 'accepted';
   $('#acceptInsight').parentElement.classList.toggle('hidden', accepted);
@@ -834,6 +866,12 @@ $('#nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('.on
 $$('input[name="role"]').forEach(r => r.addEventListener('change', () => { $('#onbError1').textContent = ''; }));
 $('#nameInput').addEventListener('input', () => { $('#nameInput').setAttribute('aria-invalid', 'false'); $('#onbError1').textContent = ''; });
 
+function freshStart() {   // cuenta real nueva: parte de cero (los números de demo no cuentan para logros ni bioma)
+  if (state.onboarded) return;
+  Object.assign(state.user, { level: 1, xp: 0, xpMax: 300, streak: 0, shields: 2, drops: 0, earthPoints: 0 });
+  state.weekly = [0, 0, 0, 0, 0, 0, 0]; state.stats = { ...defaultState.stats };
+  state.heat = {}; state.moodLog = []; state.achievements = {}; state.calendar = { weekStart: keyOf(weekMonday()), slots: [] };
+}
 function afterOnboarding() {
   closeOverlay($('#onboarding'));
   renderDashboard(); renderMissions(); renderTimer();
@@ -842,7 +880,7 @@ function afterOnboarding() {
 $$('[data-skip]').forEach(b => b.addEventListener('click', () => {
   const ses = getSession();
   if (!state.user.name && ses) state.user.name = String(ses.name || '').split(' ')[0];
-  state.onboarded = true; saveState();
+  freshStart(); state.onboarded = true; saveState();
   afterOnboarding();
 }));
 $('#finishOnboarding').addEventListener('click', () => {
@@ -866,7 +904,7 @@ $('#finishOnboarding').addEventListener('click', () => {
     state.missions = state.missions.filter(m => m.id !== 'goal');
     state.missions.unshift({ id: 'goal', base: true, title: `Dar el primer paso en: ${goal}`, xp: 40, drops: 10, target: 1, progress: 0, done: false });
   }
-  state.onboarded = true; saveState();
+  freshStart(); state.onboarded = true; saveState();
   afterOnboarding();
   toast(`¡Bienvenido${name ? ', ' + name : ''}! 🌱`);
 });
@@ -877,11 +915,13 @@ const TOUR = [
   { view: 'dashboard', target: '#checkInCard', title: '1. Check-in emocional', text: 'Mueve la barra de energía y elige cómo te sientes. Si estás agotado, SYNCRO activa el modo ligero y baja tus bloques a 15 minutos.', tip: 'Guardar el check-in suma +5 XP cada día.' },
   { view: 'dashboard', target: '.missions-col', title: '2. Misiones de hoy', text: 'Tu objetivo grande se divide en tareas pequeñas. Pulsa “Iniciar” para vincular una misión al temporizador, o ✓ para marcarla como hecha.', tip: 'Si te bloqueas, el botón verde de 5 minutos te ayuda a arrancar sin perfección.' },
   { view: 'plan', target: '#view-plan .card', title: '3. SincroPlan', text: 'Escribe una tarea grande y los días que tienes: la IA la desglosa en micro-pasos con fecha meta. Añádelos a tus misiones de hoy con un clic.', tip: 'Más abajo compara cuánto tiempo crees tener con el que realmente tienes.' },
-  { view: 'focus', target: '#timerCard', title: '4. Bloque protegido', text: 'Elige Clásico 25/5, Profundo 50/10 o 5 minutos sin perfección, y pulsa Iniciar. Tu semilla crece mientras te concentras.', tip: 'Al terminar, una pausa guiada te ayuda a recuperar energía.' },
+  { view: 'calendar', target: '#view-calendar .cal-card', title: '4. Calendario de estudio', text: 'Arrastra tus misiones a un horario (o tócalas y luego toca la hora). Las zonas rayadas son tus horas de baja energía: ahí SYNCRO te sugiere tareas ligeras.', tip: 'Exporta la semana a Google Calendar con el botón .ics.' },
+  { view: 'focus', target: '#timerCard', title: '5. Bloque protegido', text: 'Elige Clásico 25/5, Profundo 50/10 o 5 minutos sin perfección, y pulsa Iniciar. Tu semilla crece mientras te concentras.', tip: 'Al terminar, una pausa guiada te ayuda a recuperar energía.' },
   { view: 'focus', target: '#view-focus .focus-grid .card:nth-child(2)', title: 'Escudo anti-distracción', text: 'Si cambias de pestaña durante un bloque, tu Guardián te intercepta. Si te vas de todos modos, solo se reinicia el bloque: sin castigos.', tip: 'Prueba “Simular distracción” para ver la alerta.' },
-  { view: 'biome', target: '.biome-metrics', title: '5. Impacto verificado', text: 'Cada bloque suma gotas de riego y puntos Tierra. Al alcanzar metas colectivas se planta un árbol real junto a ARBIO Perú.', tip: 'El panel de transparencia muestra certificados y fotos geolocalizadas.' },
+  { view: 'biome', target: '#biomeLive', title: '6. Impacto verificado', text: 'Tu bioma reacciona a tu esfuerzo: sol, niebla o arcoíris según tu día, estaciones reales y fauna que aparece con tus logros. Mueve la línea para ver crecer tus plantas.', tip: 'Con 7 días seguidos, un cóndor sobrevuela tu valle.' },
   { view: 'community', target: '.community-grid', title: 'Comunidad', text: 'Únete a una cuadrilla con un código, estudia en sala sincronizada o pide orientación a un tutor par.' },
   { view: 'progress', target: '#view-progress .card', title: 'Tu progreso', text: 'Mira tus horas de la semana, tus logros y los insights de la IA. Es para conocerte, no para presionarte.', tip: 'Si tu ánimo baja varios días, te mostraremos apoyo privado.' },
+  { view: 'profile', target: '.profile-hero', title: 'Tu perfil', text: 'Edita tus datos, cambia tu guardián, elige modo claro u oscuro, exporta tus datos o borra tu diario cuando quieras.', tip: 'Los guardianes 🐆 y 🐓 se desbloquean con logros.' },
   { emoji: '🚀', title: '¡Todo listo!', text: 'Empieza por lo más simple: tu check-in de hoy. Son 30 segundos y SYNCRO ajusta el resto.', last: true },
 ];
 const tour = { i: 0, el: null, active: false };
@@ -1001,6 +1041,606 @@ $$('[data-logout]').forEach(b => b.addEventListener('click', () => {
   $('#accountInfo').textContent = `${ses.name} · ${ses.email} · ${ses.provider === 'google' ? 'Google (simulado)' : 'usuario @' + ses.username}`;
 })();
 
+// =====================================================================
+// NUEVAS FUNCIONES · logros, calendario, bioma vivo, diario, rescate, perfil, tema
+// =====================================================================
+
+// ============ TEMA CLARO / OSCURO ============
+function setTheme(t, persist = true) {
+  const theme = t === 'light' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', theme);
+  if (persist) { try { localStorage.setItem('syncro_theme', theme); } catch (e) { } }
+  $('meta[name="theme-color"]')?.setAttribute('content', theme === 'light' ? '#EEF2F8' : '#0B132B');
+  $$('[data-theme-toggle]').forEach(b => { (b.querySelector('.tool-ico') || b).textContent = theme === 'light' ? '☀️' : '🌙'; });
+  $$('[data-theme-set]').forEach(b => b.classList.toggle('active', b.dataset.themeSet === theme));
+}
+const currentTheme = () => document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+$$('[data-theme-toggle]').forEach(b => b.addEventListener('click', () => setTheme(currentTheme() === 'light' ? 'dark' : 'light')));
+$$('[data-theme-set]').forEach(b => b.addEventListener('click', () => setTheme(b.dataset.themeSet)));
+
+// ============ LOGROS NARRATIVOS ============
+const bestStreak = () => Math.max(state.user.streak, state.stats.bestStreak || 0);
+const ACHIEVEMENTS = [
+  { id: 'semilla', icon: '🌱', name: 'Primera semilla', goal: 'Completa 1 bloque de enfoque', story: 'Completaste tu primer bloque. Todo bosque empieza con una semilla.',
+    value: () => state.stats.blocks, target: 1, reward: { kind: 'especie', emoji: '🦋', name: 'Mariposa' } },
+  { id: 'raices', icon: '🌿', name: 'Raíces profundas', goal: 'Mantén una racha de 7 días', story: 'Siete días seguidos cuidando tu atención: tus raíces ya sostienen el suelo.',
+    value: () => bestStreak(), target: 7, reward: { kind: 'especie', emoji: '🦌', name: 'Taruca' } },
+  { id: 'cantuta', icon: '🌺', name: 'Guardián de la Cantuta', goal: 'Acumula 100 gotas de riego', story: 'Tu cantuta floreció con 100 gotas de riego, y un puma vigila el valle.',
+    value: () => state.stats.dropsEarned, target: 100, reward: { kind: 'guardián', key: 'puma', emoji: '🐆', name: 'Puma' } },
+  { id: 'rebano', icon: '🦙', name: 'Compañero del rebaño', goal: 'Haz 5 sesiones en comunidad', story: 'Cinco sesiones junto a tu cuadrilla: estudiar acompañado lo cambia todo.',
+    value: () => state.stats.community, target: 5, reward: { kind: 'especie', emoji: '🦜', name: 'Guacamayo' } },
+  { id: 'cumbre', icon: '🏔️', name: 'Cumbre andina', goal: 'Reúne 50 horas verificadas', story: 'Cincuenta horas de enfoque verificado: llegaste a la cumbre y el gallito de las rocas te recibe.',
+    value: () => Math.floor((state.stats.minutes / 60) * 10) / 10, target: 50, reward: { kind: 'guardián', key: 'gallito', emoji: '🐓', name: 'Gallito de las rocas' } },
+];
+const achUnlocked = (id) => !!state.achievements[id];
+const unlockedSpecies = () => ACHIEVEMENTS.filter(a => achUnlocked(a.id) && a.reward.kind === 'especie').map(a => a.reward);
+const GUARDIAN_LOCK = { puma: 'cantuta', gallito: 'cumbre' };
+const guardianLocked = (key) => !!GUARDIAN_LOCK[key] && !achUnlocked(GUARDIAN_LOCK[key]);
+
+function checkAchievements(silent = false) {
+  const fresh = ACHIEVEMENTS.filter(a => !achUnlocked(a.id) && a.value() >= a.target);
+  if (!fresh.length) return [];
+  fresh.forEach(a => { state.achievements[a.id] = keyOf(new Date()); });
+  saveState();
+  if (!silent) setTimeout(() => toast(`🏅 Logro: ${fresh[0].name} · desbloqueaste ${fresh[0].reward.emoji} ${fresh[0].reward.name}`), 1000);
+  renderAchievements();
+  return fresh;
+}
+function renderAchievements() {
+  const list = $('#achList'); if (!list) return;
+  const n = ACHIEVEMENTS.filter(a => achUnlocked(a.id)).length;
+  $('#achCount').textContent = `${n} de ${ACHIEVEMENTS.length} logros`;
+  list.innerHTML = ACHIEVEMENTS.map(a => {
+    const on = achUnlocked(a.id), v = Math.min(a.value(), a.target), pct = Math.round((v / a.target) * 100);
+    const shown = a.id === 'cumbre' ? `${v.toFixed(1)} / ${a.target} h` : `${v} / ${a.target}`;
+    return `<div class="ach-item ${on ? 'unlocked' : ''}" data-ach="${a.id}">
+      <div class="ic" aria-hidden="true">${a.icon}</div>
+      <div>
+        <h4>${esc(a.name)} ${on ? '✓' : ''}</h4>
+        <p>${esc(on ? a.story : a.goal)}</p>
+        ${on ? '' : `<div class="bar"><div class="bar-fill emerald" style="width:${pct}%"></div></div><span class="small muted">${shown}</span>`}
+        <div class="reward">${on ? 'Desbloqueaste' : 'Desbloquea'}: ${a.reward.emoji} ${esc(a.reward.name)} (${a.reward.kind})</div>
+      </div></div>`;
+  }).join('');
+}
+
+// ============ CALENDARIO DE ESTUDIO ============
+const DAY_SHORT = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+const HOURS = Array.from({ length: 17 }, (_, i) => i + 6);           // 6:00 – 22:00
+const LIGHT_TASKS = ['Lectura ligera 20 min', 'Repaso suave de apuntes', 'Ordenar apuntes y escritorio', 'Caminata y respiración 4-4-4-4'];
+const PEAK = { manana: [7, 12], tarde: [13, 18], noche: [19, 22] };
+let calSel = null;   // { t: 'mission', id } | { t: 'light', title }
+
+const weekMonday = () => { const d = new Date(); d.setDate(d.getDate() - dayIdx()); d.setHours(0, 0, 0, 0); return d; };
+function ensureWeek() {
+  const wk = keyOf(weekMonday());
+  if (state.calendar.weekStart !== wk) state.calendar = { weekStart: wk, slots: [] };
+}
+const slotAt = (d, h) => state.calendar.slots.find(s => s.day === d && s.hour === h);
+
+// Horas de baja energía aprendidas de los check-ins (≥2 registros bajos en el mismo día y ventana de 3 h)
+function lowSet() {
+  const counts = {}, set = new Set();
+  state.moodLog.forEach(e => {
+    if (e.energy <= 3 || LOW_MOODS.includes(e.mood)) { const k = `${e.dow}-${e.hour}`; counts[k] = (counts[k] || 0) + 1; }
+  });
+  for (let d = 0; d < 7; d++) for (const h of HOURS) {
+    let n = 0; for (let k = h - 1; k <= h + 1; k++) n += counts[`${d}-${k}`] || 0;
+    if (n >= 2) set.add(`${d}-${h}`);
+  }
+  return set;
+}
+const peakRange = () => PEAK[state.profile.schedule] || null;
+
+function placeSlot(day, hour, item, opts = {}) {
+  ensureWeek();
+  if (slotAt(day, hour)) { toast('Ese horario ya está ocupado.'); return null; }
+  const slot = {
+    id: 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), day, hour, status: 'scheduled', autoAdjusted: !!opts.auto,
+    kind: item.t === 'mission' ? 'mission' : 'light',
+    missionId: item.t === 'mission' ? item.id : null,
+    title: item.t === 'mission' ? (state.missions.find(m => m.id === item.id)?.title || 'Misión') : item.title,
+  };
+  state.calendar.slots.push(slot);
+  return slot;
+}
+function markSlotsDone(missionId) {
+  state.calendar.slots.forEach(s => { if (s.missionId === missionId) s.status = 'done'; });
+}
+
+function renderCalTray() {
+  ensureWeek();
+  const scheduled = new Set(state.calendar.slots.map(s => s.missionId).filter(Boolean));
+  const pending = state.missions.filter(m => !m.done);
+  const chip = (attrs, cls, label) => `<button type="button" class="cal-chip ${cls}" draggable="true" ${attrs}><span>${label}</span></button>`;
+  const sel = (t, k) => calSel && calSel.t === t && (calSel.id === k || calSel.title === k) ? 'sel' : '';
+  $('#calTray').innerHTML = pending.map(m =>
+    chip(`data-t="mission" data-k="${esc(m.id)}"`, sel('mission', m.id), `${scheduled.has(m.id) ? '✓ ' : ''}${esc(m.title)}`)).join('')
+    + LIGHT_TASKS.slice(0, 3).map(t => chip(`data-t="light" data-k="${esc(t)}"`, 'light ' + sel('light', t), `🍃 ${esc(t)}`)).join('');
+}
+function renderCalendar() {
+  ensureWeek();
+  const mon = weekMonday(), today = dayIdx(), nowH = new Date().getHours();
+  const low = lowSet(), pk = peakRange();
+  let html = '<div class="cal-head"></div>' + DAY_SHORT.map((n, i) => {
+    const d = new Date(mon); d.setDate(mon.getDate() + i);
+    return `<div class="cal-head ${i === today ? 'today' : ''}">${n}<small>${d.getDate()}</small></div>`;
+  }).join('');
+  for (const h of HOURS) {
+    html += `<div class="cal-hour">${h}:00</div>`;
+    for (let d = 0; d < 7; d++) {
+      const s = slotAt(d, h);
+      const cls = [low.has(`${d}-${h}`) ? 'low' : '', pk && h >= pk[0] && h < pk[1] ? 'peak' : '',
+        d < today || (d === today && h < nowH) ? 'past' : '', d === today ? 'today-col' : '', s ? '' : 'armed'].join(' ');
+      const block = s ? `<div class="cal-block ${s.kind === 'light' ? 'light' : ''} ${s.status === 'done' ? 'done' : ''}" draggable="true" data-slot="${s.id}" title="${esc(s.title)}">
+          <span class="cb-title">${s.autoAdjusted ? '<span class="auto" title="Ajustado según tu energía">✨</span> ' : ''}${esc(s.title)}</span>
+          <button type="button" data-act="done" aria-label="${s.status === 'done' ? 'Marcar pendiente' : 'Marcar hecho'}">✓</button>
+          <button type="button" data-act="del" aria-label="Quitar del calendario">✕</button></div>` : '';
+      html += `<div class="cal-cell ${cls}" role="gridcell" data-day="${d}" data-hour="${h}" aria-label="${DAY_SHORT[d]} ${h}:00">${block}</div>`;
+    }
+  }
+  $('#calGrid').innerHTML = html;
+  const a = new Date(mon), b = new Date(mon); b.setDate(b.getDate() + 6);
+  const fmt = (x) => x.toLocaleDateString('es-PE', { day: 'numeric', month: 'short' });
+  $('#calWeekLabel').textContent = `Semana del ${fmt(a)} al ${fmt(b)} · ${state.calendar.slots.length} bloques programados`
+    + (low.size ? ' · Las zonas rayadas son horas en las que sueles sentirte agotado.' : ' · Con más check-ins aprenderemos tus horas de baja energía.');
+  renderCalTray(); renderHeat();
+}
+function dropOnCell(day, hour, data) {
+  ensureWeek();
+  const low = lowSet().has(`${day}-${hour}`);
+  if (data.t === 'slot') {
+    const s = state.calendar.slots.find(x => x.id === data.id); if (!s) return;
+    if (slotAt(day, hour)) return toast('Ese horario ya está ocupado.');
+    s.day = day; s.hour = hour;
+  } else {
+    const item = data.t === 'mission' ? { t: 'mission', id: data.k } : { t: 'light', title: data.k };
+    if (item.t === 'mission' && low) {
+      toast('Ese horario suele agotarte. Te sugerimos una tarea ligera aquí 🍃');
+    }
+    if (!placeSlot(day, hour, item)) return;
+  }
+  calSel = null; saveState(); renderCalendar();
+}
+$('#calTray').addEventListener('click', e => {
+  const c = e.target.closest('.cal-chip'); if (!c) return;
+  const same = calSel && calSel.t === c.dataset.t && (calSel.id === c.dataset.k || calSel.title === c.dataset.k);
+  calSel = same ? null : (c.dataset.t === 'mission' ? { t: 'mission', id: c.dataset.k } : { t: 'light', title: c.dataset.k });
+  renderCalTray();
+  $('#calHelp').textContent = calSel ? 'Ahora toca el horario donde quieres programarla.' : 'Arrastra una misión a un horario, o toca la misión y luego el horario.';
+});
+$('#calGrid').addEventListener('click', e => {
+  const btn = e.target.closest('.cal-block button');
+  if (btn) {
+    const id = btn.closest('.cal-block').dataset.slot, s = state.calendar.slots.find(x => x.id === id); if (!s) return;
+    if (btn.dataset.act === 'del') state.calendar.slots = state.calendar.slots.filter(x => x.id !== id);
+    else s.status = s.status === 'done' ? 'scheduled' : 'done';
+    saveState(); renderCalendar(); return;
+  }
+  const cell = e.target.closest('.cal-cell'); if (!cell || cell.querySelector('.cal-block')) return;
+  const d = +cell.dataset.day, h = +cell.dataset.hour;
+  if (calSel) return dropOnCell(d, h, calSel.t === 'mission' ? { t: 'mission', k: calSel.id } : { t: 'light', k: calSel.title });
+  if (lowSet().has(`${d}-${h}`)) {                      // slot de baja energía: sugerencia automática
+    placeSlot(d, h, { t: 'light', title: LIGHT_TASKS[(d + h) % LIGHT_TASKS.length] }, { auto: true });
+    saveState(); renderCalendar(); toast('Horario de baja energía: añadimos una tarea ligera 🍃'); return;
+  }
+  toast('Elige primero una misión arriba para programarla aquí.');
+});
+// Arrastrar y soltar
+document.addEventListener('dragstart', e => {
+  const chip = e.target.closest?.('.cal-chip'), blk = e.target.closest?.('.cal-block');
+  if (!chip && !blk) return;
+  const data = chip ? { t: chip.dataset.t, k: chip.dataset.k } : { t: 'slot', id: blk.dataset.slot };
+  e.dataTransfer.setData('text/plain', JSON.stringify(data)); e.dataTransfer.effectAllowed = 'move';
+});
+$('#calGrid').addEventListener('dragover', e => { const c = e.target.closest('.cal-cell'); if (c) { e.preventDefault(); c.classList.add('over'); } });
+$('#calGrid').addEventListener('dragleave', e => e.target.closest?.('.cal-cell')?.classList.remove('over'));
+$('#calGrid').addEventListener('drop', e => {
+  const c = e.target.closest('.cal-cell'); if (!c) return;
+  e.preventDefault(); c.classList.remove('over');
+  try { dropOnCell(+c.dataset.day, +c.dataset.hour, JSON.parse(e.dataTransfer.getData('text/plain'))); } catch (err) { }
+});
+
+// Planificación automática: misiones en tu mejor energía, tareas ligeras en tu baja energía
+function autoPlan() {
+  ensureWeek();
+  const [a, b] = peakRange() || [8, 12], low = lowSet(), today = dayIdx(), nowH = new Date().getHours();
+  const days = []; for (let d = today; d <= 6; d++) days.push(d);
+  const free = (d, h) => !slotAt(d, h) && !low.has(`${d}-${h}`) && !(d === today && h <= nowH);
+  const pending = state.missions.filter(m => !m.done && !state.calendar.slots.some(s => s.missionId === m.id));
+  let nm = 0, nl = 0;
+  pending.forEach((m, i) => {
+    outer: for (let k = 0; k < days.length; k++) {
+      const d = days[(i + k) % days.length];
+      for (let h = a; h < b; h++) if (free(d, h)) { placeSlot(d, h, { t: 'mission', id: m.id }, { auto: true }); nm++; break outer; }
+    }
+  });
+  for (const d of days) {
+    if (nl >= 3) break;
+    const h = HOURS.find(x => low.has(`${d}-${x}`) && !slotAt(d, x) && !(d === today && x <= nowH));
+    if (h !== undefined) { placeSlot(d, h, { t: 'light', title: LIGHT_TASKS[(nl + d) % LIGHT_TASKS.length] }, { auto: true }); nl++; }
+  }
+  saveState(); renderCalendar();
+  toast(nm || nl ? `Planifiqué ${nm} misión(es) en tu mejor energía y ${nl} tarea(s) ligera(s) en tu baja energía.` : 'No hay misiones pendientes por programar.');
+}
+$('#calAutoPlan').addEventListener('click', autoPlan);
+
+// Exportación .ics (importable en Google Calendar, Outlook y Apple Calendar)
+const icsEsc = (t) => String(t).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+function buildIcs() {
+  const mon = weekMonday(), p = (n) => String(n).padStart(2, '0');
+  const fmt = (d) => `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}T${p(d.getHours())}${p(d.getMinutes())}00`;
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+  const L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//SYNCRO//Calendario de estudio//ES', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'X-WR-CALNAME:SYNCRO · Estudio'];
+  [...state.calendar.slots].sort((x, y) => x.day - y.day || x.hour - y.hour).forEach(s => {
+    const st = new Date(mon); st.setDate(mon.getDate() + s.day); st.setHours(s.hour, 0, 0, 0);
+    const en = new Date(st); en.setHours(en.getHours() + 1);
+    L.push('BEGIN:VEVENT', `UID:${s.id}@syncro.local`, `DTSTAMP:${stamp}`, `DTSTART:${fmt(st)}`, `DTEND:${fmt(en)}`,
+      `SUMMARY:${icsEsc('SYNCRO · ' + s.title)}`, `DESCRIPTION:${icsEsc(s.kind === 'light' ? 'Tarea ligera para tu horario de baja energía.' : 'Bloque de enfoque programado en SYNCRO.')}`,
+      'BEGIN:VALARM', 'TRIGGER:-PT10M', 'ACTION:DISPLAY', 'DESCRIPTION:Tu bloque de SYNCRO empieza pronto', 'END:VALARM', 'END:VEVENT');
+  });
+  L.push('END:VCALENDAR');
+  return L.join('\r\n');
+}
+function download(name, text, type) {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+function exportIcs() {
+  ensureWeek();
+  if (!state.calendar.slots.length) { toast('Programa al menos un bloque para exportar.'); return false; }
+  download(`syncro-semana-${state.calendar.weekStart}.ics`, buildIcs(), 'text/calendar;charset=utf-8');
+  return true;
+}
+$('#calExportIcs').addEventListener('click', () => { if (exportIcs()) toast('Archivo .ics descargado.'); });
+$('#calExportGoogle').addEventListener('click', () => {
+  if (!exportIcs()) return;
+  window.open('https://calendar.google.com/calendar/r/settings/export', '_blank', 'noopener');
+  toast('En Google Calendar: Configuración › Importar y exportar › Importar, y elige el archivo .ics que acabas de descargar.');
+});
+
+// Jardín de constancia (heatmap 🌱→🌺)
+const heatEmoji = (m) => m <= 0 ? '' : m < 25 ? '🌱' : m < 60 ? '🌿' : m < 120 ? '🌷' : '🌺';
+function renderHeat() {
+  const grid = $('#heatGrid'); if (!grid) return;
+  const start = weekMonday(); start.setDate(start.getDate() - 7 * 11);
+  const todayKey = keyOf(new Date()), now = new Date(); now.setHours(23, 59, 59, 999);
+  let html = '', total = 0, active = 0;
+  for (let i = 0; i < 84; i++) {
+    const dt = new Date(start); dt.setDate(start.getDate() + i);
+    const k = keyOf(dt), m = state.heat[k] || 0, future = dt > now;
+    if (!future) { total += m; if (m > 0) active++; }
+    const label = `${dt.toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })} · ${m} min`;
+    html += `<div class="heat-cell ${future ? 'future' : ''} ${k === todayKey ? 'today' : ''} ${m ? '' : 'empty'}" title="${label}" aria-label="${label}">${heatEmoji(m) || '·'}</div>`;
+  }
+  grid.innerHTML = html;
+  $('#heatTotal').textContent = `${(total / 60).toFixed(1)} h · ${active} días activos en 12 semanas`;
+}
+
+// ============ BIOMA VIVO ============
+const STAGE_AT = [0, 40, 120, 260];
+const STAGE_NAMES = ['Brote', 'Plántula', 'Planta joven', 'Floración plena'];
+const stageFor = (p) => STAGE_AT.reduce((s, t, i) => p >= t ? i : s, 0);
+function currentSeason() {
+  const now = new Date(), m = now.getMonth();           // hemisferio sur
+  const key = (m === 11 || m <= 1) ? 'verano' : m <= 4 ? 'otoño' : m <= 7 ? 'invierno' : 'primavera';
+  const startMonth = { verano: 11, otoño: 2, invierno: 5, primavera: 8 }[key];
+  const start = new Date(now.getFullYear() - (key === 'verano' && m <= 1 ? 1 : 0), startMonth, 1);
+  const week = Math.floor((now - start) / (7 * 864e5)) + 1;
+  return { key, week, emoji: { verano: '☀️', otoño: '🍂', invierno: '❄️', primavera: '🌸' }[key] };
+}
+function biomeWeather() {
+  const total = state.missions.length, done = state.missions.filter(m => m.done).length;
+  if (state.user.streak >= 3 && state.daily.counted) return 'rainbow';
+  if (total > 0 && done === total) return 'sun';
+  if (!state.daily.counted && (new Date().getHours() >= 14 || (state.gapDays || 0) >= 2)) return 'fog';
+  return 'cloudy';
+}
+const WEATHER = {
+  rainbow: ['🌈 Arcoíris', () => `Tu racha de ${state.user.streak} días pintó un arcoíris sobre el valle.`],
+  sun: ['☀️ Soleado', () => 'Completaste tus misiones de hoy: el sol brilla sobre tu bioma.'],
+  fog: ['🌫️ Niebla', () => 'Hay niebla en el valle. Un bloque de 5 minutos la disipa, sin presión.'],
+  cloudy: ['⛅ Nublado', () => 'Cielo abierto con nubes. Tu primer bloque del día despeja el horizonte.'],
+};
+const PLANT_X = [6, 17, 28, 39, 50, 61, 72, 83, 92], PLANT_Y = [10, 0, 16, 4, 18, 2, 12, 6, 14];
+let blPoints = null, blAnim = null, blFaunaSig = '';
+function ensurePlants() {
+  const box = $('#blPlants'); if (box.children.length) return;
+  box.innerHTML = PLANT_X.map((x, i) => `<div class="bl-plant" data-i="${i}" style="left:${x}%;bottom:${PLANT_Y[i]}px"><i>🌱</i></div>`).join('');
+}
+function setBiomePoints(p) {
+  blPoints = p;
+  ensurePlants();
+  const keys = [state.profile.seed, ...Object.keys(SEEDS).filter(k => k !== state.profile.seed)];
+  $$('.bl-plant').forEach((el, i) => {
+    const on = p >= i * 45, st = stageFor(Math.max(0, p - i * 30));
+    el.classList.toggle('on', i === 0 || on);
+    el.dataset.stage = st;
+    el.firstElementChild.textContent = (SEEDS[keys[i % keys.length]] || SEEDS.cantuta).stages[st];
+  });
+  $('#growthRange').value = p;
+  $('#growthLabel').textContent = `${p} / ${state.user.earthPoints} puntos Tierra`;
+  const cur = stageFor(p), st = seed().stages;
+  $('#blStages').innerHTML = STAGE_AT.map((t, i) =>
+    `<div class="bl-stage ${i <= cur ? 'reached' : ''} ${i === cur ? 'current' : ''}"><span class="em">${st[i]}</span><strong>${STAGE_NAMES[i]}</strong><small>desde ${t} pts</small></div>`).join('');
+}
+function stopGrowth() { if (blAnim) { cancelAnimationFrame(blAnim); blAnim = null; } }
+function animateGrowth(ms) {
+  stopGrowth();
+  const target = state.user.earthPoints, t0 = performance.now();
+  const step = (now) => {
+    const k = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - k, 3);
+    setBiomePoints(Math.round(e * target));
+    blAnim = k < 1 ? requestAnimationFrame(step) : null;
+  };
+  setBiomePoints(0);
+  blAnim = requestAnimationFrame(step);
+}
+function renderFauna() {
+  const species = unlockedSpecies();
+  const sig = [state.profile.guardian, ...species.map(s => s.emoji)].join('|');
+  if (sig === blFaunaSig) return;
+  blFaunaSig = sig;
+  const list = [{ emoji: guardian(), fly: false }, ...species.map(s => ({ emoji: s.emoji, fly: ['🦋', '🦜'].includes(s.emoji) }))];
+  $('#blFauna').innerHTML = list.map((a, i) =>
+    `<div class="bl-animal ${a.fly ? 'fly' : ''}" style="left:${12 + i * 16}%;--rx:${70 + (i % 3) * 40}px;animation-duration:${14 + i * 3}s;animation-delay:-${i * 4}s" aria-hidden="true">${a.emoji}</div>`).join('');
+}
+function updateWeatherUI() {
+  const w = biomeWeather(), [label] = WEATHER[w];
+  if ($('#previewWeather')) $('#previewWeather').textContent = label;
+  return w;
+}
+function renderBiomeLive(entering = false) {
+  const sc = $('#blScene'); if (!sc) return;
+  const w = updateWeatherUI(), season = currentSeason();
+  sc.dataset.weather = w; sc.dataset.season = season.key;
+  $('#blWeatherChip').textContent = WEATHER[w][0];
+  $('#blSeasonChip').textContent = `${season.emoji} ${season.key[0].toUpperCase() + season.key.slice(1)} · semana ${season.week}`;
+  $('#blCaption').textContent = WEATHER[w][1]();
+  sc.setAttribute('aria-label', `Bioma: ${WEATHER[w][0]}, ${season.key}, ${state.user.earthPoints} puntos Tierra`);
+  const condor = state.user.streak >= 7;
+  $('#blCondor').classList.toggle('on', condor);
+  $('#condorHint').textContent = condor ? '¡Hoy sobrevuela tu valle!' : `Llevas ${state.user.streak} de 7 días.`;
+  renderFauna();
+  $('#growthRange').max = Math.max(1, state.user.earthPoints);
+  if (entering) animateGrowth(1800);
+  else if (!blAnim) setBiomePoints(state.user.earthPoints);
+}
+$('#growthPlay').addEventListener('click', () => animateGrowth(4500));
+$('#growthRange').addEventListener('input', e => { stopGrowth(); setBiomePoints(+e.target.value); });
+
+// ============ DIARIO EMOCIONAL (cifrado AES-GCM en este dispositivo) ============
+const b64 = (u8) => btoa(String.fromCharCode(...u8));
+const unb64 = (s) => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const Journal = {
+  _key: null, _cache: new Map(),
+  ok() { return !!(window.crypto && crypto.subtle && window.indexedDB); },
+  store() { return 'syncro_journal_v1:' + (state.accountEmail || 'local'); },
+  read() { try { return JSON.parse(localStorage.getItem(this.store())) || []; } catch (e) { return []; } },
+  write(l) { try { localStorage.setItem(this.store(), JSON.stringify(l)); return true; } catch (e) { return false; } },
+  idb() {
+    return new Promise((res, rej) => {
+      const r = indexedDB.open('syncro_keys', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('k');
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    });
+  },
+  // La clave AES es NO extraíble y vive en IndexedDB: el texto cifrado en localStorage no se puede leer sin ella
+  async key() {
+    if (this._key) return this._key;
+    const db = await this.idb(), id = this.store();
+    let k = await new Promise((res, rej) => { const q = db.transaction('k').objectStore('k').get(id); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); });
+    if (!k) {
+      k = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+      await new Promise((res, rej) => { const tx = db.transaction('k', 'readwrite'); tx.objectStore('k').put(k, id); tx.oncomplete = res; tx.onerror = () => rej(tx.error); });
+    }
+    return this._key = k;
+  },
+  async add(text, meta) {
+    if (!this.ok()) return null;
+    try {
+      const key = await this.key(), iv = crypto.getRandomValues(new Uint8Array(12));
+      const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(text)));
+      const e = { id: 'j' + Date.now().toString(36) + Math.random().toString(36).slice(2, 4), ts: Date.now(), ...meta, iv: b64(iv), ct: b64(ct) };
+      const l = this.read(); l.push(e); if (l.length > 200) l.splice(0, l.length - 200);
+      if (!this.write(l)) return null;
+      this._cache.set(e.id, text); return e.id;
+    } catch (err) { return null; }
+  },
+  async all() {
+    const out = [];
+    for (const e of this.read()) {
+      let text = this._cache.get(e.id);
+      if (text === undefined) {
+        try { text = new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(e.iv) }, await this.key(), unb64(e.ct))); this._cache.set(e.id, text); }
+        catch (err) { text = ''; }
+      }
+      out.push({ ...e, text });
+    }
+    return out;
+  },
+  clear() { try { localStorage.removeItem(this.store()); } catch (e) { } this._cache.clear(); },
+  async dropKey() {
+    this._key = null;
+    try { const db = await this.idb(), id = this.store(); await new Promise(res => { const tx = db.transaction('k', 'readwrite'); tx.objectStore('k').delete(id); tx.oncomplete = res; tx.onerror = res; }); } catch (e) { }
+  },
+};
+
+const MOODS = { motivado: ['😊', 'Motivado', '#10B981'], tranquilo: ['😌', 'Tranquilo', '#22D3EE'], ansioso: ['😰', 'Ansioso', '#F59E0B'], agobiado: ['😵', 'Agobiado', '#FB923C'], cansado: ['😴', 'Cansado', '#9D4EDD'] };
+const THEMES = [
+  ['ansiedad', /ansied|ansios|nervios|estr[eé]s|angusti|agobi|preocup/i, 'prueba 5 minutos de respiración 4-4-4-4 antes de empezar'],
+  ['evaluaciones', /examen|parcial|evaluaci|prueba|exposici/i, 'divide el repaso en bloques de 25 minutos con pausas'],
+  ['el lunes', /lunes|semana que viene|inicio de semana/i, 'reserva un ritual de cierre el fin de semana'],
+  ['sueño y cansancio', /sue[ñn]|dorm|cansad|agotad|insomn|desvel/i, 'cuida tu descanso y usa bloques ligeros de 15 minutos'],
+  ['distracciones', /redes|celular|tiktok|insta|whats|youtube|notific/i, 'activa el Escudo antes de cada bloque'],
+  ['perfeccionismo', /perfec|salir bien|fallar|no me sale|miedo a/i, 'usa el modo Avance sin perfección'],
+  ['soledad', /\bsol[oa]\b|soledad|aislad|nadie/i, 'estudia en una cuadrilla de Comunidad'],
+];
+const DIA_PL = ['Los lunes', 'Los martes', 'Los miércoles', 'Los jueves', 'Los viernes', 'Los sábados', 'Los domingos'];
+function analyzeJournal(entries) {
+  const out = [], rx = (n) => THEMES.find(t => t[0] === n)[1];
+  const sun = entries.filter(e => e.dow === 6 && rx('ansiedad').test(e.text) && rx('el lunes').test(e.text));
+  if (sun.length >= 2) out.push({
+    text: 'Los domingos mencionas ansiedad por el lunes. Te sugerimos un ritual de cierre el sábado por la noche: 10 minutos para planear el lunes y soltar pendientes.',
+    action: { label: 'Agendar ritual el sábado 9 PM', run: () => {
+      ensureWeek();
+      if (slotAt(5, 21)) return toast('Ya tienes algo el sábado a las 9 PM.');
+      placeSlot(5, 21, { t: 'light', title: 'Ritual de cierre: planear el lunes y soltar pendientes' }, { auto: true });
+      saveState(); renderCalendar(); toast('Ritual agendado en tu calendario 🌙');
+    } },
+  });
+  let best = null;
+  for (const [name, re, tip] of THEMES) {
+    const by = {}; entries.forEach(e => { if (re.test(e.text)) by[e.dow] = (by[e.dow] || 0) + 1; });
+    for (const [d, n] of Object.entries(by)) if (n >= 2 && (!best || n > best.n)) best = { name, d: +d, n, tip };
+  }
+  if (best && !(out.length && best.name === 'ansiedad' && best.d === 6)) out.push({ text: `${DIA_PL[best.d]} aparece “${best.name}” en tus notas (${best.n} veces). Una idea: ${best.tip}.` });
+  const last = state.moodLog.slice(-5);
+  if (last.length >= 3 && last.reduce((a, e) => a + e.energy, 0) / last.length < 4)
+    out.push({ text: 'Tu energía viene baja estos días. Prioriza bloques de 5 a 15 minutos y cuida tus pausas: avanzar poco también cuenta.' });
+  return out.slice(0, 3);
+}
+let tlToken = 0;
+async function renderTimeline() {
+  const token = ++tlToken, log = state.moodLog.slice(-14);
+  const spark = $('#moodSpark');
+  if (log.length < 2) spark.innerHTML = '<p class="empty">Guarda tu check-in unos días y aquí verás cómo se mueve tu energía.</p>';
+  else {
+    const W = 600, H = 90, x = (i) => 14 + i * ((W - 28) / (log.length - 1)), y = (e) => H - 12 - ((e - 1) / 9) * (H - 28);
+    spark.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Energía de tus últimos check-ins">
+      <polyline fill="none" stroke="var(--cyan-400)" stroke-width="2.5" stroke-linejoin="round" points="${log.map((e, i) => `${x(i)},${y(e.energy)}`).join(' ')}"/>
+      ${log.map((e, i) => `<circle cx="${x(i)}" cy="${y(e.energy)}" r="5" fill="${(MOODS[e.mood] || [])[2] || '#9CA3AF'}"><title>${e.d} · energía ${e.energy}</title></circle>`).join('')}</svg>`;
+  }
+  let entries = [];
+  if (Journal.ok()) { try { entries = await Journal.all(); } catch (e) { entries = []; } }
+  if (token !== tlToken) return;
+  const texts = new Map(entries.map(e => [e.id, e.text]));
+  const ins = analyzeJournal(entries);
+  const box = $('#journalInsights');
+  box.innerHTML = ins.length ? ins.map((i, n) => `<div class="j-insight"><p><strong>INSIGHT DE IA</strong></p><p>${esc(i.text)}</p>${i.action ? `<button class="btn primary sm" data-jins="${n}">${esc(i.action.label)}</button>` : ''}</div>`).join('')
+    : `<p class="empty">${entries.length < 3 ? 'Escribe 3 o más notas en tu check-in y buscaremos patrones por ti.' : 'Aún no vemos patrones repetidos. Sigue escribiendo.'}</p>`;
+  box.querySelectorAll('[data-jins]').forEach(b => b.addEventListener('click', () => ins[+b.dataset.jins].action.run()));
+  const list = [...state.moodLog].slice(-10).reverse();
+  $('#journalList').innerHTML = list.length ? list.map(e => {
+    const m = MOODS[e.mood] || ['🙂', 'Sin ánimo marcado', '#9CA3AF'], t = e.jid ? texts.get(e.jid) : '';
+    const when = new Date(e.ts).toLocaleString('es-PE', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    return `<li style="--dot:${m[2]}"><div class="mt-head"><span>${esc(when)}</span><span class="pill">${m[0]} ${esc(m[1])}</span><span class="pill">⚡ ${e.energy}/10</span></div>${t ? `<p class="mt-text">${esc(t)}</p>` : ''}</li>`;
+  }).join('') : '<li class="muted">Todavía no hay registros. Tu primer check-in aparecerá aquí.</li>';
+}
+
+// ============ RESCATE (vuelta amable) ============
+function showRescue() {
+  const r = state.rescue; if (!r) return;
+  state.rescue = null; saveState();
+  $('#rescueTitle').textContent = `Te extrañamos${state.user.name ? ', ' + state.user.name : ''}`;
+  $('#rescueText').textContent = 'Tu bioma te espera. Empecemos con solo 5 minutos, sin presión.';
+  $('#rescueSub').textContent = `Estuviste ${r.daysAway} días fuera, y está bien. Aquí no hay castigos: solo un primer paso pequeño.`;
+  $('#rescueGuardian').textContent = guardian();
+  openOverlay($('#rescueModal'));
+}
+$('#rescueGo').addEventListener('click', () => {
+  closeOverlay($('#rescueModal'));
+  state.focus.mode = 'noPerfection'; saveState();
+  $$('input[name="mode"]').forEach(r => r.checked = r.value === 'noPerfection');
+  updateTimerDuration(); switchView('focus', true);
+  toast('Modo “Avance sin perfección” activado: solo 5 minutos 🌱');
+});
+$('#rescueLook').addEventListener('click', () => { closeOverlay($('#rescueModal')); switchView('biome', true); });
+
+// ============ PERFIL ============
+const ROLE_LABEL = { universitario: 'Estudiante universitario', remoto: 'Trabajador remoto', emprendedor: 'Emprendedor/a', opositor: 'Preparando un examen', mayor: 'Aprendiendo a mi ritmo', otro: 'Otro' };
+function renderProfile() {
+  const u = state.user, p = state.profile, ses = getSession() || {};
+  $('#pfAvatar').textContent = (u.name || '🌱').charAt(0).toUpperCase();
+  $('#pfGuardian').textContent = guardian();
+  $('#pfName').textContent = u.name || 'Estudiante';
+  $('#pfHandle').textContent = ses.username ? `@${ses.username} · ${ses.email}` : (ses.email || '');
+  $('#pfMeta').textContent = [ROLE_LABEL[p.role], p.ageRange && `${p.ageRange} años`, p.institution].filter(Boolean).join(' · ') || 'Completa tu perfil para personalizar SYNCRO.';
+  $('#pfLevel').textContent = `Nivel ${u.level} · ${levelTitle(u.level)}`;
+  $('#pfStreak').textContent = `🔥 ${u.streak} días`;
+  $('#pfAch').textContent = `🏅 ${ACHIEVEMENTS.filter(a => achUnlocked(a.id)).length}/${ACHIEVEMENTS.length} logros`;
+  $('#pfBlocks').textContent = state.stats.blocks;
+  $('#pfHours').textContent = (state.stats.minutes / 60).toFixed(1);
+  $('#pfBest').textContent = bestStreak();
+  $('#pfDrops').textContent = state.stats.dropsEarned.toLocaleString('es-PE');
+  $('#pfNameInput').value = u.name; $('#pfUserInput').value = ses.username || ''; $('#pfEmailInput').value = ses.email || '';
+  $('#pfRole').value = p.role || ''; $('#pfAge').value = p.ageRange || ''; $('#pfInstitution').value = p.institution || ''; $('#pfGoal').value = p.goal || '';
+  $('#pfTrigger').value = p.trigger || ''; $('#pfSchedule').value = p.schedule || ''; $('#pfBlock').value = p.blockPref || 'classic'; $('#pfSeed').value = p.seed;
+  $('#pfBienestar').checked = !!p.bienestarConsent; $('#pfReminder').checked = p.reminder !== false;
+  $('#pfGuardianSel').innerHTML = Object.keys(GUARDIANS).map(k => {
+    const lock = guardianLocked(k), need = lock ? ACHIEVEMENTS.find(a => a.id === GUARDIAN_LOCK[k]).name : '';
+    return `<option value="${k}" ${lock ? 'disabled' : ''}>${GUARDIANS[k]} ${GUARDIAN_NAMES[k]}${lock ? ` · 🔒 logro “${need}”` : ''}</option>`;
+  }).join('');
+  $('#pfGuardianSel').value = p.guardian;
+  setTheme(currentTheme(), false);
+}
+$('#profileForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const p = state.profile, name = $('#pfNameInput').value.trim();
+  if (!name) { $('#pfNameInput').focus(); return toast('Escribe tu nombre.'); }
+  const oldBlock = p.blockPref, goal = $('#pfGoal').value.trim();
+  state.user.name = name;
+  Object.assign(p, {
+    role: $('#pfRole').value || null, ageRange: $('#pfAge').value, institution: $('#pfInstitution').value.trim(), goal,
+    trigger: $('#pfTrigger').value || null, schedule: $('#pfSchedule').value || null, blockPref: $('#pfBlock').value,
+    seed: $('#pfSeed').value, guardian: guardianLocked($('#pfGuardianSel').value) ? p.guardian : $('#pfGuardianSel').value,
+    bienestarConsent: $('#pfBienestar').checked, reminder: $('#pfReminder').checked,
+  });
+  if (p.blockPref !== oldBlock && !T.running) {
+    state.focus.mode = p.blockPref;
+    $$('input[name="mode"]').forEach(r => r.checked = r.value === p.blockPref); updateTimerDuration();
+  }
+  const gm = state.missions.find(m => m.id === 'goal');
+  if (goal && gm) gm.title = `Dar el primer paso en: ${goal}`;
+  else if (goal) state.missions.unshift({ id: 'goal', base: true, title: `Dar el primer paso en: ${goal}`, xp: 40, drops: 10, target: 1, progress: 0, done: false });
+  else if (gm && !gm.done) state.missions = state.missions.filter(m => m.id !== 'goal');
+  saveState(); renderDashboard(); renderMissions(); renderProfile(); renderCalTray(); blFaunaSig = '';
+  $('#pfSaved').textContent = 'Cambios guardados ✓'; setTimeout(() => { $('#pfSaved').textContent = ''; }, 2500);
+});
+$('#pfExport').addEventListener('click', async () => {
+  const ses = getSession() || {};
+  let journal = []; if (Journal.ok()) { try { journal = (await Journal.all()).map(({ iv, ct, ...r }) => r); } catch (e) { } }
+  download(`syncro-mis-datos-${keyOf(new Date())}.json`, JSON.stringify({ exportadoEl: new Date().toISOString(), cuenta: { nombre: ses.name, usuario: ses.username, correo: ses.email, proveedor: ses.provider }, estado: state, diario: journal }, null, 2), 'application/json');
+  toast('Tus datos se descargaron como JSON.');
+});
+$('#pfClearJournal').addEventListener('click', () => {
+  if (!confirm('¿Borrar todas las notas de tu diario? Esta acción no se puede deshacer.')) return;
+  Journal.clear(); state.moodLog.forEach(e => { delete e.jid; }); saveState(); renderTimeline(); toast('Tu diario se borró de este dispositivo.');
+});
+$('#pfDeleteAccount').addEventListener('click', async () => {
+  if (!confirm('¿Eliminar tu cuenta y todo tu progreso de este dispositivo? No se puede deshacer.')) return;
+  const ses = getSession();
+  try {
+    if (ses) localStorage.setItem('syncro_users', JSON.stringify((JSON.parse(localStorage.getItem('syncro_users')) || []).filter(u => u.email !== ses.email)));
+    Journal.clear(); await Journal.dropKey();
+    localStorage.removeItem(KEY); localStorage.removeItem(SESSION_KEY);
+  } catch (e) { }
+  location.href = 'index.html';
+});
+
+
+// ============ BARRA LATERAL: CONTRAER / EXPANDIR (queda la tira de íconos) ============
+$$('#sidebarNav .nav-item').forEach(b => {            // nombre accesible y tooltip cuando solo se ve el ícono
+  const label = b.querySelector('span:not(.nav-lock-badge)')?.textContent.trim();
+  if (label) { b.title = label; b.setAttribute('aria-label', label); }
+});
+function setSidebar(open, persist = true) {
+  document.body.classList.toggle('sidebar-collapsed', !open);
+  const t = $('#sidebarToggle');
+  t.setAttribute('aria-expanded', String(open));
+  t.setAttribute('aria-label', open ? 'Contraer barra lateral' : 'Expandir barra lateral');
+  t.title = `${open ? 'Contraer' : 'Expandir'} barra lateral (Ctrl+B)`;
+  if (persist) { try { localStorage.setItem('syncro_sidebar', open ? 'open' : 'closed'); } catch (e) { } }
+}
+$('#sidebarToggle').addEventListener('click', () => setSidebar(document.body.classList.contains('sidebar-collapsed')));
+document.addEventListener('keydown', e => {            // Ctrl/Cmd + B también contrae y expande
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'b') {
+    e.preventDefault(); setSidebar(document.body.classList.contains('sidebar-collapsed'));
+  }
+});
+try { setSidebar(localStorage.getItem('syncro_sidebar') !== 'closed', false); } catch (e) { setSidebar(true, false); }
+
 // ============ RESET ============
 $('#resetDemo').addEventListener('click', () => {
   if (!confirm('¿Reiniciar el estado de la demo?')) return;
@@ -1018,7 +1658,10 @@ function init() {
   renderDashboard(); renderMissions(); renderProgress(); renderSquads(); renderTutors();
   $('#autoFs').checked = state.focus.autoFullscreen; updateFsBtn();
   renderShield(); renderIllusion(); updateTimerDuration(); syncSound();
+  try { setTheme(localStorage.getItem('syncro_theme') || 'dark', false); } catch (e) { setTheme('dark', false); }
+  renderAchievements(); checkAchievements(true); updateWeatherUI(); renderTimeline();
   if (!state.onboarded) { openOverlay($('#onboarding')); stepShow(1); }
+  else if (state.rescue) setTimeout(showRescue, 500);
   else if (msg) setTimeout(() => toast(msg), 600);
 }
 init();
