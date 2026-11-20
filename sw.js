@@ -1,5 +1,5 @@
 /* ============ SYNCRO SERVICE WORKER (PWA Offline Cache) ============ */
-const CACHE_NAME = 'syncro-cache-v4';
+const CACHE_NAME = 'syncro-cache-v5';
 
 const STATIC_ASSETS = [
   './',

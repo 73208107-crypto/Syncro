@@ -950,14 +950,18 @@
       position: relative;
       width: 100%;
       max-width: 560px;
+      max-height: calc(100vh - 40px);
+      max-height: calc(100dvh - 24px);
       background: linear-gradient(180deg, #1E112A 0%, #141B34 100%);
       border: 2px solid var(--coral-500);
       border-radius: 26px;
-      padding: 28px 26px;
+      padding: 26px 24px;
       text-align: center;
       box-shadow: 0 0 60px rgba(239, 68, 68, 0.65), 0 0 120px rgba(123, 44, 191, 0.5);
       animation: modalShake 0.45s cubic-bezier(.36,.07,.19,.97) both;
-      overflow: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
     }
     @keyframes modalShake {
       10%, 90% { transform: translate3d(-2px, 0, 0); }
@@ -983,6 +987,12 @@
       0% { background-position: 0 0; }
       100% { background-position: 40px 0; }
     }
+    .emergency-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
     .siren-badge {
       display: inline-flex;
       align-items: center;
@@ -996,13 +1006,27 @@
       font-weight: 800;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      margin-bottom: 10px;
       box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
       animation: sirenBlink 1s infinite alternate;
+    }
+    #muteAlertSoundBtn {
+      height: 28px;
+      font-size: 11px;
     }
     @keyframes sirenBlink {
       from { transform: scale(1); box-shadow: 0 0 12px rgba(239, 68, 68, 0.4); }
       to { transform: scale(1.04); box-shadow: 0 0 26px rgba(239, 68, 68, 0.85); }
+    }
+    .emergency-title {
+      font-size: 24px;
+      color: #FFFFFF;
+      margin-bottom: 6px;
+      line-height: 1.25;
+    }
+    .emergency-desc {
+      font-size: 14px;
+      margin-bottom: 10px;
+      line-height: 1.4;
     }
     .guardian-rescue-stage {
       display: flex;
@@ -1024,6 +1048,10 @@
       0%, 100% { transform: translateY(0) rotate(-4deg); }
       50% { transform: translateY(-8px) rotate(4deg); }
     }
+    .emergency-plant-details {
+      text-align: left;
+      flex: 1;
+    }
     .seed-danger-transfer {
       display: flex;
       align-items: center;
@@ -1038,6 +1066,20 @@
     @keyframes pulseArrow {
       from { opacity: 0.4; transform: translateX(-2px); }
       to { opacity: 1; transform: translateX(3px); }
+    }
+    .emergency-plant-status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+    }
+    .emergency-health-tag {
+      color: #FCA5A5;
+      font-weight: 700;
+      font-size: 11px;
+    }
+    .emergency-water-tag {
+      font-size: 11px;
     }
     .risk-metrics-grid {
       display: grid;
@@ -1060,6 +1102,15 @@
     .risk-box span {
       font-size: 11px;
       color: var(--gray-300);
+    }
+    .emergency-tip {
+      margin-bottom: 14px;
+      line-height: 1.35;
+    }
+    .emergency-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
     .btn-save-seed {
       width: 100%;
@@ -1325,6 +1376,106 @@ body.focus-running .timer-card { min-height: 420px; justify-content: center; }
   .row.gap .input { flex: 1 1 100%; max-width: 100% !important; }
   .siren-badge { max-width: 100%; }
   body.has-focus-ribbon .focus-top-ribbon span:nth-child(2) { display: none; }
+
+  /* ============ ALERTA DE FUGA RESPONSIVE MÓVIL ============ */
+  .emergency-overlay {
+    padding: 12px 10px;
+    align-items: center;
+    justify-content: center;
+  }
+  .emergency-modal {
+    padding: 16px 14px;
+    border-radius: 20px;
+    max-height: calc(100dvh - 20px);
+    box-shadow: 0 0 35px rgba(239, 68, 68, 0.55), 0 0 70px rgba(123, 44, 191, 0.4);
+  }
+  .emergency-top-row {
+    margin-bottom: 6px;
+    gap: 6px;
+  }
+  .siren-badge {
+    font-size: 10px;
+    padding: 4px 10px;
+    max-width: calc(100% - 110px);
+    letter-spacing: 0.05em;
+    margin-bottom: 0;
+  }
+  #muteAlertSoundBtn {
+    height: 26px;
+    font-size: 10px;
+    padding: 0 8px;
+    white-space: nowrap;
+  }
+  .emergency-title {
+    font-size: 18px !important;
+    margin-bottom: 4px !important;
+    line-height: 1.25;
+  }
+  .emergency-desc {
+    font-size: 12.5px !important;
+    margin-bottom: 8px !important;
+    line-height: 1.35;
+  }
+  .guardian-rescue-stage {
+    padding: 8px 10px;
+    margin: 8px 0;
+    gap: 10px;
+    border-radius: 12px;
+  }
+  .guardian-avatar-huge {
+    font-size: 38px;
+  }
+  .seed-danger-transfer {
+    font-size: 22px;
+    gap: 6px;
+  }
+  .wilt-arrow {
+    font-size: 14px;
+  }
+  .emergency-health-tag, .emergency-water-tag {
+    font-size: 9.5px;
+  }
+  .plant-health-bar {
+    height: 6px;
+    margin-top: 4px;
+  }
+  /* Forzar las 3 métricas en 1 sola fila horizontal de 3 columnas compactas */
+  .emergency-modal .risk-metrics-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px;
+    margin: 8px 0;
+  }
+  .emergency-modal .risk-box {
+    padding: 6px 4px;
+    border-radius: 8px;
+  }
+  .emergency-modal .risk-box strong {
+    font-size: 13px;
+    line-height: 1.2;
+  }
+  .emergency-modal .risk-box span {
+    font-size: 9.5px;
+    line-height: 1.1;
+  }
+  .emergency-tip {
+    font-size: 11px !important;
+    margin-bottom: 10px !important;
+    line-height: 1.3;
+  }
+  .emergency-actions {
+    gap: 8px;
+  }
+  .btn-save-seed {
+    height: 46px;
+    font-size: 14px;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+  }
+  #leaveAnyway {
+    font-size: 11.5px;
+    padding: 7px 8px;
+    line-height: 1.2;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
@@ -1995,8 +2146,9 @@ body.sidebar-collapsed .sidebar-offline-badge {
 }
 
 /* ============ MODALES RESPONSIVOS & RESTAURACIÓN ============ */
-.modal, .onboarding-modal, .emergency-card {
+.modal, .onboarding-modal, .emergency-modal, .emergency-card {
   max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 24px);
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;

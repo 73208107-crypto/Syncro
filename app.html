@@ -172,27 +172,27 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
 <div id="blockModal" class="emergency-overlay hidden" role="alertdialog" aria-modal="true" aria-labelledby="alertTitle">
   <div class="emergency-modal">
     <div class="hazard-bar"></div>
-    <div class="row" style="justify-content: space-between; margin-bottom: 6px;">
-      <div class="siren-badge" style="margin-bottom:0;"><span>🚨</span><span id="alertReasonBadge">ALERTA DE FUGA DETECTADA</span></div>
-      <button type="button" class="btn ghost sm" id="muteAlertSoundBtn" style="height:28px; font-size:11px;">🔊 Alarma activa</button>
+    <div class="emergency-top-row">
+      <div class="siren-badge"><span>🚨</span><span id="alertReasonBadge">ALERTA DE FUGA DETECTADA</span></div>
+      <button type="button" class="btn ghost sm" id="muteAlertSoundBtn">🔊 Alarma activa</button>
     </div>
-    <h2 id="alertTitle" style="font-size: 24px; color: #FFFFFF; margin-bottom: 6px;">
+    <h2 id="alertTitle" class="emergency-title">
       ¡Espera, <span id="alertUserName">estudiante</span>! ¡Tu <span id="alertSeedTitleInline">cantuta</span> se está marchitando!
     </h2>
-    <p class="muted" style="font-size: 14px; margin-bottom: 10px;">
+    <p class="muted emergency-desc">
       Tu guardián <strong id="alertGuardianName">Alpaca Andina</strong> interceptó tu salida. Si abandonas ahora, el bloque actual se reinicia.
     </p>
     <div class="guardian-rescue-stage">
       <div class="guardian-avatar-huge" id="alertGuardianEmoji" title="Tu Guardián">🦙</div>
-      <div style="text-align: left; flex: 1;">
+      <div class="emergency-plant-details">
         <div class="seed-danger-transfer">
           <span id="alertHealthySeed">🌺</span>
           <span class="wilt-arrow">⚡ ➔</span>
           <span title="En riesgo de marchitarse">🥀</span>
         </div>
-        <div class="row" style="justify-content: space-between; margin-top: 4px;">
-          <span class="small" style="color: #FCA5A5; font-weight: 700; font-size: 11px;">⚠️ SALUD DE TU PLANTA: CRÍTICA</span>
-          <span class="small muted" style="font-size: 11px;">Riego detenido</span>
+        <div class="emergency-plant-status-row">
+          <span class="emergency-health-tag">⚠️ SALUD DE TU PLANTA: CRÍTICA</span>
+          <span class="small muted emergency-water-tag">Riego detenido</span>
         </div>
         <div class="plant-health-bar"><div class="plant-health-fill"></div></div>
       </div>
@@ -202,10 +202,10 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
       <div class="risk-box"><strong id="alertReward">+25 XP · +5 💧</strong><span>Recompensa en juego</span></div>
       <div class="risk-box"><strong id="alertStreakRisk">🔥 12 días</strong><span>Tu racha</span></div>
     </div>
-    <p class="small muted" style="margin-bottom: 14px;">
+    <p class="small muted emergency-tip">
       💡 <em>El impulso de distraerte dura menos de 30 segundos. Respira hondo y quédate: cada bloque suma para reforestar.</em>
     </p>
-    <div style="display:flex; flex-direction:column; gap:12px;">
+    <div class="emergency-actions">
       <button class="btn-save-seed" id="stayFocused">🛡️ ¡Volver al enfoque y salvar mi planta!</button>
       <button class="btn danger sm block" id="leaveAnyway">🥀 Abandonar sesión de todos modos (se reinicia el bloque)</button>
     </div>
