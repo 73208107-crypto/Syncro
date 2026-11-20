@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#0B132B" />
+<title>Política de privacidad · SYNCRO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
+<link rel="manifest" href="manifest.json">
+<style>
+:root { --navy-900:#0B132B; --navy-800:#1C2541; --cyan-400:#22D3EE; --white:#fff; --text-secondary:#D1D5DB; --text-tertiary:#9CA3AF; --border:rgba(255,255,255,.1); }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--navy-900); color:var(--white); font-family:'Inter',system-ui,sans-serif; line-height:1.7; -webkit-font-smoothing:antialiased; }
+a { color:var(--cyan-400); }
+header { border-bottom:1px solid var(--border); }
+.wrap { max-width:760px; margin:0 auto; padding:0 24px; }
+header .wrap { height:64px; display:flex; align-items:center; justify-content:space-between; }
+.brand { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px; color:var(--white); text-decoration:none; }
+main { padding:48px 0 80px; }
+h1 { font-family:'Space Grotesk',sans-serif; font-size:36px; line-height:1.15; margin:0 0 8px; letter-spacing:-.02em; }
+h2 { font-size:20px; margin:36px 0 8px; }
+p, li { color:var(--text-secondary); font-size:15px; }
+.meta { color:var(--text-tertiary); font-size:13px; margin:0 0 24px; }
+.note { padding:14px 16px; border:1px solid rgba(245,158,11,.4); background:rgba(245,158,11,.08); border-radius:12px; color:#FDE68A; font-size:13px; }
+footer { border-top:1px solid var(--border); padding:24px 0; color:var(--text-tertiary); font-size:13px; }
+</style>
+</head>
+<body>
+<header><div class="wrap"><a class="brand" href="index.html">🌱 SYNCRO</a><a href="index.html">← Volver al inicio</a></div></header>
+<main><div class="wrap">
+<h1>Política de privacidad</h1>
+<p class="meta">Última actualización: 19 de noviembre de 2026</p>
+<p class="note">Borrador de política de privacidad para la fase piloto 2026. Cumple con principios de minimización de datos y cifrado local. Consultas: <a href="mailto:contacto@syncro.app">contacto@syncro.app</a>.</p>
+
+<h2>1. Qué datos tratamos</h2>
+<ul>
+<li><strong>Cuenta:</strong> correo, nombre y nombre de usuario.</li>
+<li><strong>Perfil y preferencias:</strong> ocupación, rango de edad, institución, objetivos y ajustes que tú eliges.</li>
+<li><strong>Uso:</strong> misiones, bloques de enfoque, calendario, progreso y logros.</li>
+<li><strong>Datos emocionales:</strong> nivel de energía, estado de ánimo y notas del diario. Son datos sensibles y los tratamos con especial cuidado.</li>
+</ul>
+
+<h2>2. Dónde se guardan hoy</h2>
+<p>En esta versión, tu información se guarda en el almacenamiento de tu propio navegador (localStorage e IndexedDB). Las notas del diario se cifran en tu dispositivo con AES-GCM de 256 bits, con una clave no extraíble. Esto significa que no se sincronizan entre dispositivos, y que borrar los datos del navegador borra tu progreso.</p>
+
+<h2>3. Con quién se comparten</h2>
+<p>No vendemos tus datos ni los mostramos a otros usuarios. Si activas la conexión con una red de bienestar, solo se compartiría un resumen anónimo y siempre con tu consentimiento previo, que puedes retirar en Perfil.</p>
+
+<h2>4. Tus derechos</h2>
+<ul>
+<li><strong>Acceso y portabilidad:</strong> exporta tus datos en JSON desde Perfil.</li>
+<li><strong>Borrado:</strong> borra tu diario o elimina tu cuenta y todo tu progreso desde Perfil.</li>
+<li><strong>Rectificación:</strong> edita tus datos desde Perfil.</li>
+</ul>
+
+<h2>5. Cambios futuros</h2>
+<p>Cuando SYNCRO incorpore sincronización en la nube o análisis con IA, actualizaremos esta política y te pediremos consentimiento explícito antes de usar tus notas para cualquier análisis.</p>
+
+<h2>6. Contacto</h2>
+<p>Para ejercer tus derechos o resolver dudas: <a href="mailto:contacto@syncro.app">contacto@syncro.app</a>.</p>
+</div></main>
+<footer><div class="wrap">© 2026 SYNCRO · <a href="terminos.html">Términos de uso</a> · <a href="privacidad.html">Política de privacidad</a></div></footer>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>

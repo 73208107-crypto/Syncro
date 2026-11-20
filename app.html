@@ -4,14 +4,15 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="theme-color" content="#0B132B" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>SYNCRO · Enfócate hoy, transforma tu mente y reforesta el futuro</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
+<link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css" />
-<script>
-try { var th = localStorage.getItem('syncro_theme'); if (th) document.documentElement.setAttribute('data-theme', th); } catch (e) { }
-</script>
 <script>
 // Sin sesión iniciada => volver a la página de inicio para crear cuenta o ingresar
 try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'); } catch (e) { }
@@ -19,11 +20,16 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
 </head>
 <body>
 
+<!-- Micro-transición de arranque -->
+<div id="appSplash" class="app-splash" aria-hidden="true">
+  <div class="app-splash-mark">🌱</div>
+  <span class="app-splash-name">SYNCRO</span>
+</div>
+
 <!-- Cinta superior de sesión activa -->
 <div id="focusTopRibbon" class="focus-top-ribbon hidden" role="status">
   <span>🛡️ <strong>ESCUDO SYNCRO ACTIVO:</strong> sesión en curso (<span id="ribbonTimer">25:00</span>)</span>
   <span id="ribbonGuardian">🦙 Tu guardián protege tu semilla</span>
-  <button class="btn sm ghost" style="height:26px; padding:0 10px; color:#fff; border-color:rgba(255,255,255,0.4);" id="ribbonTriggerAlertBtn">Probar alerta de salida</button>
 </div>
 
 <!-- ============ MODALES / OVERLAYS ============ -->
@@ -31,6 +37,9 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
 <!-- Onboarding (5 pasos) -->
 <div id="onboarding" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="onbTitle">
   <div class="modal onboarding-modal">
+    <div id="onbDiagBanner" class="onb-diag-banner hidden" role="status">
+      <span>✨ <strong>Diagnóstico sincronizado:</strong> <span id="onbDiagSummary">Perfil de enfoque</span>. Tus opciones han sido pre-seleccionadas.</span>
+    </div>
     <div class="steps" id="onbDots" aria-hidden="true"></div>
     <p class="small muted onb-count" id="onbCount" aria-live="polite"></p>
 
@@ -65,7 +74,7 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
         </div>
         <div>
           <label class="field-label" for="institutionInput">Universidad, centro o empresa <span class="muted">(opcional)</span></label>
-          <input class="input" id="institutionInput" maxlength="48" placeholder="Ej. UC Cusco" autocomplete="organization" />
+          <input class="input" id="institutionInput" maxlength="48" placeholder="Ej. Universidad, empresa o proyecto" autocomplete="organization" />
         </div>
       </div>
       <p class="onb-error" id="onbError1" role="alert"></p>
@@ -147,7 +156,7 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
       <h2>Tu privacidad, tú decides</h2>
       <p class="muted">Tus check-ins, estados de ánimo y notas son privados y cifrados. Puedes cambiar esto cuando quieras.</p>
       <div class="option-list">
-        <label class="option"><input type="checkbox" id="consentBienestar"> <span><strong>Conectar con Bienestar Universitario</strong><small class="muted block-small">Si detectamos patrones críticos, se envía solo un resumen anónimo y siempre con tu consentimiento.</small></span></label>
+        <label class="option"><input type="checkbox" id="consentBienestar"> <span><strong>Conectar con la Red de Bienestar</strong><small class="muted block-small">Si detectamos patrones críticos, se envía solo un resumen anónimo y siempre con tu consentimiento.</small></span></label>
         <label class="option"><input type="checkbox" id="consentReminder" checked> <span><strong>Recordarme el check-in diario</strong><small class="muted block-small">Son 30 segundos y ajustan tus bloques a tu energía.</small></span></label>
       </div>
       <p class="muted small">Al terminar, te mostramos un tutorial de 1 minuto con un recorrido por la herramienta.</p>
@@ -233,6 +242,27 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
     <button class="btn primary" id="closeInfo">Entendido</button>
   </div>
 </div>
+
+<!-- Modal Confirmar Restauración JSON -->
+<div id="restoreConfirmModal" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="restoreModalTitle">
+  <div class="modal restore-modal">
+    <h2 id="restoreModalTitle">Restaurar copia de seguridad</h2>
+    <p class="muted small" style="margin-bottom:12px">Revisa los datos del archivo antes de confirmar la restauración:</p>
+    <div class="restore-preview-card" id="restorePreviewCard">
+      <div class="restore-stat-row"><span>👤 Usuario:</span><strong id="rstUserName">—</strong></div>
+      <div class="restore-stat-row"><span>⭐ Nivel / Racha:</span><strong id="rstUserLevel">—</strong></div>
+      <div class="restore-stat-row"><span>⏱️ Bloques completados:</span><strong id="rstBlocks">—</strong></div>
+      <div class="restore-stat-row"><span>📅 Fecha del respaldo:</span><strong id="rstDate">—</strong></div>
+    </div>
+    <p class="restore-warning small">
+      ⚠️ <strong>Atención:</strong> Tus datos locales actuales se reemplazarán por los del archivo. Se creará una copia de seguridad automática previa por seguridad.
+    </p>
+    <div class="row gap" style="margin-top:16px; justify-content: flex-end;">
+      <button type="button" class="btn ghost" id="cancelRestoreBtn">Cancelar</button>
+      <button type="button" class="btn primary" id="confirmRestoreBtn">Confirmar y restaurar</button>
+    </div>
+  </div>
+</div>
 <div id="toast" class="toast-single" role="status" aria-live="polite"></div>
 
 <!-- ============ APP ============ -->
@@ -243,7 +273,7 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
   <aside class="sidebar" aria-label="Navegación principal">
     <div class="logo">
       <a class="logo-left" href="index.html" title="Volver al inicio" style="color:inherit;text-decoration:none"><span class="logo-mark">🌱</span><span>SYNCRO</span></a>
-      <span class="uc-badge">DEMO</span>
+      <span id="sidebarOfflineBadge" class="sidebar-offline-badge hidden" title="Modo sin conexión">📶 Offline</span>
       <button class="icon-btn sidebar-toggle" id="sidebarToggle" type="button" aria-controls="sidebarNav" aria-expanded="true" aria-label="Contraer barra lateral" title="Contraer barra lateral (Ctrl+B)">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
       </button>
@@ -296,8 +326,6 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
           <strong id="sidebarName">Estudiante</strong>
           <span id="sidebarLevel" class="muted">Nivel 12</span>
         </div>
-        <button class="icon-btn row-btn" data-theme-toggle type="button" aria-label="Cambiar entre modo claro y oscuro" title="Modo claro / oscuro">🌙</button>
-        <button class="icon-btn row-btn" id="resetDemo" type="button" title="Reiniciar demo" aria-label="Reiniciar demo">↺</button>
       </div>
       <div class="sidebar-actions">
         <button class="btn ghost" data-replay-tour type="button" title="Ver el tutorial"><span class="act-ico" aria-hidden="true">❔</span><span class="act-lbl">Tutorial</span></button>
@@ -320,6 +348,10 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
         <div class="dash-meta">
           <button class="btn ghost sm" data-replay-tour id="dashTourBtn">❔ Ver tutorial</button>
           <div class="streak">
+            <div class="streak" title="Tus gotas de riego disponibles">
+              <span>💧</span>
+              <strong id="dashDrops">1,240</strong> gotas
+            </div>
             <span class="flame">🔥</span>
             <strong id="streakDays">12</strong> días
             <span class="pill"><span class="shield">🛡</span> Escudo x<span id="shieldsCount">2</span></span>
@@ -368,6 +400,10 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
               <span class="muted" id="missionsCount">0 / 3</span>
             </div>
             <div id="missionsList" class="mission-list"></div>
+            <form class="mission-add" id="missionForm" novalidate>
+              <input class="input" id="missionNew" maxlength="80" aria-label="Nueva misión" placeholder="Añadir una misión, ej. Repasar apuntes de clase" autocomplete="off" />
+              <button class="btn primary sm" type="submit">+ Añadir</button>
+            </form>
           </div>
           <button class="btn eco block" id="antiParalysisBtn">¡Desbloqueo Anti-Parálisis 5 min!</button>
         </div>
@@ -457,6 +493,16 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
           <div class="cal-tray" id="calTray" aria-label="Misiones para programar"></div>
           <p class="muted small" id="calHelp">Arrastra una misión a un horario, o toca la misión y luego el horario.</p>
         </div>
+        <div class="cal-day-picker" id="calDayPicker">
+          <div class="cal-day-nav">
+            <button type="button" class="btn ghost sm cal-nav-arrow" id="calPrevDay" aria-label="Día anterior">‹</button>
+            <div class="cal-days-chips" id="calDayChips" role="tablist" aria-label="Días de la semana"></div>
+            <button type="button" class="btn ghost sm cal-nav-arrow" id="calNextDay" aria-label="Día siguiente">›</button>
+          </div>
+          <div class="cal-view-toggle">
+            <button type="button" class="btn ghost sm" id="calToggleMode" aria-label="Cambiar vista de calendario">📆 Ver semana completa</button>
+          </div>
+        </div>
         <div class="cal-legend small muted">
           <span><i class="lg low"></i> Energía baja (aprendido de tus check-ins)</span>
           <span><i class="lg peak"></i> Tu mejor energía</span>
@@ -503,6 +549,7 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
           <label class="option"><input type="radio" name="mode" value="deep"> <span>Profundo 50 / 10</span></label>
           <label class="option"><input type="radio" name="mode" value="noPerfection"> <span>Avance sin perfección 5 min</span></label>
           <label class="option" style="border-top:1px solid var(--border-subtle); margin-top:6px"><input type="checkbox" id="autoFs" checked> <span>Pantalla completa al iniciar</span></label>
+          <label class="option"><input type="checkbox" id="notifToggle"> <span>🔔 Notificaciones del sistema</span></label>
         </div>
 
         <div class="card">
@@ -518,16 +565,48 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
           <button class="btn ghost" id="simulateDistraction">Simular distracción</button></div>
         </div>
 
-        <div class="card">
-          <h3>Burbuja sonora</h3>
-          <button class="btn ghost sm" id="soundToggle" aria-pressed="false">🔇 Sonido apagado</button>
-          <p class="muted small" style="margin:8px 0">Suena mientras el temporizador corre.</p>
+        <div class="card sound-card">
+          <div class="card-header-row">
+            <h3>Burbuja sonora</h3>
+            <button class="btn ghost sm" id="soundToggle" aria-pressed="false">🔇 Sonido apagado</button>
+          </div>
+
+          <div class="volume-control-box">
+            <div class="volume-row">
+              <span class="volume-icon" id="soundVolIcon" aria-hidden="true">🔊</span>
+              <input type="range" id="soundVolume" class="volume-slider" min="0" max="100" value="70" aria-label="Volumen ambiente" />
+              <span class="volume-label" id="soundVolLabel">70%</span>
+            </div>
+          </div>
+
+          <p class="muted small" style="margin:8px 0 10px">Suena mientras el temporizador corre:</p>
           <div class="sound-list" id="soundList">
             <button class="sound-item active" data-sound="rain">🌧 Lluvia Valle Sagrado</button>
             <button class="sound-item" data-sound="wind">🍃 Viento andino</button>
+            <button class="sound-item" data-sound="fire">🔥 Fogata andina</button>
+            <button class="sound-item" data-sound="night">🦗 Noche andina</button>
             <button class="sound-item" data-sound="river">🌊 Río Urubamba</button>
             <button class="sound-item" data-sound="lofi">🎧 Lo-Fi</button>
-            <button class="sound-item" data-sound="binaural">🧠 Binaural</button>
+            <button class="sound-item" data-sound="binaural">🧠 Binaural 40Hz</button>
+          </div>
+
+          <div class="alarm-settings-box">
+            <h4 class="alarm-settings-title">🔔 Alarma al terminar bloque</h4>
+            <div class="alarm-controls-grid">
+              <div class="alarm-tone-select-wrap">
+                <select class="input sm" id="alarmToneSelect" aria-label="Tono de alarma">
+                  <option value="chime">🔔 Campana armónica</option>
+                  <option value="bowl">🥣 Cuenco tibetano zen</option>
+                  <option value="alert">🎺 Tono activo</option>
+                </select>
+              </div>
+              <button type="button" class="btn ghost sm" id="testAlarmBtn" title="Probar sonido de alarma">▶ Probar</button>
+            </div>
+            <div class="volume-row" style="margin-top:6px">
+              <span class="volume-icon" aria-hidden="true">🔔</span>
+              <input type="range" id="alarmVolume" class="volume-slider" min="0" max="100" value="80" aria-label="Volumen de alarma" />
+              <span class="volume-label" id="alarmVolLabel">80%</span>
+            </div>
           </div>
         </div>
       </div>
@@ -570,10 +649,12 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
           <div class="bl-plants" id="blPlants"></div>
           <div class="bl-fauna" id="blFauna"></div>
           <div class="bl-fog f1"></div><div class="bl-fog f2"></div>
+          <div class="bl-rain" id="blRain" aria-hidden="true"></div>
         </div>
         <p class="bl-caption" id="blCaption"></p>
         <div class="bl-controls">
           <button class="btn ghost sm" id="growthPlay">▶ Ver crecimiento</button>
+          <button class="btn eco sm" id="waterBiomeBtn">💧 Regar (-20 💧)</button>
           <input type="range" id="growthRange" min="0" max="320" value="0" aria-label="Línea de crecimiento del bioma" />
           <span class="muted small" id="growthLabel">0 puntos Tierra</span>
         </div>
@@ -626,9 +707,15 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
       <div class="card transparency">
         <h3>Panel de transparencia</h3>
         <div class="transp-grid">
-          <div class="transp-item"><span>📄</span><p>Certificado ARBIO Perú</p></div>
-          <div class="transp-item"><span>📸</span><p>Foto geolocalizada</p></div>
-          <div class="transp-item"><span>🌍</span><p>Huella CO₂ compensada</p></div>
+          <button type="button" class="transp-item" data-transp="arbio">
+            <span>📄</span><p>Certificado ARBIO Perú</p>
+          </button>
+          <button type="button" class="transp-item" data-transp="geo">
+            <span>📸</span><p>Foto geolocalizada</p>
+          </button>
+          <button type="button" class="transp-item" data-transp="co2">
+            <span>🌍</span><p>Huella CO₂ compensada</p>
+          </button>
         </div>
       </div>
     </section>
@@ -636,7 +723,7 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
     <!-- ===== VISTA 5: COMUNIDAD ===== -->
     <section id="view-community" class="view">
       <header class="view-header">
-        <h1>Comunidad UC</h1>
+        <h1>Comunidad</h1>
         <p class="muted">Estudiar acompañado cambia todo.</p>
       </header>
 
@@ -668,7 +755,7 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
         </div>
 
         <div class="card">
-          <h3>Liga inter-facultades</h3>
+          <h3>Liga de grupos</h3>
           <ol class="leaderboard" id="leaderboard">
             <li><span>1</span><span>Ingeniería</span><strong>4,820 h</strong></li>
             <li><span>2</span><span>Ciencias de la Empresa</span><strong>4,210 h</strong></li>
@@ -722,9 +809,9 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
 
         <div class="side-col">
         <div class="card wellbeing">
-          <h3>Bienestar UC</h3>
+          <h3>Red de Bienestar</h3>
           <p class="muted">Si tus ánimos de 1–2/10 se repiten varios días, el sistema te mostrará apoyo privado.</p>
-          <button class="btn secondary" id="bienestarBtn">Agendar con Bienestar UC</button>
+          <button class="btn secondary" id="bienestarBtn">Agendar con la Red de Bienestar</button>
           <p class="muted small">100% privado y confidencial.</p>
         </div>
 
@@ -820,26 +907,21 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
               </select></label>
           </div>
           <label class="pf-field"><span class="field-label">Guardián</span><select class="input" id="pfGuardianSel"></select></label>
-          <label class="option"><input type="checkbox" id="pfBienestar"> <span>Permitir conexión con Bienestar Universitario (resumen anónimo, siempre con mi consentimiento)</span></label>
+          <label class="option"><input type="checkbox" id="pfBienestar"> <span>Permitir conexión con la Red de Bienestar (resumen anónimo, siempre con mi consentimiento)</span></label>
           <label class="option"><input type="checkbox" id="pfReminder"> <span>Recordarme el check-in diario</span></label>
+          <label class="option"><input type="checkbox" id="pfNotif"> <span>🔔 Notificaciones del sistema (al terminar bloques y pausas)</span></label>
           <div class="row gap"><button class="btn primary" type="submit">Guardar cambios</button><span class="muted small" id="pfSaved" role="status"></span></div>
         </form>
 
         <div class="side-col">
-          <div class="card">
-            <h3>Apariencia</h3>
-            <p class="muted small">Estudia de día en la biblioteca o de noche en casa.</p>
-            <div class="row gap">
-              <button class="chip" data-theme-set="dark">🌙 Oscuro</button>
-              <button class="chip" data-theme-set="light">☀️ Claro</button>
-            </div>
-          </div>
           <div class="card">
             <h3>Mi cuenta</h3>
             <p class="muted" id="accountInfo">—</p>
             <div class="row gap">
               <button class="btn ghost sm" data-replay-tour>❔ Ver tutorial</button>
               <button class="btn ghost sm" id="pfExport">⬇ Exportar mis datos</button>
+              <button class="btn ghost sm" id="pfImportBtn">⬆ Restaurar respaldo</button>
+              <input type="file" id="pfImportInput" accept=".json,application/json" class="hidden" style="display:none" />
               <button class="btn ghost sm" data-logout>Cerrar sesión</button>
             </div>
           </div>

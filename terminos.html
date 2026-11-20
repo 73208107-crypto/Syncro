@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#0B132B" />
+<title>Términos de uso · SYNCRO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
+<link rel="manifest" href="manifest.json">
+<style>
+:root { --navy-900:#0B132B; --navy-800:#1C2541; --cyan-400:#22D3EE; --white:#fff; --text-secondary:#D1D5DB; --text-tertiary:#9CA3AF; --border:rgba(255,255,255,.1); }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--navy-900); color:var(--white); font-family:'Inter',system-ui,sans-serif; line-height:1.7; -webkit-font-smoothing:antialiased; }
+a { color:var(--cyan-400); }
+header { border-bottom:1px solid var(--border); }
+.wrap { max-width:760px; margin:0 auto; padding:0 24px; }
+header .wrap { height:64px; display:flex; align-items:center; justify-content:space-between; }
+.brand { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px; color:var(--white); text-decoration:none; }
+main { padding:48px 0 80px; }
+h1 { font-family:'Space Grotesk',sans-serif; font-size:36px; line-height:1.15; margin:0 0 8px; letter-spacing:-.02em; }
+h2 { font-size:20px; margin:36px 0 8px; }
+p, li { color:var(--text-secondary); font-size:15px; }
+.meta { color:var(--text-tertiary); font-size:13px; margin:0 0 24px; }
+.note { padding:14px 16px; border:1px solid rgba(245,158,11,.4); background:rgba(245,158,11,.08); border-radius:12px; color:#FDE68A; font-size:13px; }
+footer { border-top:1px solid var(--border); padding:24px 0; color:var(--text-tertiary); font-size:13px; }
+</style>
+</head>
+<body>
+<header><div class="wrap"><a class="brand" href="index.html">🌱 SYNCRO</a><a href="index.html">← Volver al inicio</a></div></header>
+<main><div class="wrap">
+<h1>Términos de uso</h1>
+<p class="meta">Última actualización: 19 de noviembre de 2026</p>
+<p class="note">Borrador de términos para la fase piloto 2026. Para consultas legales o institucionales: <a href="mailto:contacto@syncro.app">contacto@syncro.app</a>.</p>
+
+<h2>1. Qué es SYNCRO</h2>
+<p>SYNCRO es una herramienta web de productividad y bienestar que ofrece check-in emocional, planificación de tareas, temporizador de enfoque, calendario de estudio y un bioma virtual vinculado a tus hábitos. No es un servicio médico ni de psicoterapia y no reemplaza la atención de un profesional de la salud.</p>
+
+<h2>2. Tu cuenta</h2>
+<p>Debes dar un correo válido y una contraseña segura, y mantener tus credenciales en reserva. Eres responsable de la actividad realizada con tu cuenta. Puedes eliminar tu cuenta en cualquier momento desde Perfil.</p>
+
+<h2>3. Uso aceptable</h2>
+<ul>
+<li>No uses SYNCRO para actividades ilegales ni para acosar a otras personas.</li>
+<li>No intentes acceder a datos de otros usuarios ni vulnerar la seguridad del servicio.</li>
+<li>No uses el servicio de forma automatizada que afecte su funcionamiento.</li>
+</ul>
+
+<h2>4. Contenido y datos personales</h2>
+<p>Tus notas y estados de ánimo son tuyos. Su tratamiento se describe en la <a href="privacidad.html">Política de privacidad</a>.</p>
+
+<h2>5. Impacto ecológico</h2>
+<p>Las horas de enfoque y las gotas de riego son métricas internas. Las metas colectivas de reforestación dependen de convenios con organizaciones aliadas; publicaremos la información de verificación disponible en el panel de transparencia.</p>
+
+<h2>6. Disponibilidad y cambios</h2>
+<p>Mejoramos SYNCRO de forma continua. Podemos modificar o interrumpir funciones, y actualizar estos términos; si el cambio es importante te lo avisaremos en la aplicación.</p>
+
+<h2>7. Limitación de responsabilidad</h2>
+<p>El servicio se ofrece «tal cual». En la medida permitida por la ley, no respondemos por daños indirectos derivados del uso o la imposibilidad de uso de SYNCRO.</p>
+
+<h2>8. Contacto</h2>
+<p>Para consultas sobre estos términos: <a href="mailto:contacto@syncro.app">contacto@syncro.app</a>.</p>
+</div></main>
+<footer><div class="wrap">© 2026 SYNCRO · <a href="terminos.html">Términos de uso</a> · <a href="privacidad.html">Política de privacidad</a></div></footer>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>

@@ -53,12 +53,12 @@ const defaultState = {
     { id: 'm2', base: true, title: 'Redactar primer borrador del informe de Liderazgo', xp: 40, drops: 10, target: 1, progress: 0, done: false },
     { id: 'm3', base: true, title: 'Leer 10 páginas de bibliografía', xp: 30, drops: 5, target: 1, progress: 0, done: false },
   ],
-  focus: { mode: 'classic', sound: 'rain', soundOn: false, shield: true, activeMission: null, alarmMuted: false, autoFullscreen: true },
+  focus: { mode: 'classic', sound: 'rain', soundOn: false, shield: true, activeMission: null, alarmMuted: false, autoFullscreen: true, notificationsEnabled: false, volume: 0.7, alarmTone: 'chime', alarmVolume: 0.8 },
   weekly: [3, 4.5, 2, 5, 3.5, 1, 0.5],
   weekKey: null,
   daily: { date: null, blocks: 0, minutes: 0, distractions: 0, counted: false, checkInXp: false },
   stats: { blocks: 0, noPerf: 0, minutes: 0, dropsEarned: 0, bestStreak: 0, community: 0 },
-  plan: { est: 9, real: 6 },
+  plan: { est: 9, real: 6, task: '', days: 10, steps: [] },
   squads: [{ name: 'Código Andino', n: 4, active: true }, { name: 'Los Incas', n: 3 }],
   insight: null,
   lastActive: null,
@@ -162,16 +162,29 @@ function toast(msg) {
   t.textContent = msg; t.classList.add('show');
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 3400);
 }
-let lastFocus = null;
+const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+const openModals = () => $$('.overlay:not(.hidden), .emergency-overlay:not(.hidden)');
 function openOverlay(el) {
-  lastFocus = document.activeElement;
+  el._returnFocus = document.activeElement;      // cada overlay recuerda su propio retorno de foco
   el.classList.remove('hidden');
-  (el.querySelector('input:not([type=radio]),button') || el).focus?.();
+  (el.querySelector('input:not([type=radio]):not([type=checkbox]),button') || el).focus?.();
 }
 function closeOverlay(el) {
   el.classList.add('hidden');
-  lastFocus?.focus?.();
+  const back = el._returnFocus; el._returnFocus = null;
+  if (back && document.contains(back)) back.focus?.();
 }
+// Focus trap: Tab y Shift+Tab se quedan dentro del modal superior abierto
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Tab' || (typeof tour !== 'undefined' && tour.active)) return;
+  const top = openModals().pop(); if (!top) return;
+  const f = $$(FOCUSABLE, top).filter(x => !x.disabled && x.offsetParent !== null);
+  if (!f.length) { e.preventDefault(); return; }
+  const first = f[0], last = f[f.length - 1];
+  if (!top.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+  else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
 let infoAction = null;
 function openInfo(title, html, ok = 'Entendido', onOk = null) {
   $('#infoTitle').textContent = title;
@@ -209,10 +222,15 @@ function switchView(view, force = false) {
   }
   $$('.view').forEach(v => v.classList.remove('active'));
   $('#view-' + view)?.classList.add('active');
+  try { localStorage.setItem('syncro_view', view); } catch (e) { }
+  if (location.hash !== '#' + view) history.replaceState(null, '', '#' + view);
   $$('.nav-item, .bn-item').forEach(n => {
     const on = n.dataset.view === view;
     n.classList.toggle('active', on);
     on ? n.setAttribute('aria-current', 'page') : n.removeAttribute('aria-current');
+    if (on && n.classList.contains('bn-item')) {
+      try { n.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+    }
   });
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (view === 'calendar') renderCalendar();
@@ -255,6 +273,7 @@ function renderDashboard() {
   $('#dropsCount').textContent = u.drops.toLocaleString('es-PE');
   $('#earthCount').textContent = u.earthPoints;
   $('#biomeDrops').textContent = u.drops.toLocaleString('es-PE');
+  if ($('#dashDrops')) $('#dashDrops').textContent = u.drops.toLocaleString('es-PE');
   $('#biomeEarth').textContent = u.earthPoints;
 
   const done = state.missions.filter(m => m.done).length;
@@ -296,8 +315,12 @@ function renderMissions() {
           <span class="pill">${m.target > 1 ? `${m.progress}/${m.target} bloques` : dur}</span>
         </div>
       </div>
-      <button class="btn ghost sm" data-start="${m.id}" ${m.done ? 'disabled' : ''}>${state.focus.activeMission === m.id ? 'Activa' : 'Iniciar'}</button>
-    </div>`).join('');
+      <div class="mission-actions">
+        <button class="btn ghost sm" data-start="${m.id}" ${m.done ? 'disabled' : ''}>${state.focus.activeMission === m.id ? 'Activa' : 'Iniciar'}</button>
+        <button type="button" class="icon-btn mission-edit" data-edit="${m.id}" title="Editar misión" aria-label="Editar: ${esc(m.title)}">✎</button>
+        <button type="button" class="icon-btn mission-del" data-del="${m.id}" title="Eliminar misión" aria-label="Eliminar: ${esc(m.title)}">✕</button>
+      </div>
+    </div>`).join('') || '<p class="muted small" style="margin:4px 2px">No tienes misiones hoy. Añade una abajo o desglosa una tarea en SincroPlan.</p>';
   $('#missionsCount').textContent = `${state.missions.filter(m => m.done).length} / ${state.missions.length}`;
   renderActiveMission();
 }
@@ -306,12 +329,51 @@ $('#missionsList').addEventListener('click', e => {
   if (!row) return;
   const id = row.dataset.id;
   if (e.target.closest('.mission-check')) return completeMission(id);
+  if (e.target.closest('[data-edit]')) return editMission(id);
+  if (e.target.closest('[data-del]')) return deleteMission(id);
   if (e.target.closest('[data-start]')) {
     state.focus.activeMission = id; saveState();
     renderMissions(); switchView('focus');
     toast('Misión vinculada al temporizador 🎯');
   }
 });
+// Crear, editar y eliminar misiones directamente desde el Dashboard
+$('#missionForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const inp = $('#missionNew'), title = inp.value.trim();
+  if (!title) { toast('Escribe qué quieres lograr hoy.'); return inp.focus(); }
+  state.missions.push({ id: 'c' + Date.now().toString(36), title, xp: 20, drops: 5, target: 1, progress: 0, done: false });
+  inp.value = '';
+  saveState(); renderMissions(); renderCalTray(); renderDashboard();
+  toast('Misión añadida.');
+  inp.focus();
+});
+function editMission(id) {
+  const m = state.missions.find(x => x.id === id); if (!m) return;
+  openInfo('Editar misión',
+    `<label class="field-label" for="missionEditInput">Nombre de la misión</label><input class="input" id="missionEditInput" maxlength="80" value="${esc(m.title)}" />`,
+    'Guardar', () => {
+      const title = $('#missionEditInput').value.trim();
+      if (!title) { toast('La misión necesita un nombre.'); return false; }
+      m.title = title;
+      state.calendar.slots.forEach(s => { if (s.missionId === id) s.title = title; });
+      saveState(); renderMissions(); renderCalTray();
+      if ($('#view-calendar').classList.contains('active')) renderCalendar();
+      toast('Misión actualizada.');
+    });
+  const inp = $('#missionEditInput'); inp.focus(); inp.select();
+  inp.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); $('#closeInfo').click(); } });
+}
+function deleteMission(id) {
+  const m = state.missions.find(x => x.id === id); if (!m) return;
+  if (T.running && state.focus.activeMission === id) return toast('Esta misión está vinculada a un bloque en curso. Pausa el bloque para eliminarla.');
+  state.missions = state.missions.filter(x => x.id !== id);
+  state.calendar.slots = state.calendar.slots.filter(s => s.missionId !== id);
+  if (state.focus.activeMission === id) state.focus.activeMission = null;
+  saveState(); renderMissions(); renderCalTray(); renderDashboard();
+  if ($('#view-calendar').classList.contains('active')) renderCalendar();
+  toast('Misión eliminada.');
+}
 function renderActiveMission() {
   const m = state.missions.find(x => x.id === state.focus.activeMission && !x.done);
   $('#activeMissionLabel').textContent = m ? `🎯 Misión activa: ${m.title}` : 'Sin misión vinculada: el bloque suma XP igual.';
@@ -338,22 +400,45 @@ $$('#moodChips .chip').forEach(chip => chip.addEventListener('click', () => {
   state.checkIn.mood = was ? null : chip.dataset.mood;
   $$('#moodChips .chip').forEach(c => c.classList.toggle('active', c === chip && !was));
 }));
-$('#saveCheckIn').addEventListener('click', () => {
+$('#saveCheckIn').addEventListener('click', async () => {
   const c = state.checkIn;
   c.saved = true;
   c.lowEnergy = c.energy <= 3 || LOW_MOODS.includes(c.mood);
-  if (!state.daily.checkInXp) { state.daily.checkInXp = true; addXP(5); toast('Check-in guardado · +5 XP'); }
-  // Registro para el calendario (horas de baja energía) y la línea de tiempo emocional
-  const now = new Date(), entry = { ts: now.getTime(), d: keyOf(now), dow: dayIdx(), hour: now.getHours(), energy: c.energy, mood: c.mood };
-  state.moodLog.push(entry); if (state.moodLog.length > 300) state.moodLog.splice(0, state.moodLog.length - 300);
-  saveState(); renderDashboard(); renderMissions(); updateTimerDuration(); renderTimeline();
+  if (!state.daily.checkInXp) {
+    state.daily.checkInXp = true;
+    addXP(5);
+    toast('Check-in guardado · +5 XP');
+  }
+
+  const now = new Date();
+  const entry = {
+    ts: now.getTime(),
+    d: keyOf(now),
+    dow: dayIdx(),
+    hour: now.getHours(),
+    energy: c.energy,
+    mood: c.mood,
+  };
+
   const text = $('#journalText').value.trim();
   if (text) {
-    Journal.add(text, { d: entry.d, dow: entry.dow }).then(id => {
-      if (id) { entry.jid = id; saveState(); $('#journalText').value = ''; renderTimeline(); toast('Nota guardada, cifrada en este dispositivo 🔒'); }
-      else toast('Tu navegador no permite el cifrado: no guardamos la nota.');
-    });
+    const id = await Journal.add(text, { d: entry.d, dow: entry.dow });
+    if (id) {
+      entry.jid = id;
+      $('#journalText').value = '';
+      toast('Nota guardada, cifrada en este dispositivo 🔒');
+    } else {
+      toast('Tu navegador no permite el cifrado: no guardamos la nota.');
+    }
   }
+
+  state.moodLog.push(entry);
+  if (state.moodLog.length > 300) state.moodLog.splice(0, state.moodLog.length - 300);
+  saveState();
+  renderDashboard();
+  renderMissions();
+  updateTimerDuration();
+  renderTimeline();
 });
 
 // ============ SONIDO (WebAudio, sin archivos) ============
@@ -368,25 +453,69 @@ const Sound = {
     }
     return b;
   },
+  setVolume(vol) {
+    if (this.master && this.ctx) {
+      this.master.gain.cancelScheduledValues(0);
+      this.master.gain.setTargetAtTime(Math.max(0, Math.min(1, vol)), this.ctx.currentTime, 0.04);
+    }
+  },
   play(kind) {
     this.stop();
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
     const ctx = this.ctx = this.ctx || new AC();
-    ctx.resume();
+    if (ctx.state === 'suspended') ctx.resume();
+    const targetVol = typeof state.focus.volume === 'number' ? state.focus.volume : 0.7;
     const m = this.master = ctx.createGain();
     m.gain.value = 0; m.connect(ctx.destination);
-    m.gain.linearRampToValueAtTime(1, ctx.currentTime + 1.5);
+    m.gain.linearRampToValueAtTime(targetVol, ctx.currentTime + 1.2);
     const add = (n) => (this.srcs.push(n), n);
     const noise = (t) => { const s = add(ctx.createBufferSource()); s.buffer = this.buf(t); s.loop = true; s.start(); return s; };
     const filt = (type, f, q = 1) => { const x = ctx.createBiquadFilter(); x.type = type; x.frequency.value = f; x.Q.value = q; return x; };
     const gain = (v) => { const g = ctx.createGain(); g.gain.value = v; return g; };
     const chain = (...n) => n.reduce((a, b) => (a.connect(b), b));
-    if (kind === 'rain') chain(noise('white'), filt('highpass', 900), filt('lowpass', 7000), gain(0.18), m);
-    else if (kind === 'wind') {
+    if (kind === 'rain') {
+      chain(noise('white'), filt('highpass', 900), filt('lowpass', 7000), gain(0.18), m);
+    } else if (kind === 'wind') {
       const g = gain(0.35); chain(noise('brown'), filt('bandpass', 500, 0.6), g, m);
       const lfo = add(ctx.createOscillator()); lfo.frequency.value = 0.12;
       const d = gain(0.15); lfo.connect(d); d.connect(g.gain); lfo.start();
+    } else if (kind === 'fire') {
+      // Fogata andina: murmullo cálido + crepitar procedural de leña
+      chain(noise('brown'), filt('lowpass', 380), gain(0.36), m);
+      chain(noise('white'), filt('bandpass', 2400, 1.2), gain(0.04), m);
+      const popIv = setInterval(() => {
+        if (!this.master) { clearInterval(popIv); return; }
+        if (Math.random() > 0.4) return;
+        try {
+          const snap = ctx.createBufferSource();
+          const dur = 0.008 + Math.random() * 0.014;
+          const b = ctx.createBuffer(1, Math.floor(ctx.sampleRate * dur), ctx.sampleRate);
+          const d = b.getChannelData(0);
+          for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (d.length * 0.3));
+          snap.buffer = b;
+          const snapGain = ctx.createGain();
+          snapGain.gain.value = 0.09 + Math.random() * 0.12;
+          snap.connect(snapGain);
+          snapGain.connect(m);
+          snap.start();
+        } catch (e) {}
+      }, 180);
+      this.srcs.push({ stop: () => clearInterval(popIv) });
+    } else if (kind === 'night') {
+      // Noche andina: brisa serena + grillos de altura sintetizados
+      chain(noise('brown'), filt('lowpass', 240), gain(0.2), m);
+      const c1 = add(ctx.createOscillator()), c2 = add(ctx.createOscillator());
+      c1.type = 'sine'; c1.frequency.value = 4500;
+      c2.type = 'sine'; c2.frequency.value = 4850;
+      const cMod = add(ctx.createOscillator());
+      cMod.frequency.value = 24;
+      const cModGain = ctx.createGain(); cModGain.gain.value = 0.04;
+      cMod.connect(cModGain.gain);
+      const cg = gain(0.035);
+      chain(c1, cg, m);
+      chain(c2, cg, m);
+      cMod.start(); c1.start(); c2.start();
     } else if (kind === 'river') {
       chain(noise('brown'), filt('lowpass', 1000), gain(0.5), m);
       chain(noise('white'), filt('bandpass', 2800, 0.8), gain(0.04), m);
@@ -396,10 +525,12 @@ const Sound = {
         chain(o, filt('lowpass', 900), gain(0.05), m); o.start();
       });
     } else if (kind === 'binaural') {
-      [[-1, 200], [1, 210]].forEach(([p, f]) => {
+      [[-1, 200], [1, 240]].forEach(([p, f]) => {
         const o = add(ctx.createOscillator()); o.frequency.value = f;
-        const pan = ctx.createStereoPanner(); pan.pan.value = p;
-        chain(o, gain(0.08), pan, m); o.start();
+        const pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+        if (pan) { pan.pan.value = p; chain(o, gain(0.08), pan, m); }
+        else { chain(o, gain(0.06), m); }
+        o.start();
       });
     }
   },
@@ -407,7 +538,7 @@ const Sound = {
     if (!this.master) return;
     const m = this.master, s = this.srcs;
     m.gain.cancelScheduledValues(0); m.gain.setTargetAtTime(0, this.ctx.currentTime, 0.15);
-    setTimeout(() => { s.forEach(n => { try { n.stop(); } catch (e) { } }); m.disconnect(); }, 600);
+    setTimeout(() => { s.forEach(n => { try { n.stop(); } catch (e) { } }); m.disconnect(); }, 500);
     this.master = null; this.srcs = [];
   },
   alarm() {
@@ -415,44 +546,225 @@ const Sound = {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
     try {
-      const ctx = this.ctx = this.ctx || new AC(); ctx.resume();
+      const ctx = this.ctx = this.ctx || new AC(); if (ctx.state === 'suspended') ctx.resume();
+      const vol = typeof state.focus.alarmVolume === 'number' ? state.focus.alarmVolume : 0.8;
       [580, 440, 680, 520].forEach((f, i) => {
         const o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + i * 0.11;
         o.type = 'sawtooth'; o.frequency.value = f;
         g.gain.setValueAtTime(0.001, t);
-        g.gain.exponentialRampToValueAtTime(0.14, t + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.14 * vol, t + 0.03);
         g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
         o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + 0.22);
       });
     } catch (e) { /* audio bloqueado */ }
   },
-  chime() {
+  playAlarmTone(tone = 'chime', isPreview = false) {
+    if (state.focus.alarmMuted && !isPreview) return;
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
-    const ctx = this.ctx = this.ctx || new AC(); ctx.resume();
-    [523.25, 659.25, 783.99].forEach((f, i) => {
-      const o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + i * 0.18;
-      o.frequency.value = f; g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.15, t + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
-      o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + 0.85);
-    });
+    try {
+      const ctx = this.ctx = this.ctx || new AC(); if (ctx.state === 'suspended') ctx.resume();
+      const vol = typeof state.focus.alarmVolume === 'number' ? state.focus.alarmVolume : 0.8;
+      if (vol <= 0.01) return;
+
+      if (tone === 'bowl') {
+        // Cuenco Tibetano Zen: fundamental 216Hz + armónicos con decay largo
+        const t = ctx.currentTime;
+        [216, 218, 540, 864].forEach((freq, idx) => {
+          const osc = ctx.createOscillator(), gainNode = ctx.createGain();
+          osc.type = 'sine'; osc.frequency.value = freq;
+          const peak = (idx < 2 ? 0.22 : 0.07) * vol;
+          gainNode.gain.setValueAtTime(0.0001, t);
+          gainNode.gain.exponentialRampToValueAtTime(peak, t + 0.06);
+          gainNode.gain.exponentialRampToValueAtTime(0.0001, t + 2.8);
+          osc.connect(gainNode); gainNode.connect(ctx.destination);
+          osc.start(t); osc.stop(t + 2.85);
+        });
+      } else if (tone === 'alert') {
+        // Tono activo: Fanfarria de 4 notas ascendentes A mayor
+        [440, 554.37, 659.25, 880].forEach((f, i) => {
+          const o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + i * 0.12;
+          o.type = 'triangle'; o.frequency.value = f;
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(0.18 * vol, t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + (i === 3 ? 0.6 : 0.18));
+          o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + (i === 3 ? 0.65 : 0.2));
+        });
+      } else {
+        // chime: Campana armónica tradicional 3 notas
+        [523.25, 659.25, 783.99].forEach((f, i) => {
+          const o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + i * 0.18;
+          o.frequency.value = f; g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(0.15 * vol, t + 0.03);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
+          o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + 0.85);
+        });
+      }
+    } catch (e) { /* audio bloqueado */ }
   },
+  chime() {
+    this.playAlarmTone(state.focus.alarmTone || 'chime');
+  }
 };
+
 function syncSound() {
   state.focus.soundOn && T.running ? Sound.play(state.focus.sound) : Sound.stop();
   const b = $('#soundToggle');
-  b.textContent = state.focus.soundOn ? '🔊 Sonido activado' : '🔇 Sonido apagado';
-  b.setAttribute('aria-pressed', state.focus.soundOn);
+  if (b) {
+    b.textContent = state.focus.soundOn ? '🔊 Sonido activado' : '🔇 Sonido apagado';
+    b.setAttribute('aria-pressed', state.focus.soundOn);
+  }
+  // Sincronizar control de volumen ambiental
+  const volVal = Math.round((typeof state.focus.volume === 'number' ? state.focus.volume : 0.7) * 100);
+  const volInput = $('#soundVolume');
+  const volLabel = $('#soundVolLabel');
+  const volIcon = $('#soundVolIcon');
+  if (volInput) volInput.value = volVal;
+  if (volLabel) volLabel.textContent = `${volVal}%`;
+  if (volIcon) volIcon.textContent = volVal === 0 ? '🔇' : (volVal < 45 ? '🔉' : '🔊');
+
+  // Sincronizar configuración de alarma
+  const alarmSel = $('#alarmToneSelect');
+  if (alarmSel) alarmSel.value = state.focus.alarmTone || 'chime';
+  const aVolVal = Math.round((typeof state.focus.alarmVolume === 'number' ? state.focus.alarmVolume : 0.8) * 100);
+  const aVolInput = $('#alarmVolume');
+  const aVolLabel = $('#alarmVolLabel');
+  if (aVolInput) aVolInput.value = aVolVal;
+  if (aVolLabel) aVolLabel.textContent = `${aVolVal}%`;
+
+  // Botones de sonido activo
+  $$('.sound-item').forEach(btn => btn.classList.toggle('active', btn.dataset.sound === state.focus.sound));
 }
+
 $('#soundToggle').addEventListener('click', () => {
   state.focus.soundOn = !state.focus.soundOn; saveState(); syncSound();
   if (state.focus.soundOn && !T.running) toast('El sonido empezará cuando inicies el temporizador.');
 });
+
+$('#soundVolume')?.addEventListener('input', (e) => {
+  const pct = Number(e.target.value);
+  const v = pct / 100;
+  state.focus.volume = v;
+  saveState();
+  Sound.setVolume(v);
+  const label = $('#soundVolLabel');
+  const icon = $('#soundVolIcon');
+  if (label) label.textContent = `${pct}%`;
+  if (icon) icon.textContent = pct === 0 ? '🔇' : (pct < 45 ? '🔉' : '🔊');
+});
+
+$('#alarmVolume')?.addEventListener('input', (e) => {
+  const pct = Number(e.target.value);
+  state.focus.alarmVolume = pct / 100;
+  saveState();
+  const label = $('#alarmVolLabel');
+  if (label) label.textContent = `${pct}%`;
+});
+
+$('#alarmToneSelect')?.addEventListener('change', (e) => {
+  state.focus.alarmTone = e.target.value;
+  saveState();
+  Sound.playAlarmTone(state.focus.alarmTone, true);
+});
+
+$('#testAlarmBtn')?.addEventListener('click', () => {
+  Sound.playAlarmTone(state.focus.alarmTone || 'chime', true);
+  const sel = $('#alarmToneSelect');
+  const optName = sel ? sel.options[sel.selectedIndex]?.text : 'Alarma';
+  toast(`🔔 Probando: ${optName}`);
+});
+
 $$('.sound-item').forEach(btn => btn.addEventListener('click', () => {
   $$('.sound-item').forEach(b => b.classList.toggle('active', b === btn));
   state.focus.sound = btn.dataset.sound; saveState();
   if (T.running && state.focus.soundOn) syncSound();
 }));
+
+// ============ NOTIFICACIONES WEB & VIBRACIÓN HÁPTICA ============
+const Notify = {
+  get isSupported() {
+    return 'Notification' in window;
+  },
+  get isGranted() {
+    return this.isSupported && Notification.permission === 'granted';
+  },
+  get enabled() {
+    return !!(state.focus && state.focus.notificationsEnabled && this.isGranted);
+  },
+  async request() {
+    if (!this.isSupported) {
+      toast('Tu navegador no admite notificaciones web.');
+      return false;
+    }
+    try {
+      const perm = await Notification.requestPermission();
+      const granted = perm === 'granted';
+      state.focus.notificationsEnabled = granted;
+      saveState();
+      syncNotifUI();
+      if (granted) {
+        toast('🔔 Notificaciones del sistema activadas.');
+        this.send('🌱 SYNCRO listo', 'Te avisaremos cuando terminen tus bloques de enfoque y pausas.', 'syncro-welcome');
+      } else {
+        toast('El navegador bloqueó las notificaciones.');
+      }
+      return granted;
+    } catch (e) {
+      return false;
+    }
+  },
+  send(title, body, tag = 'syncro-notif') {
+    if (!this.enabled) return;
+    try {
+      const n = new Notification(title, {
+        body,
+        icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>",
+        badge: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>",
+        tag,
+        renotify: true
+      });
+      n.onclick = () => {
+        window.focus();
+        try { n.close(); } catch (e) {}
+      };
+    } catch (e) {}
+    if ('vibrate' in navigator) {
+      try { navigator.vibrate([200, 100, 200]); } catch (e) {}
+    }
+  }
+};
+
+function syncNotifUI() {
+  const notifChk = $('#notifToggle');
+  const pfNotifChk = $('#pfNotif');
+  const active = !!(state.focus && state.focus.notificationsEnabled && Notify.isGranted);
+  if (notifChk) notifChk.checked = active;
+  if (pfNotifChk) pfNotifChk.checked = active;
+}
+
+const handleNotifToggle = async (e) => {
+  const chk = e.target;
+  if (chk.checked) {
+    if (!Notify.isGranted) {
+      chk.checked = false;
+      const ok = await Notify.request();
+      if (!ok) chk.checked = false;
+    } else {
+      state.focus.notificationsEnabled = true;
+      saveState();
+      syncNotifUI();
+      toast('🔔 Notificaciones activadas.');
+    }
+  } else {
+    state.focus.notificationsEnabled = false;
+    saveState();
+    syncNotifUI();
+    toast('🔕 Notificaciones desactivadas.');
+  }
+};
+
+$('#notifToggle')?.addEventListener('change', handleNotifToggle);
+$('#pfNotif')?.addEventListener('change', handleNotifToggle);
 
 // ============ TIMER (basado en reloj, no se desfasa) ============
 const T = { running: false, remaining: 1500, duration: 1500, endAt: 0, iv: null };
@@ -541,6 +853,7 @@ function finishBlock() {
   saveState(); renderDashboard(); renderMissions(); renderProgress(); renderTimer(); checkAchievements();
   Sound.chime();
   celebrate('¡Bloque completado!', `+${xp} XP · +${drops} Gotas${extra}${levelMsg(ups)}`, '🌺');
+  Notify.send('🌱 ¡Bloque completado!', `¡Excelente trabajo! +${xp} XP · +${drops} Gotas ganadas. Tu mente merece un descanso.`, 'syncro-block-done');
   if (state.focus.mode !== 'noPerfection') openBreak();
 }
 
@@ -627,12 +940,14 @@ function triggerExitAlert(reason = 'Intento de salir de la sesión') {
   $('#stayFocused').focus();
   Sound.alarm();
   startTitleBlink();
+  if (document.hidden) {
+    Notify.send('🚨 ¡Guardián SYNCRO!', `Tu bloque sigue en curso. Vuelve para que tu ${seed().name} no se marchite.`, 'syncro-shield-alert');
+  }
 }
 $('#toggleShield').addEventListener('click', () => {
   state.focus.shield = !state.focus.shield; saveState(); renderShield();
 });
 $('#simulateDistraction').addEventListener('click', () => triggerExitAlert('Simulación de intento de abandonar'));
-$('#ribbonTriggerAlertBtn').addEventListener('click', () => triggerExitAlert('Alerta activada desde la cinta de enfoque'));
 $('#muteAlertSoundBtn').addEventListener('click', () => {
   state.focus.alarmMuted = !state.focus.alarmMuted; saveState(); renderShield();
 });
@@ -700,7 +1015,12 @@ function breakTick() {
     $('#breathCircle').dataset.phase = ph;
     $('#guidedText').textContent = `${['Inhala', 'Sostén', 'Exhala', 'Espera'][ph]} · ${4 - Math.floor(el % 4)}`;
   }
-  if (left <= 0) { closeBreak(); Sound.chime(); toast('Pausa terminada. ¿Listo para otro bloque?'); }
+  if (left <= 0) {
+    closeBreak();
+    Sound.chime();
+    toast('Pausa terminada. ¿Listo para otro bloque?');
+    Notify.send('⚡ Pausa finalizada', 'Tu mente está renovada. ¿Listo para tu siguiente micro-paso?', 'syncro-break-done');
+  }
 }
 function closeBreak() {
   clearInterval(Brk.iv); Brk.iv = null;
@@ -720,27 +1040,110 @@ function startAntiParalysis() {
 $('#antiParalysisBtn').addEventListener('click', startAntiParalysis);
 
 // ============ SINCROPLAN ============
+// ============ SINCROPLAN ============
+function renderSubtasks() {
+  const box = $('#subtasksList');
+  const { task, days, steps = [] } = state.plan;
+  if (!steps.length) {
+    box.innerHTML = '';
+    return;
+  }
+  box.innerHTML = steps.map((st, i) => `
+    <div class="subtask" data-id="${st.id}">
+      <div class="subtask-main">
+        <span class="subtask-num">${i + 1}.</span>
+        <div class="subtask-edit">
+          <input class="input subtask-input" type="text" value="${esc(st.title)}" aria-label="Editar paso ${i + 1}" />
+          <small>Meta: día ${st.day} de ${days}${task ? ` · ${esc(task)}` : ''}</small>
+        </div>
+      </div>
+      <div class="subtask-actions">
+        <button type="button" class="btn ghost sm" data-act="add" ${st.added ? 'disabled' : ''}>${st.added ? 'Añadida ✓' : 'Añadir a hoy'}</button>
+        <button type="button" class="icon-btn" data-act="del" title="Eliminar paso" aria-label="Eliminar paso">✕</button>
+      </div>
+    </div>`).join('') + `
+    <div class="row gap" style="margin-top:6px">
+      <button type="button" class="btn ghost sm" data-act="new-step">+ Añadir paso</button>
+      <button type="button" class="btn ghost sm" data-act="clear-plan">Limpiar plan</button>
+    </div>`;
+}
+
 $('#breakdownBtn').addEventListener('click', () => {
   const task = $('#taskInput').value.trim();
   if (!task) { toast('Escribe primero la tarea que quieres desglosar.'); return $('#taskInput').focus(); }
   const days = Math.max(1, Math.min(60, Number($('#dateInput').value) || 10));
-  const steps = [
-    'Definir alcance y objetivo', 'Reunir 3 fuentes o materiales clave',
-    'Hacer un primer borrador feo (sin editar)', 'Desarrollar y mejorar lo esencial', 'Revisar, pulir y entregar',
+  const baseSteps = [
+    'Definir alcance y objetivo',
+    'Reunir 3 fuentes o materiales clave',
+    'Hacer un primer borrador feo (sin editar)',
+    'Desarrollar y mejorar lo esencial',
+    'Revisar, pulir y entregar',
   ];
-  $('#subtasksList').innerHTML = steps.map((s, i) => `
-    <div class="subtask" data-title="${esc(`${s} — ${task}`)}">
-      <span><strong>${i + 1}.</strong> ${esc(s)}<small>Meta: día ${Math.max(1, Math.round(days * (i + 1) / steps.length))} de ${days}</small></span>
-      <button class="btn ghost sm">Añadir a hoy</button>
-    </div>`).join('');
+  state.plan.task = task;
+  state.plan.days = days;
+  state.plan.steps = baseSteps.map((s, i) => ({
+    id: 'st' + Date.now().toString(36) + i,
+    title: s,
+    day: Math.max(1, Math.round(days * (i + 1) / baseSteps.length)),
+    added: false,
+  }));
+  saveState();
+  renderSubtasks();
+  toast('Plan desglosado y guardado ✨');
 });
+
+// Guardar edición de texto al escribir
+$('#subtasksList').addEventListener('input', e => {
+  const inp = e.target.closest('.subtask-input');
+  if (!inp) return;
+  const id = inp.closest('.subtask').dataset.id;
+  const st = state.plan.steps.find(x => x.id === id);
+  if (st) { st.title = inp.value; saveState(); }
+});
+
+// Acciones: añadir a hoy, eliminar paso, nuevo paso, limpiar plan
 $('#subtasksList').addEventListener('click', e => {
-  const btn = e.target.closest('button'), row = e.target.closest('.subtask');
+  const btn = e.target.closest('[data-act]');
   if (!btn || btn.disabled) return;
-  state.missions.push({ id: 'c' + Date.now(), title: row.dataset.title, xp: 20, drops: 5, target: 1, progress: 0, done: false });
-  btn.textContent = 'Añadida ✓'; btn.disabled = true;
-  saveState(); renderMissions(); renderDashboard();
-  toast('Añadida a tus misiones de hoy.');
+  const act = btn.dataset.act;
+
+  if (act === 'new-step') {
+    state.plan.steps.push({
+      id: 'st' + Date.now().toString(36),
+      title: 'Nuevo paso',
+      day: state.plan.days || 10,
+      added: false,
+    });
+    saveState(); renderSubtasks();
+    $('#subtasksList .subtask:last-of-type .subtask-input')?.focus();
+    return;
+  }
+
+  if (act === 'clear-plan') {
+    state.plan.steps = [];
+    saveState(); renderSubtasks();
+    return;
+  }
+
+  const row = btn.closest('.subtask');
+  const id = row?.dataset.id;
+  const st = state.plan.steps.find(x => x.id === id);
+  if (!st) return;
+
+  if (act === 'del') {
+    state.plan.steps = state.plan.steps.filter(x => x.id !== id);
+    saveState(); renderSubtasks();
+    return;
+  }
+
+  if (act === 'add') {
+    const title = st.title.trim() || 'Paso sin título';
+    const fullTitle = state.plan.task ? `${title} — ${state.plan.task}` : title;
+    state.missions.push({ id: 'c' + Date.now(), title: fullTitle, xp: 20, drops: 5, target: 1, progress: 0, done: false });
+    st.added = true;
+    saveState(); renderSubtasks(); renderMissions(); renderDashboard();
+    toast('Añadida a tus misiones de hoy.');
+  }
 });
 
 function renderIllusion() {
@@ -769,11 +1172,41 @@ $('#mentalDumpBtn').addEventListener('click', () => {
 });
 
 // ============ BIOMA ============
+const TRANSP_INFO = {
+  arbio: [
+    '📄 Certificado ARBIO Perú ',
+    `<p class="muted"><strong>Lote:</strong> Madre de Dios · Sector Cuenca Las Piedras</p>
+     <p class="muted"><strong>Árboles apadrinados por la comunidad:</strong> 412 ejemplares nativos (shihuahuaco y castaña).</p>
+     <p class="muted"><strong>Estado:</strong> En verificación con el aliado.</p>
+     `
+  ],
+  geo: [
+    '📸 Registro geolocalizado ',
+    `<p class="muted"><strong>Coordenadas:</strong> 12°35'42"S 69°11'18"W · Madre de Dios, Perú</p>
+     <p class="muted"><strong>Jornada local:</strong> Arborización con queñuales y cantutas junto a la Municipalidad del Cusco.</p>
+     <p class="muted"><strong>Última actualización:</strong> Noviembre 2026.</p>
+     <p class="small muted">* En la versión en producción aquí se enlaza el mapa satelital y la foto real del lote.</p>`
+  ],
+  co2: [
+    '🌍 Huella de CO₂ compensada ',
+    `<p class="muted"><strong>Estimación comunitaria:</strong> ~8.6 toneladas de CO₂ capturadas al año.</p>
+     <p class="muted"><strong>Equivalencia:</strong> Más de 3,200 m² de áreas verdes financiadas con horas de enfoque verificadas.</p>
+     <p class="small muted">* Cálculo referencial basado en captura promedio de especies nativas.</p>`
+  ],
+};
+
 document.addEventListener('click', e => {
-  const b = e.target.closest('[data-fichas]');
-  if (!b) return;
-  const [title, items] = FICHAS[b.dataset.fichas];
-  openInfo(title, `<div class="fichas">${items.map(([i, n, d]) => `<div class="ficha"><span>${i}</span><div><strong>${n}</strong><p>${d}</p></div></div>`).join('')}</div>`);
+  const tr = e.target.closest('[data-transp]');
+  if (tr) {
+    const item = TRANSP_INFO[tr.dataset.transp];
+    if (item) openInfo(item[0], item[1]);
+    return;
+  }
+  const fc = e.target.closest('[data-fichas]');
+  if (fc && FICHAS[fc.dataset.fichas]) {
+    const [title, items] = FICHAS[fc.dataset.fichas];
+    openInfo(title, `<div class="fichas">${items.map(([i, n, d]) => `<div class="ficha"><span>${i}</span><div><strong>${n}</strong><p>${d}</p></div></div>`).join('')}</div>`);
+  }
 });
 
 let groupSession = false;   // el bloque en curso cuenta como sesión en comunidad
@@ -788,7 +1221,7 @@ $('#joinSquad').addEventListener('click', () => {
       const code = $('#squadCode').value.trim().toUpperCase();
       if (code.length < 4) { toast('El código debe tener al menos 4 caracteres.'); return false; }
       state.squads.push({ name: 'Cuadrilla ' + code, n: 1 });
-      saveState(); renderSquads(); toast(`Te uniste a la cuadrilla ${code} (demo local).`);
+      saveState(); renderSquads(); toast(`Te uniste a la cuadrilla ${code}.`);
     });
 });
 let tutorSel = null;
@@ -806,7 +1239,7 @@ $('#tutorList').addEventListener('click', e => {
 });
 $('#askTutor').addEventListener('click', () => {
   if (!tutorSel) return toast('Elige primero un tutor de la lista.');
-  toast(`Solicitud enviada a ${tutorSel} (demo).`);
+  toast(`Solicitud enviada a ${tutorSel}.`);
 });
 $('#groupPomodoro').addEventListener('click', () => {
   switchView('focus');
@@ -832,13 +1265,57 @@ $('#acceptInsight').addEventListener('click', () => {
   toast('Aplicado: lecturas ligeras los miércoles y cálculo los jueves 9:00 AM.');
 });
 $('#ignoreInsight').addEventListener('click', () => { state.insight = 'ignored'; saveState(); renderProgress(); });
-$('#bienestarBtn').addEventListener('click', () => openInfo('Bienestar UC',
-  '<p class="muted">Esta es una versión demo: no se envía ningún dato. En la versión real solo compartiríamos un resumen anónimo y siempre con tu consentimiento previo.</p><p class="muted">Si te sientes mal ahora, busca a alguien de confianza o acude a Bienestar Universitario.</p>'));
+$('#bienestarBtn').addEventListener('click', () => openInfo('Red de Bienestar',
+  '<p class="muted">Por ahora no se envía ningún dato. Solo compartiríamos un resumen anónimo y siempre con tu consentimiento previo.</p><p class="muted">Si te sientes mal ahora, busca a alguien de confianza o a un profesional de salud mental de tu entorno.</p>'));
 
 // ============ ONBOARDING (5 pasos) ============
 const ONB_STEPS = $$('.onb-step').length;
 let onbCur = 1;
 $('#onbDots').innerHTML = '<span class="dot"></span>'.repeat(ONB_STEPS);
+function prefillOnboarding() {
+  const ses = getSession();
+  const nameInput = $('#nameInput');
+  if (nameInput) {
+    if (!nameInput.value && ses && ses.name) nameInput.value = ses.name.split(' ')[0];
+    else if (!nameInput.value && state.user && state.user.name) nameInput.value = state.user.name;
+  }
+
+  // Pre-cargar rol si ya vino del diagnóstico
+  if (state.profile && state.profile.role) {
+    const roleRadio = $(`input[name="role"][value="${state.profile.role}"]`);
+    if (roleRadio) roleRadio.checked = true;
+  }
+
+  // Pre-cargar gatillo si ya vino del diagnóstico
+  if (state.profile && state.profile.trigger) {
+    const triggerRadio = $(`input[name="trigger"][value="${state.profile.trigger}"]`);
+    if (triggerRadio) triggerRadio.checked = true;
+  }
+
+  // Pre-cargar bloque preferido si ya vino del diagnóstico
+  if (state.profile && state.profile.schedule) {
+    const sched = String(state.profile.schedule);
+    const mode = sched === '5' ? 'noPerfection' : (sched === '50' ? 'deep' : 'classic');
+    const blockRadio = $(`input[name="blockPref"][value="${mode}"]`);
+    if (blockRadio) blockRadio.checked = true;
+  }
+
+  // Mostrar aviso de diagnóstico sincronizado si aplica
+  const diagBanner = $('#onbDiagBanner');
+  if (diagBanner && state.profile && state.profile.trigger) {
+    const triggerNames = {
+      perfeccionismo: 'Perfeccionismo y Miedo a fallar',
+      redes: 'Distracciones digitales / Notificaciones',
+      desorganizacion: 'Sobrecarga y Desorganización',
+      cansancio: 'Fatiga cognitiva y Cansancio'
+    };
+    const tName = triggerNames[state.profile.trigger] || state.profile.trigger;
+    const summary = $('#onbDiagSummary');
+    if (summary) summary.textContent = tName;
+    diagBanner.classList.remove('hidden');
+  }
+}
+
 const stepShow = (n) => {
   onbCur = Number(n);
   $$('.onb-step').forEach(st => st.classList.toggle('hidden', st.dataset.step !== String(n)));
@@ -1045,19 +1522,6 @@ $$('[data-logout]').forEach(b => b.addEventListener('click', () => {
 // NUEVAS FUNCIONES · logros, calendario, bioma vivo, diario, rescate, perfil, tema
 // =====================================================================
 
-// ============ TEMA CLARO / OSCURO ============
-function setTheme(t, persist = true) {
-  const theme = t === 'light' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', theme);
-  if (persist) { try { localStorage.setItem('syncro_theme', theme); } catch (e) { } }
-  $('meta[name="theme-color"]')?.setAttribute('content', theme === 'light' ? '#EEF2F8' : '#0B132B');
-  $$('[data-theme-toggle]').forEach(b => { (b.querySelector('.tool-ico') || b).textContent = theme === 'light' ? '☀️' : '🌙'; });
-  $$('[data-theme-set]').forEach(b => b.classList.toggle('active', b.dataset.themeSet === theme));
-}
-const currentTheme = () => document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
-$$('[data-theme-toggle]').forEach(b => b.addEventListener('click', () => setTheme(currentTheme() === 'light' ? 'dark' : 'light')));
-$$('[data-theme-set]').forEach(b => b.addEventListener('click', () => setTheme(b.dataset.themeSet)));
-
 // ============ LOGROS NARRATIVOS ============
 const bestStreak = () => Math.max(state.user.streak, state.stats.bestStreak || 0);
 const ACHIEVEMENTS = [
@@ -1158,28 +1622,94 @@ function renderCalTray() {
     chip(`data-t="mission" data-k="${esc(m.id)}"`, sel('mission', m.id), `${scheduled.has(m.id) ? '✓ ' : ''}${esc(m.title)}`)).join('')
     + LIGHT_TASKS.slice(0, 3).map(t => chip(`data-t="light" data-k="${esc(t)}"`, 'light ' + sel('light', t), `🍃 ${esc(t)}`)).join('');
 }
+
+let calSelectedDay = dayIdx();
+let calMode = window.innerWidth <= 768 ? 'day' : 'week';
+const DAY_LONG = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
 function renderCalendar() {
   ensureWeek();
   const mon = weekMonday(), today = dayIdx(), nowH = new Date().getHours();
   const low = lowSet(), pk = peakRange();
-  let html = '<div class="cal-head"></div>' + DAY_SHORT.map((n, i) => {
-    const d = new Date(mon); d.setDate(mon.getDate() + i);
-    return `<div class="cal-head ${i === today ? 'today' : ''}">${n}<small>${d.getDate()}</small></div>`;
-  }).join('');
-  for (const h of HOURS) {
-    html += `<div class="cal-hour">${h}:00</div>`;
-    for (let d = 0; d < 7; d++) {
+
+  // 1. Renderizar selector de días móvil (#calDayChips)
+  const chipsEl = $('#calDayChips');
+  if (chipsEl) {
+    chipsEl.innerHTML = DAY_SHORT.map((n, i) => {
+      const d = new Date(mon); d.setDate(mon.getDate() + i);
+      const isToday = i === today;
+      const isActive = i === calSelectedDay;
+      return `<button type="button" class="cal-day-pill ${isToday ? 'today' : ''} ${isActive ? 'active' : ''}" data-day-idx="${i}" role="tab" aria-selected="${isActive}">
+        <span>${n}</span>
+        <strong>${d.getDate()}</strong>
+      </button>`;
+    }).join('');
+    const activePill = chipsEl.querySelector('.cal-day-pill.active');
+    if (activePill) {
+      try { activePill.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+    }
+  }
+
+  // 2. Botón alternador de modo
+  const toggleBtn = $('#calToggleMode');
+  if (toggleBtn) {
+    toggleBtn.textContent = calMode === 'day' ? '📆 Ver semana completa' : '📅 Ver modo día';
+  }
+
+  // 3. Renderizar cuadrícula
+  const grid = $('#calGrid');
+  if (calMode === 'day') {
+    grid.classList.add('mode-day');
+    const selD = new Date(mon); selD.setDate(mon.getDate() + calSelectedDay);
+    const dayLabel = DAY_LONG[calSelectedDay] || DAY_NAMES[calSelectedDay];
+    const isToday = calSelectedDay === today;
+    let html = `<div class="cal-head"></div>
+      <div class="cal-head ${isToday ? 'today' : ''}">${dayLabel} <small>${selD.getDate()} de ${selD.toLocaleDateString('es-PE', { month: 'short' })}</small></div>`;
+    for (const h of HOURS) {
+      html += `<div class="cal-hour">${h}:00</div>`;
+      const d = calSelectedDay;
       const s = slotAt(d, h);
-      const cls = [low.has(`${d}-${h}`) ? 'low' : '', pk && h >= pk[0] && h < pk[1] ? 'peak' : '',
-        d < today || (d === today && h < nowH) ? 'past' : '', d === today ? 'today-col' : '', s ? '' : 'armed'].join(' ');
+      const cls = [
+        low.has(`${d}-${h}`) ? 'low' : '',
+        pk && h >= pk[0] && h < pk[1] ? 'peak' : '',
+        d < today || (d === today && h < nowH) ? 'past' : '',
+        d === today ? 'today-col' : '',
+        s ? '' : 'armed'
+      ].filter(Boolean).join(' ');
       const block = s ? `<div class="cal-block ${s.kind === 'light' ? 'light' : ''} ${s.status === 'done' ? 'done' : ''}" draggable="true" data-slot="${s.id}" title="${esc(s.title)}">
           <span class="cb-title">${s.autoAdjusted ? '<span class="auto" title="Ajustado según tu energía">✨</span> ' : ''}${esc(s.title)}</span>
           <button type="button" data-act="done" aria-label="${s.status === 'done' ? 'Marcar pendiente' : 'Marcar hecho'}">✓</button>
           <button type="button" data-act="del" aria-label="Quitar del calendario">✕</button></div>` : '';
-      html += `<div class="cal-cell ${cls}" role="gridcell" data-day="${d}" data-hour="${h}" aria-label="${DAY_SHORT[d]} ${h}:00">${block}</div>`;
+      html += `<div class="cal-cell ${cls}" role="gridcell" data-day="${d}" data-hour="${h}" aria-label="${dayLabel} ${h}:00">${block}</div>`;
     }
+    grid.innerHTML = html;
+  } else {
+    grid.classList.remove('mode-day');
+    let html = '<div class="cal-head"></div>' + DAY_SHORT.map((n, i) => {
+      const d = new Date(mon); d.setDate(mon.getDate() + i);
+      return `<div class="cal-head ${i === today ? 'today' : ''}">${n}<small>${d.getDate()}</small></div>`;
+    }).join('');
+    for (const h of HOURS) {
+      html += `<div class="cal-hour">${h}:00</div>`;
+      for (let d = 0; d < 7; d++) {
+        const s = slotAt(d, h);
+        const cls = [
+          low.has(`${d}-${h}`) ? 'low' : '',
+          pk && h >= pk[0] && h < pk[1] ? 'peak' : '',
+          d < today || (d === today && h < nowH) ? 'past' : '',
+          d === today ? 'today-col' : '',
+          s ? '' : 'armed'
+        ].filter(Boolean).join(' ');
+        const block = s ? `<div class="cal-block ${s.kind === 'light' ? 'light' : ''} ${s.status === 'done' ? 'done' : ''}" draggable="true" data-slot="${s.id}" title="${esc(s.title)}">
+            <span class="cb-title">${s.autoAdjusted ? '<span class="auto" title="Ajustado según tu energía">✨</span> ' : ''}${esc(s.title)}</span>
+            <button type="button" data-act="done" aria-label="${s.status === 'done' ? 'Marcar pendiente' : 'Marcar hecho'}">✓</button>
+            <button type="button" data-act="del" aria-label="Quitar del calendario">✕</button></div>` : '';
+        html += `<div class="cal-cell ${cls}" role="gridcell" data-day="${d}" data-hour="${h}" aria-label="${DAY_SHORT[d]} ${h}:00">${block}</div>`;
+      }
+    }
+    grid.innerHTML = html;
   }
-  $('#calGrid').innerHTML = html;
+
   const a = new Date(mon), b = new Date(mon); b.setDate(b.getDate() + 6);
   const fmt = (x) => x.toLocaleDateString('es-PE', { day: 'numeric', month: 'short' });
   $('#calWeekLabel').textContent = `Semana del ${fmt(a)} al ${fmt(b)} · ${state.calendar.slots.length} bloques programados`
@@ -1190,9 +1720,12 @@ function dropOnCell(day, hour, data) {
   ensureWeek();
   const low = lowSet().has(`${day}-${hour}`);
   if (data.t === 'slot') {
-    const s = state.calendar.slots.find(x => x.id === data.id); if (!s) return;
+    const s = state.calendar.slots.find(x => x.id === data.id);
+    if (!s) return;
+    if (s.day === day && s.hour === hour) return; // mismo horario: no hacer nada
     if (slotAt(day, hour)) return toast('Ese horario ya está ocupado.');
-    s.day = day; s.hour = hour;
+    s.day = day;
+    s.hour = hour;
   } else {
     const item = data.t === 'mission' ? { t: 'mission', id: data.k } : { t: 'light', title: data.k };
     if (item.t === 'mission' && low) {
@@ -1200,7 +1733,10 @@ function dropOnCell(day, hour, data) {
     }
     if (!placeSlot(day, hour, item)) return;
   }
-  calSel = null; saveState(); renderCalendar();
+  calSel = null;
+  $('#calHelp').textContent = 'Arrastra una misión a un horario, o toca la misión y luego el horario.';
+  saveState();
+  renderCalendar();
 }
 $('#calTray').addEventListener('click', e => {
   const c = e.target.closest('.cal-chip'); if (!c) return;
@@ -1239,6 +1775,41 @@ $('#calGrid').addEventListener('drop', e => {
   const c = e.target.closest('.cal-cell'); if (!c) return;
   e.preventDefault(); c.classList.remove('over');
   try { dropOnCell(+c.dataset.day, +c.dataset.hour, JSON.parse(e.dataTransfer.getData('text/plain'))); } catch (err) { }
+});
+
+// Navegación móvil y selector de vista del calendario
+$('#calPrevDay')?.addEventListener('click', () => {
+  calSelectedDay = (calSelectedDay + 6) % 7;
+  calMode = 'day';
+  renderCalendar();
+});
+$('#calNextDay')?.addEventListener('click', () => {
+  calSelectedDay = (calSelectedDay + 1) % 7;
+  calMode = 'day';
+  renderCalendar();
+});
+$('#calDayChips')?.addEventListener('click', e => {
+  const pill = e.target.closest('.cal-day-pill');
+  if (!pill) return;
+  calSelectedDay = Number(pill.dataset.dayIdx);
+  calMode = 'day';
+  renderCalendar();
+});
+$('#calToggleMode')?.addEventListener('click', () => {
+  calMode = calMode === 'day' ? 'week' : 'day';
+  renderCalendar();
+});
+
+let calResizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(calResizeTimer);
+  calResizeTimer = setTimeout(() => {
+    const isMobile = window.innerWidth <= 768;
+    if (!isMobile && calMode === 'day') {
+      calMode = 'week';
+      if ($('#view-calendar')?.classList.contains('active')) renderCalendar();
+    }
+  }, 200);
 });
 
 // Planificación automática: misiones en tu mejor energía, tareas ligeras en tu baja energía
@@ -1410,6 +1981,36 @@ function renderBiomeLive(entering = false) {
 $('#growthPlay').addEventListener('click', () => animateGrowth(4500));
 $('#growthRange').addEventListener('input', e => { stopGrowth(); setBiomePoints(+e.target.value); });
 
+const WATER_COST = 20;
+const WATER_EARTH = 10;
+
+function triggerRainAnim() {
+  const rain = $('#blRain');
+  if (!rain) return;
+  rain.innerHTML = Array.from({ length: 14 }, (_, i) =>
+    `<span style="left:${6 + i * 6.8}%;animation-delay:${(i % 5) * 0.12}s">💧</span>`
+  ).join('');
+  rain.classList.add('active');
+  setTimeout(() => { rain.classList.remove('active'); rain.innerHTML = ''; }, 1400);
+}
+
+$('#waterBiomeBtn')?.addEventListener('click', () => {
+  if (state.user.drops < WATER_COST) {
+    return toast(`Necesitas ${WATER_COST} gotas para regar. Completa un bloque para ganar más 💧`);
+  }
+  const prevStage = stageFor(state.user.earthPoints);
+  state.user.drops -= WATER_COST;
+  state.user.earthPoints += WATER_EARTH;
+  saveState();
+  triggerRainAnim();
+  renderDashboard();
+  renderBiomeLive(false);
+  const nextStage = stageFor(state.user.earthPoints);
+  toast(nextStage > prevStage
+    ? `✨ ¡Tu ${seed().name} pasó a "${STAGE_NAMES[nextStage]}"!`
+    : `💧 Bioma regado · +${WATER_EARTH} Puntos Tierra`);
+});
+
 // ============ DIARIO EMOCIONAL (cifrado AES-GCM en este dispositivo) ============
 const b64 = (u8) => btoa(String.fromCharCode(...u8));
 const unb64 = (s) => Uint8Array.from(atob(s), c => c.charCodeAt(0));
@@ -1573,7 +2174,7 @@ function renderProfile() {
     return `<option value="${k}" ${lock ? 'disabled' : ''}>${GUARDIANS[k]} ${GUARDIAN_NAMES[k]}${lock ? ` · 🔒 logro “${need}”` : ''}</option>`;
   }).join('');
   $('#pfGuardianSel').value = p.guardian;
-  setTheme(currentTheme(), false);
+  syncNotifUI();
 }
 $('#profileForm').addEventListener('submit', e => {
   e.preventDefault();
@@ -1603,6 +2204,103 @@ $('#pfExport').addEventListener('click', async () => {
   let journal = []; if (Journal.ok()) { try { journal = (await Journal.all()).map(({ iv, ct, ...r }) => r); } catch (e) { } }
   download(`syncro-mis-datos-${keyOf(new Date())}.json`, JSON.stringify({ exportadoEl: new Date().toISOString(), cuenta: { nombre: ses.name, usuario: ses.username, correo: ses.email, proveedor: ses.provider }, estado: state, diario: journal }, null, 2), 'application/json');
   toast('Tus datos se descargaron como JSON.');
+});
+
+// ============ IMPORTAR / RESTAURAR RESPALDO JSON ============
+let pendingRestoreData = null;
+
+$('#pfImportBtn')?.addEventListener('click', () => {
+  $('#pfImportInput')?.click();
+});
+
+$('#pfImportInput')?.addEventListener('change', (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    try {
+      const parsed = JSON.parse(event.target.result);
+      const candidateState = parsed.estado || parsed.state || (parsed.user && parsed.focus ? parsed : null);
+      if (!candidateState) {
+        toast('El archivo no parece ser un respaldo válido de SYNCRO.');
+        $('#pfImportInput').value = '';
+        return;
+      }
+      pendingRestoreData = parsed;
+
+      const uName = parsed.cuenta?.nombre || candidateState.user?.name || 'Estudiante';
+      const uLevel = candidateState.user?.level || 1;
+      const uStreak = candidateState.user?.streak || 0;
+      const uBlocks = candidateState.stats?.blocks || 0;
+      const uHours = ((candidateState.stats?.minutes || 0) / 60).toFixed(1);
+      const rDate = parsed.exportadoEl
+        ? new Date(parsed.exportadoEl).toLocaleDateString('es-PE', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+        : 'Desconocida';
+
+      $('#rstUserName').textContent = uName;
+      $('#rstUserLevel').textContent = `Nivel ${uLevel} · ${uStreak} días racha`;
+      $('#rstBlocks').textContent = `${uBlocks} bloques (${uHours}h)`;
+      $('#rstDate').textContent = rDate;
+
+      openOverlay($('#restoreConfirmModal'));
+    } catch (err) {
+      toast('Error al leer el archivo JSON.');
+      $('#pfImportInput').value = '';
+    }
+  };
+  reader.readAsText(file);
+});
+
+$('#cancelRestoreBtn')?.addEventListener('click', () => {
+  closeOverlay($('#restoreConfirmModal'));
+  $('#pfImportInput').value = '';
+  pendingRestoreData = null;
+});
+
+$('#confirmRestoreBtn')?.addEventListener('click', () => {
+  if (!pendingRestoreData) return;
+  try {
+    // 1. Respaldo de seguridad preventivo
+    localStorage.setItem('syncro_state_backup_safety', JSON.stringify(state));
+
+    // 2. Extraer y asignar estado
+    const candidateState = pendingRestoreData.estado || pendingRestoreData.state || pendingRestoreData;
+    Object.assign(state, candidateState);
+
+    // 3. Sincronizar sesión si viene en el archivo
+    if (pendingRestoreData.cuenta && pendingRestoreData.cuenta.correo) {
+      const curSes = getSession() || {};
+      const newSes = {
+        id: curSes.id || ('u_' + Date.now().toString(36)),
+        name: pendingRestoreData.cuenta.nombre || curSes.name,
+        username: pendingRestoreData.cuenta.usuario || curSes.username,
+        email: pendingRestoreData.cuenta.correo || curSes.email,
+        provider: pendingRestoreData.cuenta.proveedor || curSes.provider || 'local'
+      };
+      localStorage.setItem('syncro_session', JSON.stringify(newSes));
+    }
+
+    saveState();
+    closeOverlay($('#restoreConfirmModal'));
+    $('#pfImportInput').value = '';
+    pendingRestoreData = null;
+
+    // 4. Actualizar vistas en caliente
+    renderDashboard();
+    renderMissions();
+    renderProfile();
+    renderTimer();
+    syncSound();
+    syncNotifUI();
+    renderAchievements();
+    updateWeatherUI();
+    renderTimeline();
+
+    toast('✅ Copia de seguridad restaurada con éxito.');
+  } catch (err) {
+    toast('Ocurrió un error al restaurar los datos.');
+  }
 });
 $('#pfClearJournal').addEventListener('click', () => {
   if (!confirm('¿Borrar todas las notas de tu diario? Esta acción no se puede deshacer.')) return;
@@ -1641,12 +2339,24 @@ document.addEventListener('keydown', e => {            // Ctrl/Cmd + B también 
 });
 try { setSidebar(localStorage.getItem('syncro_sidebar') !== 'closed', false); } catch (e) { setSidebar(true, false); }
 
-// ============ RESET ============
-$('#resetDemo').addEventListener('click', () => {
-  if (!confirm('¿Reiniciar el estado de la demo?')) return;
-  try { localStorage.removeItem(KEY); } catch (e) { }
-  location.reload();
-});
+// ============ MONITOR DE CONEXIÓN (ONLINE / OFFLINE) ============
+function initNetworkMonitor() {
+  const badge = $('#sidebarOfflineBadge');
+  const updateStatus = (isOnline, showToast = true) => {
+    if (badge) badge.classList.toggle('hidden', isOnline);
+    if (!isOnline) {
+      if (showToast) toast('📶 Modo sin conexión activado · Tus datos se guardan en este dispositivo.');
+    } else {
+      if (showToast) toast('🟢 Conexión a internet restablecida.');
+    }
+  };
+
+  window.addEventListener('online', () => updateStatus(true, true));
+  window.addEventListener('offline', () => updateStatus(false, true));
+
+  // Estado inicial sin toast intrusivo al arranque
+  updateStatus(navigator.onLine !== false, false);
+}
 
 // ============ INIT ============
 function init() {
@@ -1654,14 +2364,48 @@ function init() {
   $$('input[name="mode"]').forEach(r => r.checked = r.value === state.focus.mode);
   $$('.sound-item').forEach(b => b.classList.toggle('active', b.dataset.sound === state.focus.sound));
   $('#estHours').value = state.plan.est; $('#realHours').value = state.plan.real;
+  $('#taskInput').value = state.plan.task || '';
+  $('#dateInput').value = state.plan.days || 10;
+  renderSubtasks();
   $('#nameInput').value = state.user.name;
   renderDashboard(); renderMissions(); renderProgress(); renderSquads(); renderTutors();
   $('#autoFs').checked = state.focus.autoFullscreen; updateFsBtn();
-  renderShield(); renderIllusion(); updateTimerDuration(); syncSound();
-  try { setTheme(localStorage.getItem('syncro_theme') || 'dark', false); } catch (e) { setTheme('dark', false); }
+  renderShield(); renderIllusion(); updateTimerDuration(); syncSound(); syncNotifUI(); initNetworkMonitor();
   renderAchievements(); checkAchievements(true); updateWeatherUI(); renderTimeline();
-  if (!state.onboarded) { openOverlay($('#onboarding')); stepShow(1); }
+  if (!state.onboarded) {
+    prefillOnboarding();
+    openOverlay($('#onboarding'));
+    stepShow(1);
+  }
+  // Mantener el apartado activo al recargar la página
+  const fromHash = location.hash.slice(1);
+  let savedView = fromHash;
+  if (!savedView) {
+    try { savedView = localStorage.getItem('syncro_view') || 'dashboard'; } catch (e) { savedView = 'dashboard'; }
+  }
+  if (savedView && savedView !== 'dashboard' && $('#view-' + savedView)) {
+    switchView(savedView, true);
+  }
   else if (state.rescue) setTimeout(showRescue, 500);
   else if (msg) setTimeout(() => toast(msg), 600);
+
+  // Ocultar micro-transición apenas termina de armarse la vista
+  const splash = $('#appSplash');
+  if (splash) {
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        splash.classList.add('done');
+        setTimeout(() => splash.remove(), 280);
+      }, 120);
+    });
+  }
+
 }
 init();
+
+// Registrar Service Worker PWA (Offline Cache)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}

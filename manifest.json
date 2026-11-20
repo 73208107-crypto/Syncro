@@ -1,0 +1,18 @@
+{
+  "name": "SYNCRO — Productividad sin culpa y reforestación",
+  "short_name": "SYNCRO",
+  "description": "Regulación emocional por IA, enfoque protegido e impacto ecológico verificable.",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0B132B",
+  "theme_color": "#0B132B",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
