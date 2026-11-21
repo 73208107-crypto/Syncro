@@ -229,10 +229,20 @@ function switchView(view, force = false) {
     n.classList.toggle('active', on);
     on ? n.setAttribute('aria-current', 'page') : n.removeAttribute('aria-current');
     if (on && n.classList.contains('bn-item')) {
-      try { n.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+      const nav = n.closest('.bottom-nav');
+      if (nav) {
+        try {
+          nav.scrollTo({
+            left: n.offsetLeft - (nav.clientWidth - n.clientWidth) / 2,
+            behavior: 'smooth'
+          });
+        } catch (e) {}
+      }
     }
   });
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+  document.documentElement.scrollLeft = 0;
+  document.body.scrollLeft = 0;
   if (view === 'calendar') renderCalendar();
   else if (view === 'profile') renderProfile();
   else if (view === 'biome') renderBiomeLive(true);
@@ -1646,7 +1656,12 @@ function renderCalendar() {
     }).join('');
     const activePill = chipsEl.querySelector('.cal-day-pill.active');
     if (activePill) {
-      try { activePill.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+      try {
+        chipsEl.scrollTo({
+          left: activePill.offsetLeft - (chipsEl.clientWidth - activePill.clientWidth) / 2,
+          behavior: 'smooth'
+        });
+      } catch (e) {}
     }
   }
 
@@ -1658,8 +1673,11 @@ function renderCalendar() {
 
   // 3. Renderizar cuadrícula
   const grid = $('#calGrid');
+  const scrollContainer = grid?.parentElement;
   if (calMode === 'day') {
     grid.classList.add('mode-day');
+    scrollContainer?.classList.add('mode-day-active');
+    if (scrollContainer) scrollContainer.scrollLeft = 0;
     const selD = new Date(mon); selD.setDate(mon.getDate() + calSelectedDay);
     const dayLabel = DAY_LONG[calSelectedDay] || DAY_NAMES[calSelectedDay];
     const isToday = calSelectedDay === today;
@@ -1685,6 +1703,7 @@ function renderCalendar() {
     grid.innerHTML = html;
   } else {
     grid.classList.remove('mode-day');
+    scrollContainer?.classList.remove('mode-day-active');
     let html = '<div class="cal-head"></div>' + DAY_SHORT.map((n, i) => {
       const d = new Date(mon); d.setDate(mon.getDate() + i);
       return `<div class="cal-head ${i === today ? 'today' : ''}">${n}<small>${d.getDate()}</small></div>`;
@@ -1715,6 +1734,8 @@ function renderCalendar() {
   $('#calWeekLabel').textContent = `Semana del ${fmt(a)} al ${fmt(b)} · ${state.calendar.slots.length} bloques programados`
     + (low.size ? ' · Las zonas rayadas son horas en las que sueles sentirte agotado.' : ' · Con más check-ins aprenderemos tus horas de baja energía.');
   renderCalTray(); renderHeat();
+  document.documentElement.scrollLeft = 0;
+  document.body.scrollLeft = 0;
 }
 function dropOnCell(day, hour, data) {
   ensureWeek();
