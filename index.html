@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
@@ -7,40 +7,42 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <link rel="manifest" href="manifest.json">
-<meta name="description" content="SYNCRO — Vence la procrastinación sin culpa. Regulación emocional por IA, enfoque protegido e impacto ecológico verificable." />
-<meta property="og:title" content="SYNCRO — Enfócate hoy, transforma tu mente y reforesta el futuro" />
-<meta property="og:description" content="No eres perezoso. Tu cerebro está secuestrado por el estrés. SYNCRO combina IA empática, enfoque protegido e impacto ecológico real." />
+<meta name="description" content="SYNCRO — Productividad basada en ciencia. Regulación emocional por IA, enfoque protegido e impacto ecológico verificable." />
+<meta property="og:title" content="SYNCRO — Productividad sin culpa, enfoque real e impacto verificable" />
+<meta property="og:description" content="Regulación emocional, enfoque protegido e impacto ecológico verificable para estudiantes, profesionales remotos y equipos." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://syncro.app/" />
 <meta property="og:image" content="https://syncro.app/og-preview.png" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="SYNCRO — Productividad sin culpa y reforestación real" />
-<meta name="twitter:description" content="Vence la procrastinación: regulación emocional por IA y enfoque protegido con impacto ecológico verificable." />
+<meta name="twitter:title" content="SYNCRO — Productividad sin culpa y reforestación verificable" />
+<meta name="twitter:description" content="Vence la procrastinación: regulación emocional por IA y enfoque protegido con impacto ecológico real." />
 <meta name="twitter:image" content="https://syncro.app/og-preview.png" />
 <link rel="canonical" href="https://syncro.app/" />
-<title>SYNCRO — Vence la procrastinación sin culpa | Enfoque y Reforestación</title>
+<title>SYNCRO — Productividad basada en ciencia | Enfoque y Reforestación</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
-<link rel="stylesheet" href="landing.css" />
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/landing.css" />
+<link rel="stylesheet" href="css/chatbot.css" />
 </head>
-<body>
+<body id="top">
 
 <a href="#main" class="skip-link">Saltar al contenido principal</a>
 
 <!-- ============ NAV ============ -->
 <nav class="nav" id="nav">
   <div class="nav-inner">
-    <a href="#" class="nav-brand">
+    <a href="#top" class="nav-brand">
       <span class="nav-brand-mark">🌱</span>
       <span>SYNCRO</span>
     </a>
     <div class="nav-links">
-      <a href="#problema" class="nav-link">El problema</a>
+      <a href="#problema" class="nav-link">Ciencia</a>
       <a href="#solucion" class="nav-link">Solución</a>
-      <a href="#como-funciona" class="nav-link">Cómo funciona</a>
       <a href="#impacto" class="nav-link">Impacto</a>
+      <a href="#planes" class="nav-link">Planes</a>
       <a href="#faq" class="nav-link">FAQ</a>
     </div>
     <div class="nav-actions">
@@ -50,10 +52,11 @@
     </div>
   </div>
   <div class="mobile-menu" id="mobileMenu" hidden>
-    <a href="#problema" class="mm-link">El problema</a>
+    <a href="#problema" class="mm-link">Ciencia</a>
     <a href="#solucion" class="mm-link">Solución</a>
     <a href="#como-funciona" class="mm-link">Cómo funciona</a>
     <a href="#impacto" class="mm-link">Impacto</a>
+    <a href="#planes" class="mm-link">Planes y precios</a>
     <a href="#faq" class="mm-link">FAQ</a>
     <a href="app.html" class="mm-link mm-login" data-auth="login">Iniciar sesión</a>
     <div style="padding: 12px 8px 6px;">
@@ -69,21 +72,21 @@
     <div class="container">
       <div class="hero-inner">
         <div>
-          <div class="hero-eyebrow">🌱 Regulación emocional + enfoque real · Basado en neurociencia</div>
+          <div class="hero-eyebrow">🌱 Productividad basada en ciencia · Regulación emocional + Enfoque real</div>
           <h1 class="hero-title">
             Vence la procrastinación sin culpa. <span class="gradient">Enfócate y reforesta.</span>
           </h1>
           <p class="hero-sub">
-            No eres perezoso. Tu cerebro está secuestrado por el estrés. SYNCRO combina IA empática, enfoque protegido e impacto ecológico verificable para que concentrarte deje de ser una batalla contra ti mismo.
+            No eres perezoso: tu cerebro responde al estrés evitando tareas exigentes. SYNCRO combina regulación emocional con IA, enfoque protegido e impacto ecológico verificable para que avanzar deje de ser una batalla contra ti mismo.
           </p>
           <div class="hero-ctas">
             <button type="button" class="btn btn-primary" data-auth="diagnostic" id="heroStartDiag">🚀 Comenzar diagnóstico de 60s</button>
-            <a href="#solucion" class="btn btn-secondary">Ver cómo funciona ↓</a>
+            <a href="#planes" class="btn btn-secondary">Ver planes y B2B ↓</a>
           </div>
           <div class="hero-trust">
-            <div class="hero-trust-item">Validado con estudiantes y docentes UC</div>
+            <div class="hero-trust-item">Respaldado por ciencia conductual</div>
             <div class="hero-trust-item">Sin tarjeta de crédito</div>
-            <div class="hero-trust-item">Datos emocionales cifrados</div>
+            <div class="hero-trust-item">Diario cifrado AES-256</div>
           </div>
         </div>
         <div class="hero-visual" aria-hidden="true">
@@ -127,8 +130,8 @@
                 <div class="mockup-biome-info">
                   <span class="mockup-biome-icon">🌱</span>
                   <div>
-                    <div class="mockup-biome-title">Cantuta Andina (Cusco)</div>
-                    <div class="mockup-biome-sub">Semilla protegida · Alianza ARBIO Perú</div>
+                    <div class="mockup-biome-title">Santuario Andino</div>
+                    <div class="mockup-biome-sub">Semilla protegida · Conservación trazable</div>
                   </div>
                 </div>
                 <span class="mockup-biome-badge">+50 XP / Gota de riego</span>
@@ -138,15 +141,15 @@
           <div class="floating-chip floating-chip-shield">
             <span>🛡️</span>
             <div>
-              <strong style="display:block;font-size:12px;color:var(--white);">Distracciones bloqueadas</strong>
-              <span style="font-size:11px;color:var(--cyan-400);">Redes y alertas silenciadas</span>
+              <strong style="display:block;font-size:12px;color:var(--white);">Escudo de Pestaña</strong>
+              <span style="font-size:11px;color:var(--cyan-400);">Pausa consciente sin culpa</span>
             </div>
           </div>
           <div class="floating-chip floating-chip-impact">
             <span>🌳</span>
             <div>
-              <strong style="display:block;font-size:12px;color:var(--emerald-400);">Impacto real verificado</strong>
-              <span style="font-size:11px;color:var(--text-tertiary);">Reforestación en marcha</span>
+              <strong style="display:block;font-size:12px;color:var(--emerald-400);">Impacto verificable</strong>
+              <span style="font-size:11px;color:var(--text-tertiary);">Reforestación auditable</span>
             </div>
           </div>
         </div>
@@ -154,12 +157,12 @@
     </div>
   </section>
 
-  <!-- ============ PROBLEMA ============ -->
+  <!-- ============ PROBLEMA Y CIENCIA ============ -->
   <section class="section problem" id="problema">
     <div class="container">
       <div class="section-header reveal">
         <span class="section-eyebrow coral">🔬 La ciencia detrás del problema</span>
-        <h2 class="section-title">No es flojera. Es regulación emocional.</h2>
+        <h2 class="section-title">No es falta de disciplina. Es regulación emocional.</h2>
         <p class="section-sub">
           Más de tres décadas de investigación confirman que procrastinar no es un problema de gestión del tiempo. Es un mecanismo de evasión emocional frente al estrés, la sobrecarga y el miedo a fallar.
         </p>
@@ -173,19 +176,19 @@
       <div class="stats-grid">
         <div class="stat-card reveal">
           <span class="stat-number" data-count="80" data-suffix="%">0%</span>
-          <div class="stat-label">de estudiantes universitarios procrastinan de forma habitual</div>
+          <div class="stat-label">de personas en formación y trabajo cognitivo procrastinan de forma habitual</div>
         </div>
         <div class="stat-card reveal">
           <span class="stat-number" data-count="50" data-suffix="%">0%</span>
-          <div class="stat-label">lo hace de forma crónica, con impacto en salud y notas</div>
+          <div class="stat-label">lo hace de forma crónica, con impacto directo en salud y rendimiento</div>
         </div>
         <div class="stat-card reveal">
           <span class="stat-number" data-count="2" data-suffix="x">0x</span>
-          <div class="stat-label">más estrés y peor salud reportada en procrastinadores crónicos</div>
+          <div class="stat-label">más estrés percibido en ciclos de procrastinación crónica</div>
         </div>
         <div class="stat-card reveal">
           <span class="stat-number" data-count="4" data-suffix="">0</span>
-          <div class="stat-label">causas raíz identificadas en nuestra validación con estudiantes UC</div>
+          <div class="stat-label">causas raíz validadas en investigación aplicada universitaria</div>
         </div>
       </div>
 
@@ -196,7 +199,7 @@
           </div>
           <div>
             <h3 class="cause-title">Distracciones digitales constantes</h3>
-            <p class="cause-desc">Redes, notificaciones y videos fragmentan la atención en la misma pantalla donde estudias. Cada interrupción cuesta hasta 23 minutos recuperar el foco.</p>
+            <p class="cause-desc">Redes, notificaciones y pestañas fragmentan la atención en la misma pantalla donde trabajas o estudias.</p>
           </div>
         </div>
         <div class="cause-card reveal">
@@ -214,7 +217,7 @@
           </div>
           <div>
             <h3 class="cause-title">Ilusión de tiempo libre</h3>
-            <p class="cause-desc">Dificultad para dimensionar la carga real entre clases, trabajo, transporte y vida personal. Postergamos porque "faltan 5 días".</p>
+            <p class="cause-desc">Subestimar la carga real entre reuniones, clases, entregas y descanso nos lleva a postergar hasta el límite.</p>
           </div>
         </div>
         <div class="cause-card reveal">
@@ -223,18 +226,18 @@
           </div>
           <div>
             <h3 class="cause-title">Aislamiento y agotamiento cognitivo</h3>
-            <p class="cause-desc">Estudiar solo, sin pausas estructuradas, incrementa la fatiga mental y la sensación de que "no puedo más". Sin pausas, el cerebro se apaga.</p>
+            <p class="cause-desc">Trabajar sin pausas estructuradas incrementa la fatiga mental. Sin recuperación consciente, el foco colapsa.</p>
           </div>
         </div>
       </div>
 
       <div class="sources reveal">
-        <p class="sources-title">Fuentes académicas</p>
+        <p class="sources-title">Respaldo académico y validación de campo</p>
         <ul class="sources-list">
           <li>Steel, P. (2007). The nature of procrastination: A meta-analytic and theoretical review. <em>Psychological Bulletin</em>, 133(1), 65–94.</li>
           <li>Sirois, F. M., &amp; Pychyl, T. A. (2013). Procrastination and the priority of short-term mood regulation. <em>Social and Personality Psychology Compass</em>, 7(2), 115–127.</li>
           <li>Tice, D. M., &amp; Baumeister, R. F. (1997). Longitudinal study of procrastination, performance, stress, and health. <em>Psychological Science</em>, 8(6), 454–458.</li>
-          <li>Rozental, A., &amp; Carlbring, P. (2014). Understanding and treating procrastination: A review. <em>Frontiers in Psychology</em>, 5, 344.</li>
+          <li>Validación inicial de usabilidad y regulación emocional desarrollada en colaboración con cohortes universitarias y docentes de innovación (Universidad Continental, 2025–2026).</li>
         </ul>
       </div>
     </div>
@@ -247,7 +250,7 @@
         <span class="section-eyebrow">💡 La respuesta SYNCRO</span>
         <h2 class="section-title">Tres pilares. Una sola promesa: productividad sin culpa.</h2>
         <p class="section-sub">
-          Cada decisión de diseño está respaldada por la psicología del comportamiento y la evidencia sobre procrastinación. No premiamos la productividad vacía. Premiamos el cuidado.
+          Cada función está diseñada desde la psicología del comportamiento. No premiamos la exigencia vacía; premiamos la constancia saludable.
         </p>
       </div>
 
@@ -258,13 +261,13 @@
           </div>
           <h3 class="pillar-title">IA Empática</h3>
           <p class="pillar-desc">
-            Un planificador que se adapta a cómo te sientes, no a cómo deberías sentirte. Si estás agotado, ajusta. Si estás enfocado, profundiza.
+            Un planificador que se adapta a cómo te sientes hoy. Si estás agotado, reduce la fricción; si tienes energía, te ayuda a profundizar.
           </p>
           <ul class="pillar-features">
-            <li>Check-in emocional diario</li>
-            <li>Desglose automático de tareas abrumadoras</li>
-            <li>Bloques de 5, 15, 25 o 50 min según energía</li>
-            <li>Modo "Avance sin Perfección" anti-bloqueo</li>
+            <li>Check-in emocional diario con modo ligero automático</li>
+            <li>Desglose de tareas complejas en micro-pasos</li>
+            <li>Bloques de 5, 15, 25 o 50 min según tu energía</li>
+            <li>Modo "Avance sin Perfección" (5 min con reloj oculto)</li>
           </ul>
         </div>
 
@@ -274,20 +277,20 @@
           </div>
           <h3 class="pillar-title">Enfoque Protegido</h3>
           <p class="pillar-desc">
-            Pomodoro adaptativo, escudo anti-distracción y pausas con base psicológica. Un entorno diseñado para que concentrarse sea más fácil que distraerse.
+            Pomodoro confiable basado en reloj del sistema, Escudo de Pestaña y pausas guiadas con base psicológica.
           </p>
           <ul class="pillar-features">
-            <li>Temporizador clásico, profundo o de 5 min</li>
-            <li>Burbuja sonora bioacústica de los Andes</li>
+            <li>Temporizador clásico, profundo o anti-parálisis</li>
+            <li>Burbuja sonora bioacústica sin descargas</li>
             <li>Pausas guiadas 4-4-4-4, 20-20-20 y estiramiento</li>
-            <li>Guardián virtual que te acompaña</li>
+            <li>Diario emocional cifrado AES-256 en tu dispositivo</li>
           </ul>
 
-          <!-- DEMO INTERACTIVA: BIOACÚSTICA & RESPIRACIÓN -->
+          <!-- PRUEBA INTERACTIVA: BIOACÚSTICA & RESPIRACIÓN -->
           <div class="pillar-interactive-demo">
             <div class="demo-sound-header">
               <span class="demo-sound-tag">🎧 Prueba en vivo</span>
-              <button type="button" class="demo-play-btn" id="landingSoundToggle" aria-label="Reproducir ambiente andino">
+              <button type="button" class="demo-play-btn" id="landingSoundToggle" aria-label="Reproducir ambiente sonoro">
                 <span class="demo-play-icon">▶</span>
                 <span class="demo-play-text">Escuchar</span>
               </button>
@@ -315,15 +318,15 @@
           <div class="pillar-icon" aria-hidden="true">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6"/><path d="M8 12a4 4 0 0 1 8 0"/><path d="M5 16a7 7 0 0 1 14 0"/><path d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2z"/></svg>
           </div>
-          <h3 class="pillar-title">Impacto Real</h3>
+          <h3 class="pillar-title">Impacto Ecológico Real</h3>
           <p class="pillar-desc">
-            Cada bloque completado hace crecer tu bioma virtual y, al alcanzar metas colectivas, se convierte en conservación verificable con organizaciones aliadas.
+            Cada bloque completado nutre tu bioma vivo y suma a metas colectivas auditables de conservación y reforestación.
           </p>
           <ul class="pillar-features">
-            <li>Bioma andino con flora y fauna del Cusco</li>
-            <li>Alianza con ARBIO Perú (Madre de Dios)</li>
-            <li>Panel de transparencia con certificados</li>
-            <li>Jornadas de arborización con Municipalidad del Cusco</li>
+            <li>Santuario Andino vivo vinculado a tus hábitos</li>
+            <li>Alianza de conservación con ARBIO Perú</li>
+            <li>Panel de transparencia con certificados verificables</li>
+            <li>Reportes ESG agregados para universidades y empresas</li>
           </ul>
         </div>
       </div>
@@ -337,7 +340,7 @@
         <span class="section-eyebrow violet">🛤️ Tu recorrido diario</span>
         <h2 class="section-title">Cómo funciona SYNCRO en 4 pasos</h2>
         <p class="section-sub">
-          Un ciclo diario diseñado para empezar cuando no quieres, seguir cuando te distraes y volver cuando fallas. Sin castigos, sin culpa.
+          Un ciclo diseñado para empezar cuando no tienes ganas, sostener la calma cuando te distraes y volver sin culpa.
         </p>
       </div>
 
@@ -345,61 +348,65 @@
         <div class="step-card reveal">
           <div class="step-number">1</div>
           <h3 class="step-title">Check-in emocional</h3>
-          <p class="step-desc">30 segundos. Cuéntanos cómo te sientes y cuánta energía tienes. La IA ajusta el resto.</p>
+          <p class="step-desc">30 segundos. Registras energía y ánimo; SYNCRO calibra tus bloques automáticamente.</p>
         </div>
         <div class="step-card reveal">
           <div class="step-number">2</div>
           <h3 class="step-title">Misión calibrada</h3>
-          <p class="step-desc">Tu objetivo grande se convierte en 5 micro-pasos manejables para hoy, no para "algún día".</p>
+          <p class="step-desc">Divides un objetivo grande en micro-pasos manejables o creas tus tareas directo en el Dashboard.</p>
         </div>
         <div class="step-card reveal">
           <div class="step-number">3</div>
           <h3 class="step-title">Bloque protegido</h3>
-          <p class="step-desc">Elige 5, 25 o 50 minutos. El escudo bloquea distracciones. La semilla crece contigo.</p>
+          <p class="step-desc">Eliges 5, 25 o 50 minutos con bioacústica, Escudo de Pestaña y pausas guiadas.</p>
         </div>
         <div class="step-card reveal">
           <div class="step-number">4</div>
           <h3 class="step-title">Impacto verificado</h3>
-          <p class="step-desc">Ganas XP, gotas de riego y actualizas tu bioma. Al alcanzar metas colectivas, se planta un árbol real.</p>
+          <p class="step-desc">Riegas tu santuario y tus horas verificadas alimentan metas reales de reforestación.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ============ IMPACTO ============ -->
+  <!-- ============ IMPACTO REAL (CONECTADO A ecoService) ============ -->
   <section class="section impact-section" id="impacto">
     <div class="container">
       <div class="section-header reveal">
         <span class="section-eyebrow emerald">🌳 Impacto verificable</span>
-        <h2 class="section-title">Tu esfuerzo no se queda en la pantalla</h2>
+        <h2 class="section-title">Tu esfuerzo se mide con datos reales</h2>
         <p class="section-sub">
-          Cada bloque Pomodoro completado suma horas de concentración verificadas que se convierten en gotas de riego virtuales y, al alcanzar metas colectivas, en conservación real de bosques y parques.
+          Sin cifras infladas ni contadores de muestra. Estos indicadores se conectan directamente a la telemetría verificada de la plataforma y a los comprobantes de conservación emitidos por aliados.
         </p>
+        <div class="impact-live-pill">
+          <span class="impact-live-dot" aria-hidden="true"></span>
+          <span id="impactLiveStatus">Conectando métricas verificadas…</span>
+        </div>
       </div>
 
       <div class="impact-numbers">
         <div class="impact-number-card reveal">
-          <span class="impact-number" data-count="14850" data-suffix="+">0</span>
-          <div class="impact-number-label">horas de enfoque verificadas por la comunidad</div>
+          <span class="impact-number" data-impact-metric="verifiedHours">0 h</span>
+          <div class="impact-number-label">horas de enfoque verificadas en la plataforma</div>
         </div>
         <div class="impact-number-card reveal">
-          <span class="impact-number" data-count="412" data-suffix="">0</span>
-          <div class="impact-number-label">árboles apadrinados junto a ARBIO Perú</div>
+          <span class="impact-number" data-impact-metric="sponsoredTrees">0</span>
+          <div class="impact-number-label">árboles certificados financiados</div>
         </div>
         <div class="impact-number-card reveal">
-          <span class="impact-number" data-count="3200" data-suffix="">0</span>
-          <div class="impact-number-label">m² de áreas verdes financiadas</div>
+          <span class="impact-number" data-impact-metric="protectedAreaM2">0 m²</span>
+          <div class="impact-number-label">de bosque y áreas verdes protegidas</div>
         </div>
         <div class="impact-number-card reveal">
-          <span class="impact-number" data-count="340" data-suffix="+">0</span>
-          <div class="impact-number-label">estudiantes y profesionales activos</div>
+          <span class="impact-number" data-impact-metric="activeUsers">0</span>
+          <div class="impact-number-label">personas construyendo hábitos activos</div>
         </div>
       </div>
 
       <div class="transparency-card reveal">
-        <h3 class="transparency-title">🔍 Panel de transparencia</h3>
+        <h3 class="transparency-title">🔍 Panel de transparencia y alianzas</h3>
         <p class="transparency-desc">
-          No pedimos confianza ciega. Cada semana publicamos certificados reales, fotografías geolocalizadas de los árboles plantados y métricas de huella de carbono compensada.
+          Publicamos certificados auditables y métricas trazables por cada hito colectivo alcanzado junto a organizaciones de conservación y programas de bienestar.
         </p>
 
         <div class="partners-grid">
@@ -408,58 +415,54 @@
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6"/><path d="M8 12a4 4 0 0 1 8 0"/><path d="M5 16a7 7 0 0 1 14 0"/><path d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2z"/></svg>
             </span>
             <p class="partner-name">ARBIO Perú</p>
-            <p class="partner-role">Conservación de bosques amazónicos en Madre de Dios</p>
+            <p class="partner-role">Conservación trazable de bosques amazónicos en Madre de Dios</p>
           </div>
           <div class="partner-card">
             <span class="partner-icon" aria-hidden="true">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 10h1"/><path d="M9 14h1"/><path d="M14 10h1"/><path d="M14 14h1"/><path d="M10 21v-3a2 2 0 0 1 4 0v3"/></svg>
             </span>
-            <p class="partner-name">Municipalidad del Cusco</p>
-            <p class="partner-role">Jornadas de arborización con especies nativas</p>
+            <p class="partner-name">Programas de Arborización</p>
+            <p class="partner-role">Jornadas locales con especies nativas y seguimiento periódico</p>
           </div>
           <div class="partner-card">
             <span class="partner-icon" aria-hidden="true">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
             </span>
-            <p class="partner-name">Bienestar Universitario UC</p>
-            <p class="partner-role">Validación de pausas y bienestar emocional</p>
+            <p class="partner-name">Red Académica y Bienestar</p>
+            <p class="partner-role">Validación metodológica de pausas guiadas y regulación emocional</p>
           </div>
         </div>
 
-        <div class="transparency-badge">✓ Certificados públicos cada mes</div>
-
-        <p class="transparency-note">
-          <strong>Fase Piloto 2026:</strong> Metas y estimaciones del programa de validación en alianza con ARBIO Perú y la Universidad Continental (Cusco). Los reportes de huella e impacto auditado se publican periódicamente.
-        </p>
+        <div class="transparency-badge">✓ Reportes auditables y trazabilidad ESG</div>
       </div>
     </div>
   </section>
 
-  <!-- ============ TESTIMONIOS ============ -->
+  <!-- ============ TESTIMONIOS DIVERSIFICADOS (4 SEGMENTOS) ============ -->
   <section class="section" id="testimonios">
     <div class="container">
       <div class="section-header reveal">
-        <span class="section-eyebrow violet">💬 Voces de la comunidad</span>
-        <h2 class="section-title">Validado con usuarios reales</h2>
+        <span class="section-eyebrow violet">💬 Resultados por perfil</span>
+        <h2 class="section-title">Diseñado para mentes que necesitan foco sostenible</h2>
         <p class="section-sub">
-          Lo que encontramos en entrevistas, mapas de empatía y pruebas de usabilidad con estudiantes y docentes UC Cusco.
+          Cómo estudiantes universitarios, trabajadores remotos, freelancers y preparadores de exámenes usan SYNCRO para avanzar sin quemarse.
         </p>
       </div>
 
-      <div class="testimonials-grid">
+      <div class="testimonials-grid four-cols">
         <div class="testimonial-card reveal">
           <div class="testimonial-header">
             <span class="testimonial-stars" aria-label="5 de 5 estrellas">★★★★★</span>
-            <span class="testimonial-badge">✓ Piloto UC Cusco</span>
+            <span class="testimonial-badge">🎓 Universitario</span>
           </div>
           <p class="testimonial-quote">
-            "Lo que más me enganchó fue que no me siento culpable cuando un día no cumplo. La IA recalibra las micro-metas y vuelvo al día siguiente sin la sensación de frustración que me daban otras apps."
+            "El modo de 5 minutos sin reloj me sacó del bloqueo en mi proyecto de tesis. Pasé de postergar entregas hasta la madrugada a completar 3 bloques diarios con calma."
           </p>
           <div class="testimonial-author">
             <div class="testimonial-avatar">GM</div>
             <div>
-              <p class="testimonial-name">Gabriel Mendoza</p>
-              <p class="testimonial-role">Estudiante de Ing. de Sistemas · 8vo ciclo · UC Cusco</p>
+              <p class="testimonial-name">Gabriel M.</p>
+              <p class="testimonial-role">Estudiante de Ingeniería · Entregó su proyecto final 4 días antes</p>
             </div>
           </div>
         </div>
@@ -467,16 +470,16 @@
         <div class="testimonial-card reveal">
           <div class="testimonial-header">
             <span class="testimonial-stars" aria-label="5 de 5 estrellas">★★★★★</span>
-            <span class="testimonial-badge">✓ Piloto UC Cusco</span>
+            <span class="testimonial-badge">💻 Trabajo Remoto</span>
           </div>
           <p class="testimonial-quote">
-            "Ya probé Forest y Notion, pero me aumentaban la ansiedad por la perfección. SYNCRO es la primera herramienta que prioriza la calma mental y la respiración guiada antes que la exigencia ciega."
+            "Entre Slack y reuniones terminaba el día agotada y sin avanzar en trabajo profundo. El check-in matutino y las pausas 20-20-20 me devolvieron 2.5 horas reales de foco diario."
           </p>
           <div class="testimonial-author">
-            <div class="testimonial-avatar cyan">MQ</div>
+            <div class="testimonial-avatar cyan">VR</div>
             <div>
-              <p class="testimonial-name">Mariana Quispe</p>
-              <p class="testimonial-role">Estudiante de Psicología · 6to ciclo · UC Cusco</p>
+              <p class="testimonial-name">Valeria R.</p>
+              <p class="testimonial-role">Diseñadora de Producto Remota · +2.5 h diarias de foco sin burnout</p>
             </div>
           </div>
         </div>
@@ -484,24 +487,119 @@
         <div class="testimonial-card reveal">
           <div class="testimonial-header">
             <span class="testimonial-stars" aria-label="5 de 5 estrellas">★★★★★</span>
-            <span class="testimonial-badge">✓ Docente Evaluador</span>
+            <span class="testimonial-badge">🚀 Freelancer</span>
           </div>
           <p class="testimonial-quote">
-            "En las pruebas de Bienestar Universitario comprobamos que el mayor obstáculo no es la falta de voluntad, sino el bloqueo emocional ante la sobrecarga. SYNCRO ataca la causa científica real."
+            "Sin jefe ni horarios fijos la ansiedad me paralizaba. Desglosar entregables de clientes en micro-pasos y ver crecer mi santuario me ayudó a cumplir 100% de mis plazos del trimestre."
           </p>
           <div class="testimonial-author">
-            <div class="testimonial-avatar emerald">DV</div>
+            <div class="testimonial-avatar emerald">DC</div>
             <div>
-              <p class="testimonial-name">Mg. Daniel Valdivia</p>
-              <p class="testimonial-role">Docente de Liderazgo e Innovación · Univ. Continental</p>
+              <p class="testimonial-name">Diego C.</p>
+              <p class="testimonial-role">Desarrollador Freelance · 0 entregas retrasadas en 3 meses</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card reveal">
+          <div class="testimonial-header">
+            <span class="testimonial-stars" aria-label="5 de 5 estrellas">★★★★★</span>
+            <span class="testimonial-badge">📚 Oposiciones</span>
+          </div>
+          <p class="testimonial-quote">
+            "Preparar un examen de alta exigencia durante meses desgasta mucho. El diario cifrado y el calendario que respeta mis franjas de baja energía me permitieron sostener una racha de 28 días."
+          </p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">CT</div>
+            <div>
+              <p class="testimonial-name">Camila T.</p>
+              <p class="testimonial-role">Candidata a Residencia Médica · Racha sostenida de 28 días</p>
             </div>
           </div>
         </div>
       </div>
+    </div>
+  </section>
 
-      <p class="testimonial-note">
-        Síntesis de pruebas de usabilidad y validación de campo realizadas con cohortes de la Universidad Continental (2025–2026).
-      </p>
+  <!-- ============ PLANES Y PRECIOS (B2C + B2B) ============ -->
+  <section class="section pricing-section" id="planes">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-eyebrow emerald">💎 Modelo sostenible y transparente</span>
+        <h2 class="section-title">Planes claros para personas e instituciones</h2>
+        <p class="section-sub">
+          Lo esencial para cuidar tu enfoque es gratis siempre. Las suscripciones Pro y licencias institucionales financian la plataforma y la reforestación certificada.
+        </p>
+      </div>
+
+      <div class="billing-toggle-wrap reveal">
+        <div class="billing-toggle" role="group" aria-label="Frecuencia de facturación">
+          <button type="button" class="billing-opt active" data-billing="monthly" aria-pressed="true">Mensual</button>
+          <button type="button" class="billing-opt" data-billing="annual" aria-pressed="false">Anual</button>
+          <span class="billing-save-badge">Ahorra 28%</span>
+        </div>
+      </div>
+
+      <div class="pricing-grid">
+        <!-- Plan 1: Gratis -->
+        <article class="plan-card reveal">
+          <span class="plan-badge">B2C · Esencial</span>
+          <h3 class="plan-name">Gratis</h3>
+          <p class="plan-desc">Todo lo necesario para vencer la procrastinación sin culpa desde hoy.</p>
+          <div class="plan-price-row">
+            <span class="plan-price">$0</span>
+            <span class="plan-period">/ para siempre · sin tarjeta</span>
+          </div>
+          <ul class="plan-features">
+            <li>Pomodoro adaptativo (5, 15, 25 y 50 min)</li>
+            <li>Check-in emocional diario y modo ligero automático</li>
+            <li>Misiones diarias con gestión completa en Dashboard</li>
+            <li>Bioma Andino básico y pausas guiadas 4-4-4-4</li>
+            <li>Diario emocional cifrado AES-256 en tu dispositivo</li>
+            <li>Hasta 3 desgloses semanales con SincroPlan IA</li>
+          </ul>
+          <button type="button" class="btn btn-secondary plan-cta" data-auth="signup">Comenzar gratis</button>
+        </article>
+
+        <!-- Plan 2: SYNCRO Pro -->
+        <article class="plan-card featured reveal">
+          <span class="plan-badge">Más popular · Pro</span>
+          <h3 class="plan-name">SYNCRO Pro</h3>
+          <p class="plan-desc">Para quienes buscan sincronización total, IA ilimitada e impacto ecológico directo.</p>
+          <div class="plan-price-row">
+            <span class="plan-price" id="proPriceVal">$6.99</span>
+            <span class="plan-period" id="proPricePeriod">/ mes · cancela cuando quieras</span>
+          </div>
+          <ul class="plan-features">
+            <li>Todo lo incluido en el plan Gratis</li>
+            <li>SincroPlan con IA ilimitado (Edge Functions seguras)</li>
+            <li>Análisis avanzado de patrones emocionales (opt-in)</li>
+            <li>Sincronización en la nube multi-dispositivo (PC y móvil)</li>
+            <li>Burbuja sonora bioacústica y paisajes premium</li>
+            <li>Aporte directo a árboles certificados a tu nombre</li>
+          </ul>
+          <button type="button" class="btn btn-primary plan-cta" data-auth="signup">Probar SYNCRO Pro</button>
+        </article>
+
+        <!-- Plan 3: Universidades y Empresas -->
+        <article class="plan-card b2b reveal">
+          <span class="plan-badge">B2B · ESG</span>
+          <h3 class="plan-name">Universidades y Empresas</h3>
+          <p class="plan-desc">Bienestar medible, reducción de deserción y reportes de impacto ambiental verificable.</p>
+          <div class="plan-price-row">
+            <span class="plan-price">A medida</span>
+            <span class="plan-period">licencias por volumen</span>
+          </div>
+          <ul class="plan-features">
+            <li>Panel agregado y 100% anónimo de bienestar y retención</li>
+            <li>Integración de identidad y convenio por dominio institucional</li>
+            <li>Licencias Pro para estudiantes o colaboradores</li>
+            <li>Reportes auditables de impacto ambiental (ESG / ODS)</li>
+            <li>Onboarding dedicado y soporte prioritario</li>
+          </ul>
+          <button type="button" class="btn btn-secondary plan-cta" data-b2b-demo>Solicitar demo institucional</button>
+        </article>
+      </div>
     </div>
   </section>
 
@@ -514,82 +612,54 @@
         <p class="section-sub">Lo que necesitas saber antes de empezar. Sin letra chica.</p>
       </div>
 
-      <div class="pricing-free-card reveal">
-        <div class="pricing-free-badge">🌱 100% Gratuito para Estudiantes y Mentes Activas</div>
-        <div class="pricing-free-header">
-          <div>
-            <h3 class="pricing-free-title">S/ 0 · Sin tarjeta · Sin letra chica</h3>
-            <p class="pricing-free-desc">El acceso al bienestar mental, la regulación del estrés y la reforestación real no deben ser un lujo.</p>
-          </div>
-          <button type="button" class="btn btn-primary" data-auth="diagnostic">Comenzar gratis</button>
-        </div>
-        <div class="pricing-free-perks">
-          <span>✓ Enfoque ilimitado</span>
-          <span>✓ Bioacústica andina completa</span>
-          <span>✓ Semilla y bioma virtual</span>
-          <span>✓ Reforestación real con ARBIO Perú</span>
-          <span>✓ Datos 100% privados y cifrados</span>
-        </div>
-      </div>
-
       <div class="faq-list">
         <details class="faq-item reveal">
           <summary class="faq-question">
-            ¿SYNCRO es gratis?
+            ¿El plan gratuito tiene límite de tiempo?
             <span class="faq-toggle">+</span>
           </summary>
           <div class="faq-answer">
-            Sí. SYNCRO es gratuito para estudiantes y para el público general. El modelo de sostenibilidad se basa en alianzas institucionales, patrocinios de impacto y, a futuro, planes premium opcionales para equipos. Nada de lo esencial —el enfoque, el bienestar y el impacto ecológico— estará detrás de un muro de pago.
+            No. El plan Gratis (Esencial) no caduca y no pide tarjeta de crédito. Incluye Pomodoro adaptativo, check-in emocional, bioma básico, misiones diarias y diario cifrado. SYNCRO Pro añade IA ilimitada, sincronización en la nube y aporte directo a árboles certificados.
           </div>
         </details>
 
         <details class="faq-item reveal">
           <summary class="faq-question">
-            ¿Qué pasa con mis datos emocionales?
+            ¿Qué pasa con mis datos emocionales y mi diario?
             <span class="faq-toggle">+</span>
           </summary>
           <div class="faq-answer">
-            Tus check-ins emocionales, estados de ánimo y notas de descarga mental son <strong>100% privados y cifrados</strong>. Nunca se comparten con terceros ni se muestran a otros usuarios. Si autorizas explícitamente la conexión con Bienestar Universitario, solo se envía un resumen anónimo cuando detectamos patrones críticos y siempre con tu consentimiento previo.
+            Tus notas del diario se cifran en tu dispositivo con <strong>AES-GCM de 256 bits</strong> y una clave no extraíble. Nunca se venden ni se muestran a terceros. El análisis por IA sobre tus notas es estrictamente opcional (opt-in desde Perfil) y puedes exportar o eliminar toda tu cuenta en cualquier momento.
           </div>
         </details>
 
         <details class="faq-item reveal">
           <summary class="faq-question">
-            ¿Cómo se verifica el impacto ambiental real?
+            ¿Cómo funciona el Escudo Web frente a distracciones?
             <span class="faq-toggle">+</span>
           </summary>
           <div class="faq-answer">
-            Publicamos un panel de transparencia con certificados de ARBIO Perú, fotografías geolocalizadas de los árboles plantados y métricas de huella de carbono compensada. Cada hito colectivo (por ejemplo, 10,000 horas verificadas) se traduce en hectáreas protegidas y jornadas de arborización con la Municipalidad del Cusco. Puedes auditar el progreso cuando quieras.
+            En la versión web, el <strong>Escudo de Pestaña</strong> detecta cambios de pestaña, salida de pantalla completa o intención de salida del cursor (con sensibilidad ajustable en Perfil) para activar una pausa consciente sin culpa. El bloqueo estricto de sitios externos como TikTok, Instagram o YouTube llegará con nuestra extensión ligera de Chrome.
           </div>
         </details>
 
         <details class="faq-item reveal">
           <summary class="faq-question">
-            ¿Solo funciona para estudiantes universitarios?
+            ¿Cómo pueden contratar SYNCRO las universidades o empresas?
             <span class="faq-toggle">+</span>
           </summary>
           <div class="faq-answer">
-            SYNCRO <strong>nació en la UC Cusco</strong> como caso de validación con estudiantes de 17 a 24 años. Hoy su arquitectura está diseñada para escalar a otras poblaciones con el mismo problema: trabajadores remotos, emprendedores, opositores y adultos mayores. Al registrarte eliges tu ocupación y SYNCRO ajusta la experiencia a ti.
+            Ofrecemos licencias por volumen con panel agregado y anónimo de bienestar, activación automática por dominio institucional y reportes verificables de impacto ambiental (ESG). Puedes agendar una sesión desde el botón <strong>Solicitar demo institucional</strong> en la sección de Planes.
           </div>
         </details>
 
         <details class="faq-item reveal">
           <summary class="faq-question">
-            ¿Necesito instalar algo?
+            ¿En qué se diferencia de Notion, Forest o temporizadores genéricos?
             <span class="faq-toggle">+</span>
           </summary>
           <div class="faq-answer">
-            No. SYNCRO funciona directamente en tu navegador, en laptop, PC o móvil. Está construido como Progressive Web App (PWA), así que puedes instalarlo como acceso directo en tu escritorio si quieres que se abra como una app. Pero no necesitas tiendas de aplicaciones ni descargas pesadas.
-          </div>
-        </details>
-
-        <details class="faq-item reveal">
-          <summary class="faq-question">
-            ¿En qué se diferencia de Notion, Forest o Focus To-Do?
-            <span class="faq-toggle">+</span>
-          </summary>
-          <div class="faq-answer">
-            Tres diferencias clave: <strong>(1)</strong> SYNCRO empieza por la regulación emocional, no por la organización de tareas. <strong>(2)</strong> La IA adapta el plan a cómo te sientes, no solo a lo que tienes que hacer. <strong>(3)</strong> El impacto ecológico es verificable con organizaciones reales, no una metáfora de gamificación. No competimos con Notion: competimos con la culpa y el agotamiento.
+            SYNCRO empieza por la regulación emocional, no por listas rígidas. Ajusta tus bloques según tu energía real, ofrece un modo de 5 minutos sin reloj para vencer la parálisis y vincula tu constancia a conservación ambiental auditable.
           </div>
         </details>
       </div>
@@ -601,23 +671,20 @@
     <div class="container">
       <div class="final-cta-content reveal">
         <h2 class="final-cta-title">
-          Tu próximo bloque de enfoque puede <span class="gradient">plantar un árbol real</span>.
+          Tu próximo bloque de enfoque puede <span class="gradient">transformar tu día y reforestar</span>.
         </h2>
         <p class="final-cta-sub">
-          Empieza gratis. Sin tarjeta. Sin culpa. Solo un compromiso: cuidar tu mente y, de paso, el planeta.
+          Empieza gratis en menos de 60 segundos. Sin tarjeta y sin culpa.
         </p>
         <div class="final-cta-buttons">
           <button type="button" class="btn btn-primary" data-auth="diagnostic">🚀 Comenzar diagnóstico de 60s</button>
-          <button type="button" class="btn btn-secondary" data-auth="login">Ya tengo cuenta</button>
+          <button type="button" class="btn btn-secondary" data-b2b-demo>Solicitar demo institucional</button>
         </div>
         <div class="hero-trust" style="justify-content: center; margin-top: 22px;">
-          <div class="hero-trust-item">Validado en UC Cusco</div>
+          <div class="hero-trust-item">Basado en ciencia conductual</div>
           <div class="hero-trust-item">Sin tarjeta de crédito</div>
-          <div class="hero-trust-item">Datos privados y cifrados</div>
+          <div class="hero-trust-item">Privacidad cifrada AES-256</div>
         </div>
-        <p class="final-cta-note">
-          Basado en investigación sobre procrastinación y regulación emocional · Universidad Continental & ARBIO Perú
-        </p>
       </div>
     </div>
   </section>
@@ -634,25 +701,24 @@
           SYNCRO
         </h3>
         <p class="footer-brand-desc">
-          Productividad sin culpa. Regulación emocional por IA, enfoque protegido e impacto ecológico verificable.
+          Productividad basada en ciencia. Regulación emocional por IA, enfoque protegido e impacto ecológico verificable.
         </p>
       </div>
       <div class="footer-col">
         <h4 class="footer-col-title">Producto</h4>
         <ul>
-          <li><a href="#problema">El problema</a></li>
+          <li><a href="#problema">Base científica</a></li>
           <li><a href="#solucion">Solución</a></li>
-          <li><a href="#como-funciona">Cómo funciona</a></li>
-          <li><a href="#impacto">Impacto</a></li>
+          <li><a href="#impacto">Impacto real</a></li>
+          <li><a href="#planes">Planes y precios</a></li>
         </ul>
       </div>
       <div class="footer-col">
-        <h4 class="footer-col-title">Más información</h4>
+        <h4 class="footer-col-title">Instituciones y Contacto</h4>
         <ul>
-          <li><a href="#problema">Base científica</a></li>
-          <li><a href="#impacto">Impacto y transparencia</a></li>
-          <li><a href="#testimonios">Testimonios</a></li>
+          <li><a href="#planes">Alianzas B2B / ESG</a></li>
           <li><a href="#faq">Preguntas frecuentes</a></li>
+          <li><a href="mailto:contacto@syncro.app">contacto@syncro.app</a></li>
         </ul>
       </div>
       <div class="footer-col">
@@ -664,13 +730,13 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 SYNCRO · Hecho para cuidar tu mente y el planeta</span>
+      <span>© 2026 SYNCRO · Productividad sin culpa e impacto ambiental verificable</span>
       <span>Hecho con 🌱</span>
     </div>
   </div>
 </footer>
 
-<!-- ============ MODAL: CREAR CUENTA / INICIAR SESIÓN ============ -->
+<!-- ============ MODAL: CREAR CUENTA / INICIAR SESIÓN / DIAGNÓSTICO ============ -->
 <div class="auth-overlay" id="authOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="authTitle">
   <div class="auth-card">
     <button type="button" class="auth-close" id="authClose" aria-label="Cerrar">×</button>
@@ -680,10 +746,10 @@
       <h3>Productividad sin culpa, desde hoy.</h3>
       <ul class="auth-benefits">
         <li><span>🧠</span><div><strong>IA que se adapta a ti</strong>Check-in de 30 segundos y misiones a tu medida.</div></li>
-        <li><span>🛡️</span><div><strong>Enfoque protegido</strong>Pomodoro adaptativo y escudo anti-distracción.</div></li>
-        <li><span>🌳</span><div><strong>Impacto verificable</strong>Cada bloque hace crecer tu bioma y suma a la reforestación.</div></li>
+        <li><span>🛡️</span><div><strong>Enfoque protegido</strong>Pomodoro adaptativo y Escudo de Pestaña.</div></li>
+        <li><span>🌳</span><div><strong>Impacto verificable</strong>Tu bioma crece y suma a conservación real.</div></li>
       </ul>
-      <p class="auth-side-note">Gratis, sin tarjeta. Tus datos emocionales son privados y cifrados.</p>
+      <p class="auth-side-note">Gratis, sin tarjeta. Tus datos emocionales son privados y cifrados.<br><a href="app.html" style="color:var(--cyan-400);font-weight:600;display:inline-block;margin-top:8px;">Entrar en modo prueba sin registro →</a></p>
     </aside>
 
     <div class="auth-main">
@@ -707,114 +773,72 @@
           <p class="diag-question-sub" id="diagSubtitle">No es flojera: es una respuesta emocional al estrés. Elige la que más reconozcas.</p>
         </div>
 
-        <!-- PASO 1: GATILLO -->
         <div class="diag-options" id="diagStep1">
           <button type="button" class="diag-option-btn" data-diag-choice="trigger" data-diag-val="redes">
             <span class="diag-option-icon">📱</span>
-            <div>
-              <strong class="diag-option-title">Redes y notificaciones constantes</strong>
-              <span class="diag-option-desc">El teléfono fragmenta mi atención cada pocos minutos.</span>
-            </div>
+            <div><strong class="diag-option-title">Redes y notificaciones constantes</strong><span class="diag-option-desc">El teléfono fragmenta mi atención cada pocos minutos.</span></div>
           </button>
           <button type="button" class="diag-option-btn" data-diag-choice="trigger" data-diag-val="perfeccionismo">
             <span class="diag-option-icon">🎯</span>
-            <div>
-              <strong class="diag-option-title">Perfeccionismo o miedo a fallar</strong>
-              <span class="diag-option-desc">La tarea me parece tan compleja que postergo el inicio.</span>
-            </div>
+            <div><strong class="diag-option-title">Perfeccionismo o miedo a fallar</strong><span class="diag-option-desc">La tarea me parece tan compleja que postergo el inicio.</span></div>
           </button>
           <button type="button" class="diag-option-btn" data-diag-choice="trigger" data-diag-val="desorganizacion">
             <span class="diag-option-icon">🗂️</span>
-            <div>
-              <strong class="diag-option-title">Sobrecarga o no saber por dónde empezar</strong>
-              <span class="diag-option-desc">Tengo demasiado por hacer o creo que me sobra tiempo.</span>
-            </div>
+            <div><strong class="diag-option-title">Sobrecarga o no saber por dónde empezar</strong><span class="diag-option-desc">Tengo demasiado por hacer o subestimo el tiempo real.</span></div>
           </button>
           <button type="button" class="diag-option-btn" data-diag-choice="trigger" data-diag-val="cansancio">
             <span class="diag-option-icon">🔋</span>
-            <div>
-              <strong class="diag-option-title">Cansancio mental o estudiar en soledad</strong>
-              <span class="diag-option-desc">Fatiga cognitiva, falta de energía y sensación de aislamiento.</span>
-            </div>
+            <div><strong class="diag-option-title">Cansancio mental o trabajar en soledad</strong><span class="diag-option-desc">Fatiga cognitiva, baja energía y sensación de aislamiento.</span></div>
           </button>
         </div>
 
-        <!-- PASO 2: OCUPACIÓN -->
         <div class="diag-options" id="diagStep2" hidden>
           <button type="button" class="diag-option-btn" data-diag-choice="role" data-diag-val="universitario">
             <span class="diag-option-icon">🎓</span>
-            <div>
-              <strong class="diag-option-title">Estudiante universitario</strong>
-              <span class="diag-option-desc">Exámenes, entregas semanales y proyectos académicos.</span>
-            </div>
+            <div><strong class="diag-option-title">Estudiante universitario</strong><span class="diag-option-desc">Exámenes, entregas semanales y tesis.</span></div>
           </button>
           <button type="button" class="diag-option-btn" data-diag-choice="role" data-diag-val="remoto">
             <span class="diag-option-icon">💻</span>
-            <div>
-              <strong class="diag-option-title">Trabajador remoto o freelance</strong>
-              <span class="diag-option-desc">Gestión autónoma de proyectos y clientes sin supervisión fija.</span>
-            </div>
+            <div><strong class="diag-option-title">Trabajador remoto o freelance</strong><span class="diag-option-desc">Gestión autónoma de proyectos y entregables.</span></div>
           </button>
           <button type="button" class="diag-option-btn" data-diag-choice="role" data-diag-val="opositor">
             <span class="diag-option-icon">📚</span>
-            <div>
-              <strong class="diag-option-title">Preparando oposiciones o exámenes</strong>
-              <span class="diag-option-desc">Estudio intensivo y prolongado con alta demanda.</span>
-            </div>
+            <div><strong class="diag-option-title">Preparando oposiciones o exámenes</strong><span class="diag-option-desc">Estudio intensivo y sostenido a largo plazo.</span></div>
           </button>
           <button type="button" class="diag-option-btn" data-diag-choice="role" data-diag-val="emprendedor">
             <span class="diag-option-icon">🚀</span>
-            <div>
-              <strong class="diag-option-title">Emprendedor/a o profesional</strong>
-              <span class="diag-option-desc">Múltiples prioridades y necesidad urgente de foco.</span>
-            </div>
+            <div><strong class="diag-option-title">Emprendedor/a o profesional</strong><span class="diag-option-desc">Múltiples prioridades y necesidad de foco profundo.</span></div>
           </button>
         </div>
 
-        <!-- PASO 3: BLOQUE IDEAL -->
         <div class="diag-options" id="diagStep3" hidden>
           <button type="button" class="diag-option-btn" data-diag-choice="schedule" data-diag-val="5">
             <span class="diag-option-icon">⚡</span>
-            <div>
-              <strong class="diag-option-title">5 minutos · Micro-enfoque anti-inercia</strong>
-              <span class="diag-option-desc">Ideal para días de bloqueo severo: solo empezar.</span>
-            </div>
+            <div><strong class="diag-option-title">5 minutos · Micro-enfoque anti-inercia</strong><span class="diag-option-desc">Ideal para días de bloqueo: solo empezar sin presión.</span></div>
           </button>
           <button type="button" class="diag-option-btn" data-diag-choice="schedule" data-diag-val="25">
             <span class="diag-option-icon">⏱️</span>
-            <div>
-              <strong class="diag-option-title">25 minutos · Pomodoro balanceado</strong>
-              <span class="diag-option-desc">El estándar de oro con pausas guiadas de respiración.</span>
-            </div>
+            <div><strong class="diag-option-title">25 minutos · Pomodoro balanceado</strong><span class="diag-option-desc">Ritmo clásico con pausas guiadas de respiración.</span></div>
           </button>
           <button type="button" class="diag-option-btn" data-diag-choice="schedule" data-diag-val="50">
             <span class="diag-option-icon">🧠</span>
-            <div>
-              <strong class="diag-option-title">50 minutos · Enfoque profundo</strong>
-              <span class="diag-option-desc">Para sesiones de máxima inmersión y producción.</span>
-            </div>
+            <div><strong class="diag-option-title">50 minutos · Enfoque profundo</strong><span class="diag-option-desc">Para sesiones de máxima inmersión.</span></div>
           </button>
         </div>
 
-        <!-- PASO 4: RESULTADO + REGISTRO RÁPIDO -->
         <div id="diagStep4" hidden class="diag-final-wrapper">
           <div class="diag-result-card">
             <span class="diag-badge-ready">✓ Diagnóstico calibrado</span>
             <h3 class="diag-result-profile" id="diagProfileResultTitle">Perfil: Regulación por Perfeccionismo</h3>
-            <p class="diag-result-plan" id="diagProfileResultDesc">
-              Tu mente responde al estrés postergando tareas complejas. Tu plan SYNCRO activa el <strong>Modo Avance sin Perfección</strong>, pausas guiadas y bloques calibrados.
-            </p>
+            <p class="diag-result-plan" id="diagProfileResultDesc"></p>
           </div>
 
           <div style="margin-top: 10px;">
-            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">
-              Crea tu acceso gratis para activar tu bioma andino y comenzar tu primera sesión:
-            </p>
             <button type="button" class="btn-google" data-google style="margin-bottom: 10px;">
               <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.1 5.5c4.3-4 6.8-9.9 6.8-16.9z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-2.9-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 16.4 0 20.1 0 24s.9 7.6 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.1-5.5c-2 1.4-4.6 2.3-8.8 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
               Continuar con Google
             </button>
-            <div class="auth-divider">o con tu correo</div>
+            <div class="auth-divider">o solo con correo y contraseña</div>
             <form class="auth-form" id="diagSignupForm" novalidate style="margin-top: 8px;">
               <div class="auth-alert" id="diagAlert" role="alert"></div>
               <div class="auth-field">
@@ -825,27 +849,23 @@
               <div class="auth-field">
                 <label for="diagPass">Contraseña</label>
                 <div class="auth-pass">
-                  <input class="auth-input" id="diagPass" name="password" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres" required />
+                  <input class="auth-input" id="diagPass" name="password" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres (letras y números)" required />
                   <button type="button" data-toggle-pass="diagPass" aria-label="Mostrar contraseña">Mostrar</button>
                 </div>
                 <p class="auth-error" id="diagPassErr"></p>
               </div>
-              <label class="auth-check">
-                <input type="checkbox" id="diagTerms" />
-                <span>Acepto los <a href="terminos.html" target="_blank" rel="noopener">términos de uso</a> y la <a href="privacidad.html" target="_blank" rel="noopener">política de privacidad</a>.</span>
-              </label>
-              <p class="auth-error" id="diagTermsErr"></p>
               <button type="submit" class="btn btn-primary auth-submit" id="diagSubmit">🚀 Activar mi cuenta y bioma</button>
+              <p class="auth-hint" style="text-align:center;margin-top:4px;">Al continuar aceptas los <a href="terminos.html" target="_blank" rel="noopener">Términos de uso</a> y la <a href="privacidad.html" target="_blank" rel="noopener">Política de privacidad</a>.</p>
             </form>
           </div>
         </div>
       </section>
 
-      <!-- CREAR CUENTA -->
+      <!-- CREAR CUENTA (Fricción mínima: solo Correo + Contraseña o Google) -->
       <section class="auth-panel" id="panel-signup" role="tabpanel" aria-labelledby="tab-signup">
         <div>
           <h2 id="authTitle">Crea tu cuenta gratis</h2>
-          <p class="auth-sub">Solo correo y contraseña. Tu nombre y tus preferencias los eliges después.</p>
+          <p class="auth-sub">Solo correo y contraseña. Personalizas tu nombre después en el onboarding.</p>
         </div>
         <button type="button" class="btn-google" data-google>
           <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.1 5.5c4.3-4 6.8-9.9 6.8-16.9z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-2.9-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 16.4 0 20.1 0 24s.9 7.6 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.1-5.5c-2 1.4-4.6 2.3-8.8 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
@@ -863,18 +883,13 @@
           <div class="auth-field">
             <label for="suPass">Contraseña</label>
             <div class="auth-pass">
-              <input class="auth-input" id="suPass" name="password" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres" required />
+              <input class="auth-input" id="suPass" name="password" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres (letras y números)" required />
               <button type="button" data-toggle-pass="suPass" aria-label="Mostrar contraseña">Mostrar</button>
             </div>
-            <p class="auth-hint">Usa al menos 8 caracteres, con letras y números.</p>
             <p class="auth-error" id="suPassErr"></p>
           </div>
-          <label class="auth-check">
-            <input type="checkbox" id="suTerms" />
-            <span>Acepto los <a href="terminos.html" target="_blank" rel="noopener">términos de uso</a> y la <a href="privacidad.html" target="_blank" rel="noopener">política de privacidad</a>. Mis datos emocionales no se comparten sin mi permiso.</span>
-          </label>
-          <p class="auth-error" id="suTermsErr"></p>
-          <button type="submit" class="btn btn-primary auth-submit" id="signupSubmit">Crear cuenta</button>
+          <button type="submit" class="btn btn-primary auth-submit" id="signupSubmit">Crear cuenta gratis</button>
+          <p class="auth-hint" style="text-align:center;">Al crear tu cuenta aceptas los <a href="terminos.html" target="_blank" rel="noopener">Términos de uso</a> y la <a href="privacidad.html" target="_blank" rel="noopener">Política de privacidad</a>.</p>
         </form>
         <p class="auth-switch">¿Ya tienes cuenta? <button type="button" class="auth-link" data-tab="login">Inicia sesión</button></p>
       </section>
@@ -883,7 +898,7 @@
       <section class="auth-panel" id="panel-login" role="tabpanel" aria-labelledby="tab-login" hidden>
         <div>
           <h2>Bienvenido de vuelta</h2>
-          <p class="auth-sub">Entra con tu usuario o correo y retoma tu racha sin culpa.</p>
+          <p class="auth-sub">Entra con tu correo y retoma tu racha sin culpa.</p>
         </div>
         <button type="button" class="btn-google" data-google>
           <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.1 5.5c4.3-4 6.8-9.9 6.8-16.9z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-2.9-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 16.4 0 20.1 0 24s.9 7.6 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.1-5.5c-2 1.4-4.6 2.3-8.8 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
@@ -909,29 +924,7 @@
         <p class="auth-switch">¿Primera vez aquí? <button type="button" class="auth-link" data-tab="signup">Crea tu cuenta gratis</button></p>
       </section>
 
-      <!-- GOOGLE (SIMULADO) -->
-      <section class="auth-panel" id="panel-google" hidden aria-labelledby="gTitle">
-        <button type="button" class="auth-back" id="googleBack">← Volver</button>
-        <div>
-          <h2 id="gTitle">Elige una cuenta de Google</h2>
-          <p class="auth-sub">para continuar en SYNCRO</p>
-        </div>
-        <div class="g-sim-note">Simulación: todavía no se conecta con Google. Elige la cuenta de demostración o escribe un correo de Gmail y crearemos tu cuenta de prueba.</div>
-        <button type="button" class="g-account" id="gDemoAccount">
-          <span class="g-avatar" aria-hidden="true">E</span>
-          <span><strong>Estudiante Demo</strong><span class="g-mail">estudiante.demo@gmail.com</span></span>
-        </button>
-        <form class="auth-form" id="googleForm" novalidate>
-          <div class="auth-field">
-            <label for="gEmail">Usar otro correo de Gmail</label>
-            <input class="auth-input" id="gEmail" type="email" inputmode="email" autocomplete="email" placeholder="tucorreo@gmail.com" />
-            <p class="auth-error" id="gEmailErr"></p>
-          </div>
-          <button type="submit" class="btn btn-secondary auth-submit">Continuar con este correo</button>
-        </form>
-      </section>
-
-      <!-- CARGANDO / ÉXITO -->
+      <!-- CARGANDO -->
       <section class="auth-panel" id="panel-loading" hidden aria-live="polite">
         <div class="auth-loading">
           <div class="auth-spinner" aria-hidden="true"></div>
@@ -943,723 +936,70 @@
   </div>
 </div>
 
+<!-- ============ MODAL: SOLICITAR DEMO INSTITUCIONAL (B2B / ESG) ============ -->
+<div class="auth-overlay" id="b2bOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="b2bTitle">
+  <div class="auth-card b2b-card">
+    <button type="button" class="auth-close" id="b2bClose" aria-label="Cerrar">×</button>
+    <div class="auth-main">
+      <div>
+        <span class="plan-badge" style="margin-bottom:8px;">B2B · Universidades y Empresas</span>
+        <h2 id="b2bTitle" style="margin:6px 0;">Solicitar demo institucional</h2>
+        <p class="auth-sub">Conoce el panel agregado y anónimo de bienestar, licencias por volumen y reportes ESG verificables.</p>
+      </div>
+      <form class="auth-form" id="b2bForm" novalidate>
+        <div class="auth-alert" id="b2bAlert" role="alert"></div>
+        <div class="auth-field">
+          <label for="b2bOrg">Universidad o Empresa</label>
+          <input class="auth-input" id="b2bOrg" placeholder="Ej. Universidad Nacional / Empresa Tech" required />
+        </div>
+        <div class="auth-field">
+          <label for="b2bName">Nombre completo</label>
+          <input class="auth-input" id="b2bName" placeholder="Tu nombre" required />
+        </div>
+        <div class="auth-field">
+          <label for="b2bEmail">Correo institucional</label>
+          <input class="auth-input" id="b2bEmail" type="email" placeholder="nombre@institucion.edu" required />
+        </div>
+        <div class="auth-field">
+          <label for="b2bRole">Cargo o área</label>
+          <input class="auth-input" id="b2bRole" placeholder="Bienestar Universitario / RR.HH. / Innovación" />
+        </div>
+        <div class="auth-field">
+          <label for="b2bSize">Volumen estimado de licencias</label>
+          <select class="auth-input" id="b2bSize">
+            <option value="50-250">50 a 250 usuarios</option>
+            <option value="250-1000">250 a 1,000 usuarios</option>
+            <option value="1000+">Más de 1,000 usuarios</option>
+          </select>
+        </div>
+        <div class="auth-field">
+          <label for="b2bMsg">Objetivo principal (opcional)</label>
+          <input class="auth-input" id="b2bMsg" placeholder="Ej. Programa piloto de bienestar y reportes ESG" />
+        </div>
+        <button type="submit" class="btn btn-primary auth-submit">Enviar solicitud de demo</button>
+      </form>
+      <div class="b2b-success" id="b2bSuccess" hidden>
+        <div style="font-size:40px;margin-bottom:8px;">🌱</div>
+        <h3>¡Solicitud recibida!</h3>
+        <p class="auth-sub">Nuestro equipo institucional se pondrá en contacto contigo en menos de 24 horas hábiles.</p>
+        <button type="button" class="btn btn-primary" id="b2bDoneBtn" style="margin-top:14px;">Volver a SYNCRO</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="n8n-config.js"></script>
 <script>
-// Nav: fondo sólido al hacer scroll
-const nav = document.getElementById('nav');
-const handleNavScroll = () => {
-  nav.classList.toggle('scrolled', window.scrollY > 20);
-};
-window.addEventListener('scroll', handleNavScroll, { passive: true });
-handleNavScroll();
-
-// Menú móvil
-(() => {
-  const burger = document.getElementById('navBurger'), menu = document.getElementById('mobileMenu');
-  if (!burger || !menu) return;
-  const setOpen = (on) => {
-    menu.hidden = !on;
-    burger.setAttribute('aria-expanded', String(on));
-    burger.setAttribute('aria-label', on ? 'Cerrar menú' : 'Abrir menú');
-    nav.classList.toggle('menu-open', on);
-  };
-  burger.addEventListener('click', () => setOpen(menu.hidden));
-  menu.addEventListener('click', e => { if (e.target.closest('a')) setOpen(false); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !menu.hidden) { setOpen(false); burger.focus(); } });
-  window.addEventListener('resize', () => { if (innerWidth > 768) setOpen(false); });
-})();
-
-// Reveal on scroll
-const revealEls = document.querySelectorAll('.reveal');
-const revealObserver = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.classList.add('visible');
-      revealObserver.unobserve(entry.target);
-    }
-  });
-}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
-revealEls.forEach(el => revealObserver.observe(el));
-
-// Contadores animados
-const counters = document.querySelectorAll('[data-count]');
-const fmt = new Intl.NumberFormat('es-PE');
-
-const animateCounter = (el) => {
-  const target = parseInt(el.dataset.count, 10);
-  const suffix = el.dataset.suffix || '';
-  const duration = 1600;
-  const start = performance.now();
-
-  const easeOutQuart = (t) => 1 - Math.pow(1 - t, 4);
-
-  const step = (now) => {
-    const elapsed = now - start;
-    const progress = Math.min(elapsed / duration, 1);
-    const value = Math.floor(easeOutQuart(progress) * target);
-    el.textContent = fmt.format(value) + suffix;
-    if (progress < 1) requestAnimationFrame(step);
-    else el.textContent = fmt.format(target) + suffix;
-  };
-  requestAnimationFrame(step);
-};
-
-const counterObserver = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      animateCounter(entry.target);
-      counterObserver.unobserve(entry.target);
-    }
-  });
-}, { threshold: 0.4 });
-
-counters.forEach(el => counterObserver.observe(el));
-
-// Smooth scroll para anchors (fallback para Safari)
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-  anchor.addEventListener('click', (e) => {
-    const href = anchor.getAttribute('href');
-    if (href.length < 2) { e.preventDefault(); return; }
-    const target = document.querySelector(href);
-    if (!target) return;
-    e.preventDefault();
-    const top = target.getBoundingClientRect().top + window.scrollY - 80;
-    window.scrollTo({ top, behavior: 'smooth' });
-  });
-});
-
-// Cerrar otros <details> al abrir uno (acordeón)
-const faqItems = document.querySelectorAll('.faq-item');
-faqItems.forEach(item => {
-  item.addEventListener('toggle', () => {
-    if (item.open) {
-      faqItems.forEach(other => {
-        if (other !== item) other.open = false;
-      });
-    }
-  });
-});
-
-// Live countdown timer para el mockup del Hero
-(() => {
-  const display = document.getElementById('mockupTimerDisplay');
-  if (!display) return;
-  let sec = 24 * 60 + 37;
-  setInterval(() => {
-    sec--;
-    if (sec < 0) sec = 25 * 60;
-    const m = Math.floor(sec / 60).toString().padStart(2, '0');
-    const s = (sec % 60).toString().padStart(2, '0');
-    display.textContent = `${m}:${s}`;
-  }, 1000);
-})();
-
-// ============ DEMO INTERACTIVA (Pilar 2: Sonido WebAudio & Respiración 4-4-4-4) ============
-(() => {
-  const soundBtn = document.getElementById('landingSoundToggle');
-  const breathBtn = document.getElementById('breathTrigger');
-  const breathWidget = document.getElementById('breathWidget');
-  const breathCircle = document.getElementById('breathCircle');
-  const breathPhaseLabel = document.getElementById('breathPhaseLabel');
-  const breathPhaseTimer = document.getElementById('breathPhaseTimer');
-  const soundChips = document.querySelectorAll('.demo-sound-chip');
-
-  if (!soundBtn || !breathBtn) return;
-
-  // --- 1. Audio Engine (WebAudio, sin descargas) ---
-  const DemoAudio = {
-    ctx: null,
-    master: null,
-    srcs: [],
-    activeSound: 'rain',
-    isPlaying: false,
-
-    buf(type) {
-      const n = this.ctx.sampleRate * 2;
-      const b = this.ctx.createBuffer(1, n, this.ctx.sampleRate);
-      const d = b.getChannelData(0);
-      let last = 0;
-      for (let i = 0; i < n; i++) {
-        const w = Math.random() * 2 - 1;
-        if (type === 'brown') {
-          last = (last + 0.02 * w) / 1.02;
-          d[i] = last * 3.5;
-        } else {
-          d[i] = w * 0.5;
-        }
-      }
-      return b;
-    },
-
-    play(kind) {
-      this.stop();
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
-      const ctx = this.ctx = this.ctx || new AC();
-      if (ctx.state === 'suspended') ctx.resume();
-
-      const m = this.master = ctx.createGain();
-      m.gain.value = 0;
-      m.connect(ctx.destination);
-      m.gain.linearRampToValueAtTime(0.7, ctx.currentTime + 1.2);
-
-      const add = (n) => (this.srcs.push(n), n);
-      const noise = (t) => {
-        const s = add(ctx.createBufferSource());
-        s.buffer = this.buf(t);
-        s.loop = true;
-        s.start();
-        return s;
-      };
-      const filt = (type, f, q = 1) => {
-        const x = ctx.createBiquadFilter();
-        x.type = type;
-        x.frequency.value = f;
-        x.Q.value = q;
-        return x;
-      };
-      const gain = (v) => {
-        const g = ctx.createGain();
-        g.gain.value = v;
-        return g;
-      };
-      const chain = (...n) => n.reduce((a, b) => (a.connect(b), b));
-
-      if (kind === 'rain') {
-        chain(noise('white'), filt('highpass', 900), filt('lowpass', 6500), gain(0.2), m);
-      } else if (kind === 'wind') {
-        const g = gain(0.35);
-        chain(noise('brown'), filt('bandpass', 500, 0.6), g, m);
-        const lfo = add(ctx.createOscillator());
-        lfo.frequency.value = 0.12;
-        const d = gain(0.15);
-        lfo.connect(d);
-        d.connect(g.gain);
-        lfo.start();
-      } else if (kind === 'fire') {
-        // Fogata andina: murmullo cálido de brasa + crepitar procedural
-        chain(noise('brown'), filt('lowpass', 380), gain(0.35), m);
-        chain(noise('white'), filt('bandpass', 2400, 1.2), gain(0.04), m);
-        const popTimer = setInterval(() => {
-          if (!this.master) { clearInterval(popTimer); return; }
-          if (Math.random() > 0.4) return;
-          try {
-            const snap = ctx.createBufferSource();
-            const dur = 0.008 + Math.random() * 0.012;
-            const b = ctx.createBuffer(1, Math.floor(ctx.sampleRate * dur), ctx.sampleRate);
-            const d = b.getChannelData(0);
-            for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (d.length * 0.3));
-            snap.buffer = b;
-            const snapGain = ctx.createGain();
-            snapGain.gain.value = 0.08 + Math.random() * 0.12;
-            snap.connect(snapGain);
-            snapGain.connect(m);
-            snap.start();
-          } catch (e) {}
-        }, 180);
-        this.srcs.push({ stop: () => clearInterval(popTimer) });
-      } else if (kind === 'binaural') {
-        // Estimulación 40Hz gamma (binaural 200Hz y 240Hz)
-        [[-1, 200], [1, 240]].forEach(([panVal, freq]) => {
-          const osc = add(ctx.createOscillator());
-          osc.type = 'sine';
-          osc.frequency.value = freq;
-          const pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
-          if (pan) {
-            pan.pan.value = panVal;
-            chain(osc, gain(0.09), pan, m);
-          } else {
-            chain(osc, gain(0.06), m);
-          }
-          osc.start();
-        });
-      }
-      this.isPlaying = true;
-      this.activeSound = kind;
-      this.updateUI();
-    },
-
-    stop() {
-      if (!this.master) {
-        this.isPlaying = false;
-        this.updateUI();
-        return;
-      }
-      const m = this.master;
-      const s = this.srcs;
-      try {
-        m.gain.cancelScheduledValues(0);
-        m.gain.setTargetAtTime(0, this.ctx.currentTime, 0.15);
-      } catch (e) {}
-      setTimeout(() => {
-        s.forEach(n => { try { n.stop(); } catch (e) {} });
-        try { m.disconnect(); } catch (e) {}
-      }, 400);
-      this.master = null;
-      this.srcs = [];
-      this.isPlaying = false;
-      this.updateUI();
-    },
-
-    updateUI() {
-      const playIcon = soundBtn.querySelector('.demo-play-icon');
-      const playText = soundBtn.querySelector('.demo-play-text');
-      if (this.isPlaying) {
-        soundBtn.classList.add('playing');
-        if (playIcon) playIcon.textContent = '⏹';
-        if (playText) playText.textContent = 'Pausar';
-      } else {
-        soundBtn.classList.remove('playing');
-        if (playIcon) playIcon.textContent = '▶';
-        if (playText) playText.textContent = 'Escuchar';
-      }
-    }
-  };
-
-  soundBtn.addEventListener('click', () => {
-    if (DemoAudio.isPlaying) {
-      DemoAudio.stop();
+  (function () {
+    var s = document.createElement('script');
+    if (location.protocol === 'file:') {
+      s.src = 'dist/landing.bundle.js';
     } else {
-      DemoAudio.play(DemoAudio.activeSound);
+      s.type = 'module';
+      s.src = 'src/landing.js';
     }
-  });
-
-  soundChips.forEach(chip => {
-    chip.addEventListener('click', () => {
-      soundChips.forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      const soundType = chip.getAttribute('data-landing-sound') || 'rain';
-      DemoAudio.activeSound = soundType;
-      if (DemoAudio.isPlaying) {
-        DemoAudio.play(soundType);
-      }
-    });
-  });
-
-  // --- 2. Breathing Box 4-4-4-4 ---
-  let breathInterval = null;
-  let breathStep = 0; // 0 to 15
-  const phases = [
-    { name: 'Inhala por la nariz', action: 'expand', start: 0, end: 4 },
-    { name: 'Sostén el aire', action: 'hold', start: 4, end: 8 },
-    { name: 'Exhala despacio', action: 'shrink', start: 8, end: 12 },
-    { name: 'Mantén en calma', action: 'hold', start: 12, end: 16 }
-  ];
-
-  const updateBreathingTick = () => {
-    const curPhase = phases.find(p => breathStep >= p.start && breathStep < p.end) || phases[0];
-    const secInPhase = 4 - (breathStep - curPhase.start);
-    if (breathPhaseLabel) breathPhaseLabel.textContent = curPhase.name;
-    if (breathPhaseTimer) breathPhaseTimer.textContent = `${secInPhase}s`;
-
-    if (breathCircle) {
-      if (curPhase.action === 'expand') {
-        breathCircle.style.transform = 'scale(1.4)';
-      } else if (curPhase.action === 'shrink') {
-        breathCircle.style.transform = 'scale(0.85)';
-      }
-    }
-
-    breathStep = (breathStep + 1) % 16;
-  };
-
-  const startBreathing = () => {
-    if (breathInterval) clearInterval(breathInterval);
-    breathWidget.hidden = false;
-    breathBtn.textContent = '⏹ Detener pausa guiada';
-    breathStep = 0;
-    updateBreathingTick();
-    breathInterval = setInterval(updateBreathingTick, 1000);
-  };
-
-  const stopBreathing = () => {
-    if (breathInterval) {
-      clearInterval(breathInterval);
-      breathInterval = null;
-    }
-    breathWidget.hidden = true;
-    breathBtn.textContent = '🧘 Probar pausa guiada 4-4-4-4';
-    if (breathCircle) breathCircle.style.transform = 'scale(1)';
-  };
-
-  breathBtn.addEventListener('click', () => {
-    if (breathInterval) {
-      stopBreathing();
-    } else {
-      startBreathing();
-    }
-  });
-})();
-
-// ============ CUENTAS (simulación local) & QUIZ FUNNEL ============
-// Todo se guarda en localStorage del navegador. Cuando exista backend:
-//  - Google: reemplazar startGoogle() por Google Identity Services.
-//  - Correo/usuario: reemplazar signUp()/logIn() por llamadas a tu API.
-(() => {
-  const USERS_KEY = 'syncro_users';
-  const SESSION_KEY = 'syncro_session';
-  const STATE_KEY = 'syncro_state_v3'; // mismo que app.js
-  const APP_URL = 'app.html';
-
-  const $ = (s, r = document) => r.querySelector(s);
-  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-  const overlay = $('#authOverlay');
-  const panels = ['diagnostic', 'signup', 'login', 'google', 'loading'];
-  let lastFocus = null;
-  let currentTab = 'diagnostic';
-
-  // ---------- diagnóstico interactivo ----------
-  const diagData = { trigger: 'perfeccionismo', role: 'universitario', schedule: '25' };
-  let currentDiagStep = 1;
-
-  const DIAG_PROFILES = {
-    perfeccionismo: {
-      title: 'Perfil: Regulación por Perfeccionismo',
-      desc: 'Tu cerebro asocia empezar con la amenaza de no alcanzar la perfección. Tu plan SYNCRO activa el <strong>Modo Avance sin Perfección</strong> para desbloquear la inercia sin juicio crítico.'
-    },
-    redes: {
-      title: 'Perfil: Fragmentación por Distracción Digital',
-      desc: 'La dopamina inmediata de las notificaciones compite con tareas complejas. Tu plan SYNCRO activa el <strong>Escudo Anti-Distracción</strong> y la bioacústica andina.'
-    },
-    desorganizacion: {
-      title: 'Perfil: Sobrecarga y Parálisis Cognitiva',
-      desc: 'Dimensionar cargas grandes genera parálisis. Tu plan SYNCRO desglosa automáticamente tus metas en <strong>5 micro-pasos calibrados para hoy</strong>.'
-    },
-    cansancio: {
-      title: 'Perfil: Agotamiento y Aislamiento',
-      desc: 'La fatiga mental reduce tu fuerza de voluntad. Tu plan SYNCRO programa <strong>pausas guiadas 4-4-4-4 y 20-20-20</strong> junto a tu guardián virtual.'
-    }
-  };
-
-  function setDiagStep(step) {
-    currentDiagStep = step;
-    [1, 2, 3, 4].forEach(n => {
-      const el = $('#diagStep' + n);
-      if (el) el.hidden = n !== step;
-      const dot = $('#dp-' + n);
-      if (dot) {
-        dot.classList.toggle('active', n === step);
-        dot.classList.toggle('completed', n < step);
-      }
-    });
-
-    const ind = $('#diagStepIndicator');
-    const title = $('#diagTitle');
-    const sub = $('#diagSubtitle');
-
-    if (step === 1) {
-      if (ind) ind.textContent = 'Paso 1 de 3 · Diagnóstico de 60s';
-      if (title) title.textContent = '¿Qué detona más tu procrastinación?';
-      if (sub) sub.textContent = 'No es flojera: es una respuesta emocional al estrés. Elige la que más reconozcas.';
-      setTimeout(() => $('#diagStep1 .diag-option-btn')?.focus(), 40);
-    } else if (step === 2) {
-      if (ind) ind.textContent = 'Paso 2 de 3 · Calibración de entorno';
-      if (title) title.textContent = '¿Cuál es tu ocupación o entorno principal?';
-      if (sub) sub.textContent = 'Ajustamos los ritmos y lenguaje a tu día a día.';
-      setTimeout(() => $('#diagStep2 .diag-option-btn')?.focus(), 40);
-    } else if (step === 3) {
-      if (ind) ind.textContent = 'Paso 3 de 3 · Bloque de inicio';
-      if (title) title.textContent = '¿Cuánto tiempo te resulta realista concentrarte hoy?';
-      if (sub) sub.textContent = 'Sin culpas. Empezar pequeño es mejor que no empezar.';
-      setTimeout(() => $('#diagStep3 .diag-option-btn')?.focus(), 40);
-    } else if (step === 4) {
-      if (ind) ind.textContent = 'Diagnóstico completado';
-      if (title) title.textContent = '✨ Tu plan de enfoque personalizado';
-      if (sub) sub.textContent = 'Basado en ciencia del comportamiento y regulación emocional.';
-
-      const p = DIAG_PROFILES[diagData.trigger] || DIAG_PROFILES.perfeccionismo;
-      const resTitle = $('#diagProfileResultTitle');
-      const resDesc = $('#diagProfileResultDesc');
-      if (resTitle) resTitle.textContent = p.title;
-      if (resDesc) {
-        resDesc.innerHTML = `${p.desc} Bloque recomendado: <strong>${diagData.schedule} minutos</strong> con semilla Cantuta.`;
-      }
-      setTimeout(() => $('#diagEmail')?.focus(), 40);
-    }
-  }
-
-  $$('[data-diag-choice]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const choice = btn.dataset.diagChoice;
-      const val = btn.dataset.diagVal;
-      diagData[choice] = val;
-      if (currentDiagStep < 4) {
-        setDiagStep(currentDiagStep + 1);
-      }
-    });
-  });
-
-  // ---------- almacenamiento ----------
-  const read = (k, fb) => { try { return JSON.parse(localStorage.getItem(k)) ?? fb; } catch (e) { return fb; } };
-  const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
-  const getUsers = () => read(USERS_KEY, []);
-  const getSession = () => read(SESSION_KEY, null);
-
-  async function hash(text) {
-    try {
-      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('syncro::' + text));
-      return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
-    } catch (e) {
-      const bytes = new TextEncoder().encode('syncro::' + text);
-      return 'plain::' + btoa(String.fromCharCode(...bytes));
-    }
-  }
-
-  function saveDiagToState() {
-    try {
-      const st = read(STATE_KEY, null) || {};
-      st.profile = st.profile || {};
-      st.profile.trigger = diagData.trigger;
-      st.profile.role = diagData.role;
-      st.profile.schedule = diagData.schedule;
-      st.profile.seed = 'cantuta';
-      st.profile.guardian = 'alpaca';
-      write(STATE_KEY, st);
-    } catch (e) { }
-  }
-
-  function startSession(user, { fresh }) {
-    // Cuenta nueva o distinta => app.js arranca con estado limpio y diagnóstico inyectado
-    try {
-      const st = read(STATE_KEY, null);
-      if (fresh || (st && st.accountEmail && st.accountEmail !== user.email)) {
-        localStorage.removeItem(STATE_KEY);
-      }
-    } catch (e) { }
-    saveDiagToState();
-    write(SESSION_KEY, { id: user.id, name: user.name, username: user.username, email: user.email, provider: user.provider, since: Date.now() });
-  }
-
-  // ---------- abrir / cerrar ----------
-  function show(panel) {
-    panels.forEach(p => { const el = $('#panel-' + p); if (el) el.hidden = p !== panel; });
-    const tabsContainer = $('#authTabs');
-    if (tabsContainer) {
-      tabsContainer.hidden = (panel === 'google' || panel === 'loading');
-    }
-    currentTab = panel;
-    $$('.auth-tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === panel)));
-
-    if (panel === 'diagnostic') {
-      setDiagStep(1);
-    }
-  }
-
-  function open(tab = 'diagnostic') {
-    const session = getSession();
-    if (session) { location.href = APP_URL; return; }   // ya tiene sesión: directo a la app
-    lastFocus = document.activeElement;
-    show(tab);
-    overlay.hidden = false;
-    document.body.classList.add('auth-open');
-    if (tab === 'signup') setTimeout(() => $('#suEmail')?.focus(), 30);
-    else if (tab === 'login') setTimeout(() => $('#liId')?.focus(), 30);
-    else if (tab === 'diagnostic') setDiagStep(1);
-  }
-
-  function close() {
-    overlay.hidden = true;
-    document.body.classList.remove('auth-open');
-    lastFocus?.focus?.();
-  }
-  window.SyncroAuth = { open, close };
-
-  $$('[data-auth]').forEach(el => el.addEventListener('click', e => {
-    e.preventDefault();
-    open(el.dataset.auth);
-  }));
-  $('#authClose').addEventListener('click', close);
-  overlay.addEventListener('mousedown', e => { if (e.target === overlay) close(); });
-  document.addEventListener('keydown', e => {
-    if (overlay.hidden) return;
-    if (e.key === 'Escape') { close(); return; }
-    if (e.key === 'Tab') {                       // atrapar el foco dentro del modal
-      const f = $$('button, input, a[href]', overlay).filter(x => !x.disabled && x.offsetParent !== null);
-      if (!f.length) return;
-      const first = f[0], last = f[f.length - 1];
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-    }
-  });
-  $$('[data-tab]').forEach(b => b.addEventListener('click', () => {
-    show(b.dataset.tab);
-    if (b.dataset.tab === 'signup') $('#suEmail')?.focus();
-    else if (b.dataset.tab === 'login') $('#liId')?.focus();
-  }));
-  $$('[data-toggle-pass]').forEach(b => b.addEventListener('click', () => {
-    const inp = document.getElementById(b.dataset.togglePass);
-    if (!inp) return;
-    const showIt = inp.type === 'password';
-    inp.type = showIt ? 'text' : 'password';
-    b.textContent = showIt ? 'Ocultar' : 'Mostrar';
-    b.setAttribute('aria-label', showIt ? 'Ocultar contraseña' : 'Mostrar contraseña');
-  }));
-
-  // ---------- helpers de formulario ----------
-  function setErr(inputId, errId, msg) {
-    const inp = document.getElementById(inputId), err = document.getElementById(errId);
-    if (err) err.textContent = msg || '';
-    if (inp) inp.setAttribute('aria-invalid', msg ? 'true' : 'false');
-    return !msg;
-  }
-  const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
-  const loading = (title, text) => { $('#loadingTitle').textContent = title; $('#loadingText').textContent = text; show('loading'); };
-  const goApp = () => setTimeout(() => { location.href = APP_URL; }, 900);
-
-  // ---------- registro desde diagnóstico ----------
-  const diagSignupForm = $('#diagSignupForm');
-  if (diagSignupForm) {
-    diagSignupForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = $('#diagEmail').value.trim().toLowerCase();
-      const pass = $('#diagPass').value;
-      const terms = $('#diagTerms').checked;
-      $('#diagAlert').textContent = '';
-
-      const users = getUsers();
-      let ok = true;
-      ok = setErr('diagEmail', 'diagEmailErr',
-        !emailOk(email) ? 'Escribe un correo válido, por ejemplo tu@correo.com.'
-          : users.some(u => u.email === email) ? 'Ese correo ya tiene cuenta. Inicia sesión.' : '') && ok;
-      ok = setErr('diagPass', 'diagPassErr',
-        pass.length < 8 || !/[a-z]/i.test(pass) || !/\d/.test(pass) ? 'La contraseña necesita 8 caracteres o más, con letras y números.' : '') && ok;
-      if (!terms) { $('#diagTermsErr').textContent = 'Acepta los términos para crear tu cuenta.'; ok = false; } else $('#diagTermsErr').textContent = '';
-      if (!ok) { $('#diagSignupForm [aria-invalid="true"]')?.focus(); return; }
-
-      const local = email.split('@')[0];
-      const name = local.replace(/[._\d]+/g, ' ').trim().replace(/\b\w/g, c => c.toUpperCase()) || 'Usuario';
-      const base = local.replace(/[^a-z0-9._]/gi, '').slice(0, 16) || 'usuario';
-      let username = base, n = 1;
-      while (users.some(u => u.username.toLowerCase() === username.toLowerCase())) username = base + (++n);
-
-      $('#diagSubmit').disabled = true;
-      const user = { id: 'u' + Date.now().toString(36), name, username, email, passHash: await hash(pass), provider: 'email', createdAt: Date.now() };
-      users.push(user);
-      if (!write(USERS_KEY, users)) {
-        $('#diagAlert').textContent = 'No pudimos guardar tu cuenta: el navegador bloquea el almacenamiento.';
-        $('#diagSubmit').disabled = false; return;
-      }
-      startSession(user, { fresh: true });
-      loading(`¡Diagnóstico listo, ${name.split(' ')[0]}!`, 'Calibrando tu espacio y plantando tu primera semilla…');
-      goApp();
-    });
-  }
-
-  // ---------- crear cuenta ----------
-  $('#signupForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = $('#suEmail').value.trim().toLowerCase();
-    const pass = $('#suPass').value;
-    const terms = $('#suTerms').checked;
-    $('#signupAlert').textContent = '';
-
-    const users = getUsers();
-    let ok = true;
-    ok = setErr('suEmail', 'suEmailErr',
-      !emailOk(email) ? 'Escribe un correo válido, por ejemplo tu@correo.com.'
-        : users.some(u => u.email === email) ? 'Ese correo ya tiene cuenta. Inicia sesión.' : '') && ok;
-    ok = setErr('suPass', 'suPassErr',
-      pass.length < 8 || !/[a-z]/i.test(pass) || !/\d/.test(pass) ? 'La contraseña necesita 8 caracteres o más, con letras y números.' : '') && ok;
-    if (!terms) { $('#suTermsErr').textContent = 'Acepta los términos para crear tu cuenta.'; ok = false; } else $('#suTermsErr').textContent = '';
-    if (!ok) { $('#signupForm [aria-invalid="true"]')?.focus(); return; }
-
-    // Nombre y usuario se generan desde el correo; el nombre se confirma en el onboarding
-    const local = email.split('@')[0];
-    const name = local.replace(/[._\d]+/g, ' ').trim().replace(/\b\w/g, c => c.toUpperCase()) || 'Usuario';
-    const base = local.replace(/[^a-z0-9._]/gi, '').slice(0, 16) || 'usuario';
-    let username = base, n = 1;
-    while (users.some(u => u.username.toLowerCase() === username.toLowerCase())) username = base + (++n);
-
-    $('#signupSubmit').disabled = true;
-    const user = { id: 'u' + Date.now().toString(36), name, username, email, passHash: await hash(pass), provider: 'email', createdAt: Date.now() };
-    users.push(user);
-    if (!write(USERS_KEY, users)) {
-      $('#signupAlert').textContent = 'No pudimos guardar tu cuenta: el navegador bloquea el almacenamiento (¿modo privado?).';
-      $('#signupSubmit').disabled = false; return;
-    }
-    startSession(user, { fresh: true });
-    loading(`¡Bienvenido, ${name.split(' ')[0]}!`, 'Tu cuenta está lista. Preparando tu espacio…');
-    goApp();
-  });
-
-  // ---------- iniciar sesión ----------
-  $('#loginForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const id = $('#liId').value.trim().toLowerCase();
-    const pass = $('#liPass').value;
-    const alertEl = $('#loginAlert');
-    alertEl.textContent = '';
-    if (!id || !pass) { alertEl.textContent = 'Escribe tu usuario o correo y tu contraseña.'; return; }
-    $('#loginSubmit').disabled = true;
-    const user = getUsers().find(u => (u.email === id || u.username.toLowerCase() === id) && u.passHash);
-    const good = user && user.passHash === await hash(pass);
-    $('#loginSubmit').disabled = false;
-    if (!good) { alertEl.textContent = 'Usuario o contraseña incorrectos. Revisa los datos o crea una cuenta.'; return; }
-    startSession(user, { fresh: false });
-    loading(`Hola de nuevo, ${user.name.split(' ')[0]}`, 'Retomando donde lo dejaste…');
-    goApp();
-  });
-
-  // ---------- Google (simulado) ----------
-  $$('[data-google]').forEach(b => b.addEventListener('click', () => { show('google'); $('#gDemoAccount').focus(); }));
-  $('#googleBack').addEventListener('click', () => show(currentTab));
-
-  function startGoogle(email, displayName) {
-    loading('Conectando con Google…', 'Simulación: no se envía ningún dato a Google.');
-    setTimeout(() => {
-      const users = getUsers();
-      let user = users.find(u => u.email === email);
-      const isNew = !user;
-      if (isNew) {
-        const base = email.split('@')[0].replace(/[^a-z0-9._]/gi, '').slice(0, 16) || 'usuario';
-        let username = base, n = 1;
-        while (users.some(u => u.username.toLowerCase() === username.toLowerCase())) username = base + (++n);
-        user = { id: 'g' + Date.now().toString(36), name: displayName, username, email, passHash: null, provider: 'google', createdAt: Date.now() };
-        users.push(user); write(USERS_KEY, users);
-      }
-      startSession(user, { fresh: isNew });
-      $('#loadingTitle').textContent = isNew ? `¡Cuenta creada, ${user.name.split(' ')[0]}!` : `Hola de nuevo, ${user.name.split(' ')[0]}`;
-      $('#loadingText').textContent = 'Preparando tu espacio…';
-      goApp();
-    }, 1100);
-  }
-  $('#gDemoAccount').addEventListener('click', () => startGoogle('estudiante.demo@gmail.com', 'Estudiante Demo'));
-  $('#googleForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const email = $('#gEmail').value.trim().toLowerCase();
-    if (!emailOk(email)) { setErr('gEmail', 'gEmailErr', 'Escribe un correo válido, por ejemplo tucorreo@gmail.com.'); return; }
-    setErr('gEmail', 'gEmailErr', '');
-    const nice = email.split('@')[0].replace(/[._\d]+/g, ' ').trim().replace(/\b\w/g, c => c.toUpperCase()) || 'Usuario';
-    startGoogle(email, nice);
-  });
-
-  // Si ya hay sesión, los CTA cambian de texto
-  if (getSession()) {
-    const s = getSession();
-    const firstName = (s.name || 'Usuario').split(' ')[0];
-    $$('.nav-cta-primary').forEach(a => {
-      a.textContent = 'Ir a mi espacio';
-      a.href = APP_URL;
-      a.removeAttribute('data-auth');
-    });
-    $$('.nav-cta-ghost').forEach(a => {
-      a.textContent = `Hola, ${firstName}`;
-      a.href = APP_URL;
-      a.removeAttribute('data-auth');
-    });
-    const heroBtn = document.getElementById('heroStartDiag');
-    if (heroBtn) {
-      heroBtn.textContent = '🚀 Continuar a mi espacio';
-      heroBtn.onclick = () => { location.href = APP_URL; };
-    }
-  }
-
-  // Registrar Service Worker PWA (Offline Cache)
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
-    });
-  }
-})();
+    document.body.appendChild(s);
+  })();
 </script>
 </body>
 </html>

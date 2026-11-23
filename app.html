@@ -4,21 +4,26 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="theme-color" content="#0B132B" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<title>SYNCRO · Enfócate hoy, transforma tu mente y reforesta el futuro</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
+<title>SYNCRO · Productividad sin culpa y Santuario Andino</title>
+<link rel="icon" href="./icons/icon-192.png">
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=20261121_v7" />
-<script>
-// Sin sesión iniciada => volver a la página de inicio para crear cuenta o ingresar
-try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'); } catch (e) { }
-</script>
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/layout.css" />
+<link rel="stylesheet" href="css/components.css" />
+<link rel="stylesheet" href="css/views.css" />
+<link rel="stylesheet" href="css/chatbot.css" />
 </head>
 <body>
+
+<!-- Franja de Modo Invitado -->
+<div id="guestModeBanner" class="guest-mode-banner hidden" role="status" style="background:rgba(34,211,238,0.12);border-bottom:1px solid rgba(34,211,238,0.3);color:var(--cyan-400);padding:8px 16px;text-align:center;font-size:13px;font-weight:500;">
+  <span>🌱 Estás en modo prueba · <a href="index.html#auth" id="guestSignupLink" style="color:#fff;text-decoration:underline;font-weight:600;">Crea tu cuenta gratis</a> para sincronizar entre PC y celular.</span>
+</div>
 
 <!-- Micro-transición de arranque -->
 <div id="appSplash" class="app-splash" aria-hidden="true">
@@ -26,199 +31,165 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
   <span class="app-splash-name">SYNCRO</span>
 </div>
 
-<!-- Cinta superior de sesión activa -->
+<!-- Cinta superior de sesión activa (sin botones de prueba visibles en producción) -->
 <div id="focusTopRibbon" class="focus-top-ribbon hidden" role="status">
-  <span>🛡️ <strong>ESCUDO SYNCRO ACTIVO:</strong> sesión en curso (<span id="ribbonTimer">25:00</span>)</span>
+  <span>🛡️ <strong>ESCUDO DE PESTAÑA ACTIVO:</strong> sesión en curso (<span id="ribbonTimer">25:00</span>)</span>
   <span id="ribbonGuardian">🦙 Tu guardián protege tu semilla</span>
 </div>
 
-<!-- ============ MODALES / OVERLAYS ============ -->
+<!-- ============ MODALES / OVERLAYS (Accesibilidad unificada en src/ui/modals.js) ============ -->
 
-<!-- Onboarding (5 pasos) -->
+<!-- Onboarding condensado -->
 <div id="onboarding" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="onbTitle">
-  <div class="modal onboarding-modal">
-    <div id="onbDiagBanner" class="onb-diag-banner hidden" role="status">
-      <span>✨ <strong>Diagnóstico sincronizado:</strong> <span id="onbDiagSummary">Perfil de enfoque</span>. Tus opciones han sido pre-seleccionadas.</span>
-    </div>
-    <div class="steps" id="onbDots" aria-hidden="true"></div>
-    <p class="small muted onb-count" id="onbCount" aria-live="polite"></p>
-
-    <!-- 1 · Sobre ti -->
+  <div class="modal onboarding-modal" style="max-width:500px;">
     <div class="onb-step" data-step="1">
-      <h2 id="onbTitle">Cuéntanos sobre ti</h2>
-      <p class="muted">SYNCRO se adapta a tu situación. Son 5 preguntas rápidas.</p>
+      <div style="text-align:center;margin-bottom:6px"><span style="font-size:36px">🌱</span></div>
+      <h2 id="onbTitle" style="text-align:center;margin-bottom:4px">Bienvenido a SYNCRO</h2>
+      <p class="muted" style="text-align:center;font-size:14px;margin-bottom:16px">Productividad sin culpa adaptada a tu energía y Santuario Andino.</p>
 
-      <label class="field-label" for="nameInput">¿Cómo te llamas?</label>
-      <input class="input" id="nameInput" maxlength="24" placeholder="Tu nombre" autocomplete="given-name" />
+      <label class="field-label" for="nameInput">¿Cómo te llamas? <span class="muted">(opcional)</span></label>
+      <input class="input" id="nameInput" maxlength="24" placeholder="Tu nombre o apodo" autocomplete="given-name" />
 
-      <span class="field-label" id="roleLabel">¿Qué te describe mejor?</span>
-      <div class="option-grid" role="radiogroup" aria-labelledby="roleLabel">
-        <label class="option"><input type="radio" name="role" value="universitario"> <span>🎓 Estudiante universitario</span></label>
-        <label class="option"><input type="radio" name="role" value="remoto"> <span>💻 Trabajador remoto</span></label>
-        <label class="option"><input type="radio" name="role" value="emprendedor"> <span>🚀 Emprendedor/a</span></label>
-        <label class="option"><input type="radio" name="role" value="opositor"> <span>📚 Preparo un examen u oposición</span></label>
-        <label class="option"><input type="radio" name="role" value="mayor"> <span>🌿 Aprendo a mi ritmo (adulto/a mayor)</span></label>
-        <label class="option"><input type="radio" name="role" value="otro"> <span>✨ Otro</span></label>
-      </div>
-
-      <div class="onb-two">
-        <div>
-          <label class="field-label" for="ageInput">Rango de edad <span class="muted">(opcional)</span></label>
-          <select class="input" id="ageInput">
-            <option value="">Prefiero no decirlo</option>
-            <option value="17-24">17 a 24 años</option>
-            <option value="25-34">25 a 34 años</option>
-            <option value="35-49">35 a 49 años</option>
-            <option value="50+">50 años o más</option>
-          </select>
-        </div>
-        <div>
-          <label class="field-label" for="institutionInput">Universidad, centro o empresa <span class="muted">(opcional)</span></label>
-          <input class="input" id="institutionInput" maxlength="48" placeholder="Ej. Universidad, empresa o proyecto" autocomplete="organization" />
-        </div>
-      </div>
-      <p class="onb-error" id="onbError1" role="alert"></p>
-
-      <div class="onb-actions">
-        <button class="btn ghost" data-skip>Saltar por ahora</button>
-        <button class="btn primary" data-next="2">Continuar</button>
-      </div>
-    </div>
-
-    <!-- 2 · Gatillo -->
-    <div class="onb-step hidden" data-step="2">
-      <h2>¿Qué te hace procrastinar más?</h2>
-      <p class="muted">No es flojera: es regulación emocional. Elige el gatillo que más reconozcas.</p>
-      <div class="option-list" id="triggersList">
-        <label class="option"><input type="radio" name="trigger" value="redes"> <span>📱 Redes sociales y notificaciones</span></label>
-        <label class="option"><input type="radio" name="trigger" value="perfeccionismo"> <span>🎯 Miedo a fallar o perfeccionismo</span></label>
-        <label class="option"><input type="radio" name="trigger" value="desorganizacion"> <span>🗂️ No sé por dónde empezar o creo que me sobra tiempo</span></label>
-        <label class="option"><input type="radio" name="trigger" value="cansancio"> <span>🔋 Cansancio o estudiar en soledad</span></label>
-      </div>
-      <span class="field-label" id="freqLabel">¿Con qué frecuencia postergas tareas importantes?</span>
-      <div class="option-grid three" role="radiogroup" aria-labelledby="freqLabel">
-        <label class="option"><input type="radio" name="freq" value="aveces"> <span>A veces</span></label>
-        <label class="option"><input type="radio" name="freq" value="seguido"> <span>Seguido</span></label>
-        <label class="option"><input type="radio" name="freq" value="siempre"> <span>Casi siempre</span></label>
-      </div>
-      <div class="onb-actions">
-        <button class="btn ghost" data-back="1">Atrás</button>
-        <button class="btn primary" data-next="3">Continuar</button>
-      </div>
-    </div>
-
-    <!-- 3 · Energía, bloques y objetivo -->
-    <div class="onb-step hidden" data-step="3">
-      <h2>Tu energía y tu objetivo</h2>
-      <p class="muted">La IA usa esto para sugerirte cuándo hacer lo difícil y de qué tamaño son tus bloques.</p>
-      <span class="field-label" id="schedLabel">¿Cuándo tienes más energía?</span>
+      <span class="field-label" id="schedLabel">¿Cuándo tienes más energía para concentrarte?</span>
       <div class="option-grid three" id="scheduleList" role="radiogroup" aria-labelledby="schedLabel">
-        <label class="option"><input type="radio" name="schedule" value="manana"> <span>🌅 Mañana</span></label>
+        <label class="option"><input type="radio" name="schedule" value="manana" checked> <span>🌅 Mañana</span></label>
         <label class="option"><input type="radio" name="schedule" value="tarde"> <span>☀️ Tarde</span></label>
         <label class="option"><input type="radio" name="schedule" value="noche"> <span>🌙 Noche</span></label>
       </div>
-      <span class="field-label" id="blockLabel">¿Con qué tamaño de bloque quieres empezar?</span>
-      <div class="option-list" role="radiogroup" aria-labelledby="blockLabel">
-        <label class="option"><input type="radio" name="blockPref" value="noPerfection"> <span>5 min · Avance sin perfección (si cuesta arrancar)</span></label>
-        <label class="option"><input type="radio" name="blockPref" value="classic" checked> <span>25 min · Clásico, con pausa de 5</span></label>
-        <label class="option"><input type="radio" name="blockPref" value="deep"> <span>50 min · Profundo, con pausa de 10</span></label>
-      </div>
-      <label class="field-label" for="goalInput">Tu objetivo grande de esta semana <span class="muted">(opcional)</span></label>
-      <input class="input" id="goalInput" maxlength="80" placeholder="Ej. Terminar el informe final" />
-      <div class="onb-actions">
-        <button class="btn ghost" data-back="2">Atrás</button>
-        <button class="btn primary" data-next="4">Continuar</button>
-      </div>
-    </div>
 
-    <!-- 4 · Semilla y guardián -->
-    <div class="onb-step hidden" data-step="4">
-      <h2>Elige tu Semilla y tu Guardián</h2>
-      <p class="muted">Te acompañarán mientras te enfocas. Tu semilla crece con cada bloque.</p>
-      <div class="option-list" id="seedList">
-        <label class="option"><input type="radio" name="seed" value="cantuta" checked> <span>🌺 Cantuta</span></label>
-        <label class="option"><input type="radio" name="seed" value="queñual"> <span>🌲 Queñual</span></label>
-        <label class="option"><input type="radio" name="seed" value="chachacoma"> <span>🌿 Chachacoma</span></label>
+      <span class="field-label" id="blockLabel">Tamaño de bloque inicial</span>
+      <div class="option-grid three" role="radiogroup" aria-labelledby="blockLabel">
+        <label class="option"><input type="radio" name="blockPref" value="noPerfection"> <span>5 min</span></label>
+        <label class="option"><input type="radio" name="blockPref" value="classic" checked> <span>25 min</span></label>
+        <label class="option"><input type="radio" name="blockPref" value="deep"> <span>50 min</span></label>
       </div>
-      <div class="option-list" id="guardianList">
-        <label class="option"><input type="radio" name="guardian" value="alpaca" checked> <span>🦙 Alpaca Andina</span></label>
-        <label class="option"><input type="radio" name="guardian" value="oso"> <span>🐻 Oso de Anteojos</span></label>
-        <label class="option"><input type="radio" name="guardian" value="condor"> <span>🦅 Cóndor</span></label>
-      </div>
-      <div class="onb-actions">
-        <button class="btn ghost" data-back="3">Atrás</button>
-        <button class="btn primary" data-next="5">Continuar</button>
-      </div>
-    </div>
 
-    <!-- 5 · Privacidad -->
-    <div class="onb-step hidden" data-step="5">
-      <h2>Tu privacidad, tú decides</h2>
-      <p class="muted">Tus check-ins, estados de ánimo y notas son privados y cifrados. Puedes cambiar esto cuando quieras.</p>
-      <div class="option-list">
-        <label class="option"><input type="checkbox" id="consentBienestar"> <span><strong>Conectar con la Red de Bienestar</strong><small class="muted block-small">Si detectamos patrones críticos, se envía solo un resumen anónimo y siempre con tu consentimiento.</small></span></label>
-        <label class="option"><input type="checkbox" id="consentReminder" checked> <span><strong>Recordarme el check-in diario</strong><small class="muted block-small">Son 30 segundos y ajustan tus bloques a tu energía.</small></span></label>
-      </div>
-      <p class="muted small">Al terminar, te mostramos un tutorial de 1 minuto con un recorrido por la herramienta.</p>
-      <div class="onb-actions">
-        <button class="btn ghost" data-back="4">Atrás</button>
-        <button class="btn primary" id="finishOnboarding">Entrar y ver el tutorial</button>
+      <div class="onb-actions" style="margin-top:18px">
+        <button class="btn ghost" id="onbDirectStartBtn" type="button">Empezar directo (5 min)</button>
+        <button class="btn primary" id="finishOnboarding" type="button">Comenzar</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Alerta de fuga / intercepción del Escudo -->
-<div id="blockModal" class="emergency-overlay hidden" role="alertdialog" aria-modal="true" aria-labelledby="alertTitle">
+<!-- Pausa Consciente (sin culpa) -->
+<div id="blockModal" class="emergency-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="alertTitle">
   <div class="emergency-modal">
-    <div class="hazard-bar"></div>
     <div class="emergency-top-row">
-      <div class="siren-badge"><span>🚨</span><span id="alertReasonBadge">ALERTA DE FUGA DETECTADA</span></div>
-      <button type="button" class="btn ghost sm" id="muteAlertSoundBtn">🔊 Alarma activa</button>
+      <div class="siren-badge"><span>⏸</span><span id="alertReasonBadge">PAUSA CONSCIENTE</span></div>
+      <button type="button" class="btn ghost sm" id="muteAlertSoundBtn">🔔 Sonido activo</button>
     </div>
     <h2 id="alertTitle" class="emergency-title">
-      ¡Espera, <span id="alertUserName">estudiante</span>! ¡Tu <span id="alertSeedTitleInline">cantuta</span> se está marchitando!
+      Respira un segundo, <span id="alertUserName">estudiante</span>.
     </h2>
-    <p class="muted emergency-desc">
-      Tu guardián <strong id="alertGuardianName">Alpaca Andina</strong> interceptó tu salida. Si abandonas ahora, el bloque actual se reinicia.
+    <p class="muted emergency-desc" id="alertReasonText">
+      Notamos que cambiaste de ventana o pestaña. Tu semilla está a salvo en pausa. ¿Deseas volver al enfoque o descansar ahora?
     </p>
     <div class="guardian-rescue-stage">
       <div class="guardian-avatar-huge" id="alertGuardianEmoji" title="Tu Guardián">🦙</div>
       <div class="emergency-plant-details">
         <div class="seed-danger-transfer">
-          <span id="alertHealthySeed">🌺</span>
-          <span class="wilt-arrow">⚡ ➔</span>
-          <span title="En riesgo de marchitarse">🥀</span>
+          <span id="alertHealthySeed">🌱</span>
+          <span class="wilt-arrow">✨</span>
+          <span id="alertSeedTitleInline">Cantuta</span>
         </div>
         <div class="emergency-plant-status-row">
-          <span class="emergency-health-tag">⚠️ SALUD DE TU PLANTA: CRÍTICA</span>
-          <span class="small muted emergency-water-tag">Riego detenido</span>
+          <span class="emergency-health-tag">Semilla en pausa protegida</span>
+          <span class="small muted emergency-water-tag" id="blockMinutesLeft">18:45 restantes</span>
         </div>
-        <div class="plant-health-bar"><div class="plant-health-fill"></div></div>
       </div>
     </div>
     <div class="risk-metrics-grid">
-      <div class="risk-box"><strong id="blockMinutesLeft">18:45</strong><span>Para florecer</span></div>
-      <div class="risk-box"><strong id="alertReward">+25 XP · +5 💧</strong><span>Recompensa en juego</span></div>
-      <div class="risk-box"><strong id="alertStreakRisk">🔥 12 días</strong><span>Tu racha</span></div>
+      <div class="risk-box"><strong id="alertReward">+25 XP</strong><span>En curso</span></div>
+      <div class="risk-box"><strong id="alertDropsReward">+5 💧</strong><span>Gotas</span></div>
+      <div class="risk-box"><strong id="alertStreakRisk">🔥 0 días</strong><span>Tu racha</span></div>
     </div>
     <p class="small muted emergency-tip">
-      💡 <em>El impulso de distraerte dura menos de 30 segundos. Respira hondo y quédate: cada bloque suma para reforestar.</em>
+      💡 <em>El impulso de dispersarse dura menos de 30 segundos. Si decides cerrar, tus minutos trabajados se guardarán sin culpa.</em>
     </p>
     <div class="emergency-actions">
-      <button class="btn-save-seed" id="stayFocused">🛡️ ¡Volver al enfoque y salvar mi planta!</button>
-      <button class="btn danger sm block" id="leaveAnyway">🥀 Abandonar sesión de todos modos (se reinicia el bloque)</button>
+      <button type="button" class="btn-save-seed" id="stayFocused">Volver al enfoque</button>
+      <button type="button" class="btn ghost sm block" id="leaveAnyway">Terminar bloque sin culpa (guardar minutos)</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Registro Post-Primer Bloque (Invitado) -->
+<div id="guestSignupModal" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="gsmTitle">
+  <div class="modal celebration-modal" style="max-width:440px;">
+    <div class="celebration">🌱</div>
+    <h2 id="gsmTitle">¡Primer bloque completado!</h2>
+    <p class="muted">Has completado tu primer bloque de enfoque con éxito. Tu semilla ha crecido y tienes progreso acumulado.</p>
+    <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);border-radius:14px;padding:12px;margin:12px 0;text-align:left;">
+      <p class="small muted" style="margin:0 0 6px">✨ <strong>Al crear tu cuenta gratuita:</strong></p>
+      <ul class="small muted" style="margin:0;padding-left:18px;">
+        <li>Sincronizas entre tu laptop y celular sin perder datos.</li>
+        <li>Tus notas del diario siguen cifradas (AES-256) en tu dispositivo.</li>
+        <li>Tus horas suman al reto colectivo de conservación.</li>
+      </ul>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <a href="index.html#auth" class="btn primary block">Crear mi cuenta gratis</a>
+      <button type="button" class="btn ghost sm" id="closeGuestSignupModal">Continuar en modo prueba</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Desglosador Guiado de Tareas -->
+<div id="breakdownModal" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="bdModalTitle">
+  <div class="modal" style="max-width:540px;">
+    <div class="card-header-row" style="display:flex;justify-content:space-between;align-items:center;">
+      <h2 id="bdModalTitle" style="margin:0">Desglosador Guiado de Tareas</h2>
+      <button type="button" class="icon-btn" id="closeBreakdownModal" aria-label="Cerrar">✕</button>
+    </div>
+    <p class="muted small" style="margin-top:4px">
+      No necesitas perfección: divide tu objetivo en micro-pasos alcanzables adaptados a tu energía.
+    </p>
+
+    <label class="field-label" for="bdTaskTitle">¿Qué tarea grande quieres avanzar?</label>
+    <input class="input" id="bdTaskTitle" placeholder="Ej. Redactar marco teórico o entrega de proyecto" maxlength="80" />
+
+    <span class="field-label" id="templateLabel">Elige la plantilla guiada:</span>
+    <div class="option-grid" style="grid-template-columns:1fr 1fr;gap:8px;" role="radiogroup" aria-labelledby="templateLabel">
+      <label class="option"><input type="radio" name="bdTemplate" value="estudio" checked> <span>📚 Estudio / Examen</span></label>
+      <label class="option"><input type="radio" name="bdTemplate" value="tesis"> <span>📑 Informe / Tesis</span></label>
+      <label class="option"><input type="radio" name="bdTemplate" value="tecnico"> <span>💻 Proyecto Técnico</span></label>
+      <label class="option"><input type="radio" name="bdTemplate" value="remoto"> <span>💼 Trabajo Remoto</span></label>
+    </div>
+
+    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border-subtle);border-radius:12px;padding:12px;margin:10px 0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <strong style="font-size:13px">⏱ Ilusión de tiempo</strong>
+        <span class="pill" id="illusionPill" style="font-size:11px">Estimación realista</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">
+        <div>
+          <label class="field-label" style="font-size:11px" for="estHours">Horas que crees tener</label>
+          <input type="number" class="input sm" id="estHours" min="1" max="40" value="10" />
+        </div>
+        <div>
+          <label class="field-label" style="font-size:11px" for="realHours">Horas reales libres</label>
+          <input type="number" class="input sm" id="realHours" min="1" max="40" value="6" />
+        </div>
+      </div>
+      <div class="bar" style="height:6px;margin-bottom:6px"><div class="bar-fill emerald" id="illusionFill" style="width:60%"></div></div>
+      <p class="muted small" id="illusionText" style="margin:0;font-size:12px;">Crees tener 10 h, pero realmente tienes 6 h (60%). Planifica con 6 h.</p>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:10px;">
+      <button type="button" class="btn ghost sm" id="cancelBreakdownModal">Cancelar</button>
+      <button type="button" class="btn primary sm" id="applyBreakdownBtn">+ Añadir a misiones de hoy</button>
     </div>
   </div>
 </div>
 
 <!-- Misión completada -->
-<div id="missionModal" class="overlay hidden" role="dialog" aria-modal="true">
+<div id="missionModal" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="missionModalTitle">
   <div class="modal celebration-modal">
     <div class="celebration" id="celebEmoji">🎉</div>
     <h2 id="missionModalTitle">¡Misión completada!</h2>
     <p class="muted" id="missionModalText">+50 XP · +15 Gotas de Riego</p>
-    <button class="btn primary" id="closeMissionModal">Continuar</button>
+    <button type="button" class="btn primary" id="closeMissionModal">Continuar</button>
   </div>
 </div>
 
@@ -229,8 +200,8 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
     <h2 id="rescueTitle">Te extrañamos</h2>
     <p class="rescue-text" id="rescueText">Tu bioma te espera. Empecemos con solo 5 minutos, sin presión.</p>
     <p class="muted small" id="rescueSub"></p>
-    <button class="btn primary lg" id="rescueGo">Volver con un micro-paso</button>
-    <button class="btn ghost" id="rescueLook">Solo mirar mi bioma</button>
+    <button type="button" class="btn primary lg" id="rescueGo">Volver con un micro-paso</button>
+    <button type="button" class="btn ghost" id="rescueLook">Solo mirar mi bioma</button>
   </div>
 </div>
 
@@ -239,7 +210,7 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
   <div class="modal">
     <h2 id="infoTitle"></h2>
     <div id="infoBody"></div>
-    <button class="btn primary" id="closeInfo">Entendido</button>
+    <button type="button" class="btn primary" id="closeInfo">Entendido</button>
   </div>
 </div>
 
@@ -255,7 +226,7 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
       <div class="restore-stat-row"><span>📅 Fecha del respaldo:</span><strong id="rstDate">—</strong></div>
     </div>
     <p class="restore-warning small">
-      ⚠️ <strong>Atención:</strong> Tus datos locales actuales se reemplazarán por los del archivo. Se creará una copia de seguridad automática previa por seguridad.
+      ⚠️ <strong>Atención:</strong> Tus datos locales actuales se reemplazarán por los del archivo.
     </p>
     <div class="row gap" style="margin-top:16px; justify-content: flex-end;">
       <button type="button" class="btn ghost" id="cancelRestoreBtn">Cancelar</button>
@@ -266,10 +237,9 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
 <div id="toast" class="toast-single" role="status" aria-live="polite"></div>
 
 <!-- ============ APP ============ -->
-
 <div class="app">
 
-  <!-- Sidebar -->
+  <!-- Sidebar (sin badges ni controles DEMO) -->
   <aside class="sidebar" aria-label="Navegación principal">
     <div class="logo">
       <a class="logo-left" href="index.html" title="Volver al inicio" style="color:inherit;text-decoration:none"><span class="logo-mark">🌱</span><span>SYNCRO</span></a>
@@ -279,41 +249,26 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
       </button>
     </div>
     <nav class="nav" id="sidebarNav">
-      <button class="nav-item active" data-view="dashboard">
+      <button type="button" class="nav-item active" data-view="dashboard">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>
-        <span>Dashboard</span>
+        <span>Hoy</span>
         <span class="nav-lock-badge" aria-hidden="true" title="Bloqueado durante el enfoque">🔒</span>
       </button>
-      <button class="nav-item" data-view="plan">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M9 11h6M9 15h4"/></svg>
-        <span>SincroPlan</span>
-        <span class="nav-lock-badge" aria-hidden="true" title="Bloqueado durante el enfoque">🔒</span>
-      </button>
-      <button class="nav-item" data-view="calendar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
-        <span>Calendario</span>
-        <span class="nav-lock-badge" aria-hidden="true" title="Bloqueado durante el enfoque">🔒</span>
-      </button>
-      <button class="nav-item" data-view="focus">
+      <button type="button" class="nav-item" data-view="focus">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>
         <span>Enfoque</span>
       </button>
-      <button class="nav-item" data-view="biome">
+      <button type="button" class="nav-item" data-view="calendar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>Calendario</span>
+        <span class="nav-lock-badge" aria-hidden="true" title="Bloqueado durante el enfoque">🔒</span>
+      </button>
+      <button type="button" class="nav-item" data-view="biome">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V12M12 12c0-3-2-5-5-5 0 3 2 5 5 5zM12 12c0-3 2-5 5-5 0 3-2 5-5 5z"/></svg>
-        <span>Bioma</span>
+        <span>Santuario</span>
         <span class="nav-lock-badge" aria-hidden="true" title="Bloqueado durante el enfoque">🔒</span>
       </button>
-      <button class="nav-item" data-view="community">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2M15 21v-2a3 3 0 0 1 3-3h1a3 3 0 0 1 3 3v2"/></svg>
-        <span>Comunidad</span>
-        <span class="nav-lock-badge" aria-hidden="true" title="Bloqueado durante el enfoque">🔒</span>
-      </button>
-      <button class="nav-item" data-view="progress">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V3M3 21h18M7 15l4-4 3 3 5-6"/></svg>
-        <span>Progreso</span>
-        <span class="nav-lock-badge" aria-hidden="true" title="Bloqueado durante el enfoque">🔒</span>
-      </button>
-      <button class="nav-item" data-view="profile">
+      <button type="button" class="nav-item" data-view="profile">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
         <span>Perfil</span>
         <span class="nav-lock-badge" aria-hidden="true" title="Bloqueado durante el enfoque">🔒</span>
@@ -323,8 +278,8 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
       <div class="sidebar-user-row">
         <div class="avatar-lg"><span id="sidebarAvatar">G</span><span class="avatar-guardian-mini" id="sidebarGuardianMini">🦙</span></div>
         <div class="sidebar-user">
-          <strong id="sidebarName">Estudiante</strong>
-          <span id="sidebarLevel" class="muted">Nivel 12</span>
+          <strong id="sidebarName">Usuario</strong>
+          <span id="sidebarLevel" class="muted">Nivel 1</span>
         </div>
       </div>
       <div class="sidebar-actions">
@@ -341,19 +296,22 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
     <section id="view-dashboard" class="view active">
       <header class="dash-header">
         <div class="dash-title">
-          <h1 id="greeting">¡Hola, Guillermo!</h1>
-          <p class="muted">Enfócate hoy, construye tu futuro.</p>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <h1 id="greeting">¡Hola!</h1>
+            <span id="institutionBadge" class="institution-badge hidden"></span>
+          </div>
+          <p class="muted">Enfócate hoy, construye tu futuro sin culpa.</p>
           <p class="muted small" id="scheduleTip"></p>
         </div>
         <div class="dash-meta">
-          <button class="btn ghost sm" data-replay-tour id="dashTourBtn">❔ Ver tutorial</button>
-          <div class="streak">
-            <div class="streak" title="Tus gotas de riego disponibles">
-              <span>💧</span>
-              <strong id="dashDrops">1,240</strong> gotas
-            </div>
+          <button type="button" class="btn ghost sm" data-replay-tour id="dashTourBtn">❔ Ayuda</button>
+          <div class="streak" title="Tus gotas de riego disponibles">
+            <span>💧</span>
+            <strong id="dashDrops">0</strong> gotas
+          </div>
+          <div class="streak" title="Tu racha de días activos">
             <span class="flame">🔥</span>
-            <strong id="streakDays">12</strong> días
+            <strong id="streakDays">0</strong> días
             <span class="pill"><span class="shield">🛡</span> Escudo x<span id="shieldsCount">2</span></span>
           </div>
         </div>
@@ -361,10 +319,10 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
 
       <div class="xp-block">
         <div class="xp-label">
-          <span id="levelTag">Nivel 12 · Guardián Enfocado</span>
-          <span id="xpText" class="muted">850 / 1000 XP</span>
+          <span id="levelTag">Nivel 1 · Iniciando</span>
+          <span id="xpText" class="muted">0 / 300 XP</span>
         </div>
-        <div class="bar"><div class="bar-fill violet" id="xpFill" style="width:85%"></div></div>
+        <div class="bar"><div class="bar-fill violet" id="xpFill" style="width:0%"></div></div>
       </div>
 
       <div class="dash-grid">
@@ -377,22 +335,22 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
             <div class="energy-scale muted"><span>1</span><span>10</span></div>
           </div>
           <div class="mood-chips" id="moodChips">
-            <button class="chip" data-mood="motivado">Motivado</button>
-            <button class="chip" data-mood="tranquilo">Tranquilo</button>
-            <button class="chip" data-mood="ansioso">Ansioso</button>
-            <button class="chip" data-mood="agobiado">Agobiado</button>
-            <button class="chip" data-mood="cansado">Cansado</button>
+            <button type="button" class="chip" data-mood="motivado">Motivado</button>
+            <button type="button" class="chip" data-mood="tranquilo">Tranquilo</button>
+            <button type="button" class="chip" data-mood="ansioso">Ansioso</button>
+            <button type="button" class="chip" data-mood="agobiado">Agobiado</button>
+            <button type="button" class="chip" data-mood="cansado">Cansado</button>
           </div>
           <div class="journal-field">
             <label class="field-label" for="journalText">¿Qué te ocupó la mente hoy? <span class="muted">(opcional)</span></label>
             <textarea class="input" id="journalText" rows="2" maxlength="400" placeholder="Escribe lo que quieras soltar. Solo tú lo ves."></textarea>
             <p class="muted small">🔒 Se guarda cifrado (AES-256) en este dispositivo.</p>
           </div>
-          <button class="btn primary block" id="saveCheckIn">Guardar check-in</button>
+          <button type="button" class="btn primary block" id="saveCheckIn">Guardar check-in</button>
           <div id="checkInBanner" class="banner hidden" role="status"></div>
         </div>
 
-        <!-- Misiones -->
+        <!-- Misiones (CRUD completo directo en Dashboard) -->
         <div class="missions-col">
           <div class="card missions">
             <div class="card-header">
@@ -400,16 +358,17 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
               <span class="muted" id="missionsCount">0 / 3</span>
             </div>
             <div id="missionsList" class="mission-list"></div>
+            <button type="button" class="btn ghost sm block" id="openBreakdownBtn" style="margin:6px 0 10px;">+ Desglosar tarea grande con IA</button>
             <form class="mission-add" id="missionForm" novalidate>
-              <input class="input" id="missionNew" maxlength="80" aria-label="Nueva misión" placeholder="Añadir una misión, ej. Repasar apuntes de clase" autocomplete="off" />
+              <input class="input" id="missionNew" maxlength="80" aria-label="Nueva misión" placeholder="Añadir una misión rápida..." autocomplete="off" />
               <button class="btn primary sm" type="submit">+ Añadir</button>
             </form>
           </div>
-          <button class="btn eco block" id="antiParalysisBtn">¡Desbloqueo Anti-Parálisis 5 min!</button>
+          <button type="button" class="btn eco block" id="antiParalysisBtn">¡Desbloqueo Anti-Parálisis 5 min!</button>
         </div>
       </div>
 
-      <!-- Bioma preview -->
+      <!-- Santuario preview -->
       <div class="card biome-preview">
         <div class="biome-art">
           <div class="scene">
@@ -422,54 +381,14 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
           </div>
         </div>
         <div class="biome-info">
-          <h3>Bioma Cusco & Amazonía</h3>
+          <h3>Santuario Andino</h3>
           <p class="muted">Progreso diario del ecosistema · <span id="previewWeather">☀️</span></p>
-          <div class="bar"><div class="bar-fill emerald" id="biomeFill" style="width:80%"></div></div>
+          <div class="bar"><div class="bar-fill emerald" id="biomeFill" style="width:0%"></div></div>
           <div class="row">
-            <span class="pill emerald">💧 <span id="dropsCount">1240</span> Gotas</span>
-            <span class="pill violet">🌱 <span id="earthCount">320</span> Puntos Tierra</span>
+            <span class="pill emerald">💧 <span id="dropsCount">0</span> Gotas</span>
+            <span class="pill violet">🌱 <span id="earthCount">0</span> Puntos Tierra</span>
           </div>
-          <button class="btn ghost" data-goto="biome">Ir al Bioma completo →</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== VISTA 2: SINCROPLAN ===== -->
-    <section id="view-plan" class="view">
-      <header class="view-header">
-        <h1>SincroPlan</h1>
-        <p class="muted">Divide lo abrumador en misiones manejables.</p>
-      </header>
-
-      <div class="card">
-        <h3>1. Desglosador automático con IA</h3>
-        <div class="row gap">
-          <input class="input" id="taskInput" aria-label="Tarea a desglosar" placeholder="Ej. Hacer proyecto final de Ingeniería" />
-          <input class="input" id="dateInput" type="number" min="1" max="60" value="10" aria-label="Días disponibles" style="max-width:90px" /><span class="muted">días</span>
-          <button class="btn primary" id="breakdownBtn">Desglosar con IA</button>
-        </div>
-        <div id="subtasksList" class="subtasks"></div>
-      </div>
-
-      <div class="plan-grid">
-        <div class="card">
-          <h3>2. Ilusión de tiempo libre</h3>
-          <p class="muted">Compara lo que crees tener con lo que realmente tienes.</p>
-          <div class="row gap">
-            <label class="small muted">Crees tener (h/sem)<input class="input" id="estHours" type="number" min="1" max="80" value="9" /></label>
-            <label class="small muted">Reales (h/sem)<input class="input" id="realHours" type="number" min="0" max="80" value="6" /></label>
-          </div>
-          <div class="bar"><div class="bar-fill coral" id="illusionFill" style="width:67%"></div></div>
-          <p class="pill coral" id="illusionPill" style="margin-top:8px"></p>
-          <p class="muted" id="illusionText"></p>
-        </div>
-
-        <div class="card">
-          <h3>3. Descarga mental pre-estudio</h3>
-          <p class="muted">¿Qué te frena ahora?</p>
-          <textarea class="input" id="mentalDump" rows="3" placeholder="Ej. Siento que no me va a salir bien el código..."></textarea>
-          <button class="btn secondary" id="mentalDumpBtn">Validar emoción</button>
-          <div id="mentalDumpReply" class="banner hidden"></div>
+          <button type="button" class="btn ghost" data-goto="biome">Ir al Santuario completo →</button>
         </div>
       </div>
     </section>
@@ -479,12 +398,12 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
       <header class="view-header">
         <div>
           <h1>Calendario de estudio</h1>
-          <p class="muted">Bloquea tu semana por horas. SYNCRO cuida tus horarios de baja energía.</p>
+          <p class="muted">Bloquea tu semana por horas. SYNCRO protege tus horarios de baja energía.</p>
         </div>
         <div class="row gap">
-          <button class="btn secondary sm" id="calAutoPlan">✨ Planificar mi semana</button>
-          <button class="btn ghost sm" id="calExportIcs">⬇ Exportar .ics</button>
-          <button class="btn ghost sm" id="calExportGoogle">📆 Google Calendar</button>
+          <button type="button" class="btn secondary sm" id="calAutoPlan">✨ Planificar mi semana</button>
+          <button type="button" class="btn ghost sm" id="calExportIcs">⬇ Exportar .ics</button>
+          <button type="button" class="btn ghost sm" id="calExportGoogle">📆 Google Calendar</button>
         </div>
       </header>
 
@@ -509,7 +428,6 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
           <span><i class="lg done"></i> Hecho</span>
         </div>
         <div class="cal-scroll"><div class="cal-grid" id="calGrid" role="grid" aria-label="Semana de estudio"></div></div>
-        <p class="muted small" id="calWeekLabel"></p>
       </div>
 
       <div class="card heat-card">
@@ -519,7 +437,7 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
       </div>
     </section>
 
-    <!-- ===== VISTA 3: MODO ENFOQUE ===== -->
+    <!-- ===== VISTA: MODO ENFOQUE ===== -->
     <section id="view-focus" class="view">
       <header class="view-header">
         <h1>Modo Enfoque</h1>
@@ -535,10 +453,10 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
         <div class="timer-mode muted" id="timerModeLabel">Enfoque clásico · 25 / 5</div>
         <div class="active-mission" id="activeMissionLabel"></div>
         <div class="timer-controls">
-          <button class="btn secondary" id="startPauseBtn">Iniciar</button>
-          <button class="btn ghost" id="resetBtn">Reiniciar</button>
-          <button class="btn ghost" id="addFiveBtn">+5 min</button>
-          <button class="btn ghost" id="fsToggle" aria-pressed="false">⛶ Pantalla completa</button>
+          <button type="button" class="btn secondary" id="startPauseBtn">Iniciar</button>
+          <button type="button" class="btn ghost" id="resetBtn">Reiniciar</button>
+          <button type="button" class="btn ghost" id="addFiveBtn">+5 min</button>
+          <button type="button" class="btn ghost" id="fsToggle" aria-pressed="false">⛶ Pantalla completa</button>
         </div>
       </div>
 
@@ -548,27 +466,41 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
           <label class="option"><input type="radio" name="mode" value="classic" checked> <span>Clásico 25 / 5</span></label>
           <label class="option"><input type="radio" name="mode" value="deep"> <span>Profundo 50 / 10</span></label>
           <label class="option"><input type="radio" name="mode" value="noPerfection"> <span>Avance sin perfección 5 min</span></label>
-          <label class="option" style="border-top:1px solid var(--border-subtle); margin-top:6px"><input type="checkbox" id="autoFs" checked> <span>Pantalla completa al iniciar</span></label>
+          <label class="option" style="border-top:1px solid var(--border-subtle); margin-top:6px"><input type="checkbox" id="autoFs"> <span>Pantalla completa al iniciar</span></label>
           <label class="option"><input type="checkbox" id="notifToggle"> <span>🔔 Notificaciones del sistema</span></label>
         </div>
 
+        <!-- Expectativas honestas: Escudo de Pestaña (Web) vs Extensión de Navegador -->
         <div class="card">
-          <h3>Escudo Web <span class="pill emerald" id="shieldStatus">ACTIVO</span></h3>
-          <p class="muted">Si cambias de pestaña durante un bloque, el Guardián te lo recordará. Toca un sitio para ver la alerta:</p>
-          <ul class="blocked-list" id="blockedSitesList">
-            <li data-site="WhatsApp Web" tabindex="0" role="button"><span>💬 WhatsApp Web</span><span class="pill coral">Bloqueado</span></li>
-            <li data-site="Instagram" tabindex="0" role="button"><span>📸 Instagram</span><span class="pill coral">Bloqueado</span></li>
-            <li data-site="TikTok" tabindex="0" role="button"><span>🎵 TikTok</span><span class="pill coral">Bloqueado</span></li>
-            <li data-site="YouTube Entretenimiento" tabindex="0" role="button"><span>▶️ YouTube Entretenimiento</span><span class="pill coral">Bloqueado</span></li>
-          </ul>
-          <div class="row"><button class="btn ghost" id="toggleShield">Desactivar escudo</button>
-          <button class="btn ghost" id="simulateDistraction">Simular distracción</button></div>
+          <div class="card-header-row" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <h3>Escudo de Pestaña (Web) <span class="pill emerald" id="shieldStatus">ACTIVO</span></h3>
+            <button type="button" class="btn ghost sm" id="toggleShield">Pausar</button>
+          </div>
+          <div class="shield-tiers">
+            <div class="shield-tier">
+              <div class="shield-tier-head">
+                <span>🛡️ Escudo de Pestaña (activo hoy)</span>
+                <span class="pill emerald">Web</span>
+              </div>
+              <p>Detecta cambios de pestaña, salida de pantalla completa y movimiento de salida del cursor en escritorio para activar una pausa consciente sin culpa. Puedes ajustar la sensibilidad de <code>mouseleave</code> en <strong>Perfil</strong>.</p>
+            </div>
+            <div class="shield-tier">
+              <div class="shield-tier-head">
+                <span>🧩 Extensión de Navegador (Chrome)</span>
+                <span class="pill violet">Próximamente</span>
+              </div>
+              <p>Para bloqueo estricto de sitios externos como TikTok, Instagram o YouTube durante tus bloques de enfoque.</p>
+            </div>
+          </div>
+          <div class="row">
+            <button type="button" class="btn ghost sm" id="simulateDistraction" data-dev-only>Probar pausa consciente (Dev)</button>
+          </div>
         </div>
 
         <div class="card sound-card">
           <div class="card-header-row">
             <h3>Burbuja sonora</h3>
-            <button class="btn ghost sm" id="soundToggle" aria-pressed="false">🔇 Sonido apagado</button>
+            <button type="button" class="btn ghost sm" id="soundToggle" aria-pressed="false">🔇 Sonido apagado</button>
           </div>
 
           <div class="volume-control-box">
@@ -581,13 +513,13 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
 
           <p class="muted small" style="margin:8px 0 10px">Suena mientras el temporizador corre:</p>
           <div class="sound-list" id="soundList">
-            <button class="sound-item active" data-sound="rain">🌧 Lluvia Valle Sagrado</button>
-            <button class="sound-item" data-sound="wind">🍃 Viento andino</button>
-            <button class="sound-item" data-sound="fire">🔥 Fogata andina</button>
-            <button class="sound-item" data-sound="night">🦗 Noche andina</button>
-            <button class="sound-item" data-sound="river">🌊 Río Urubamba</button>
-            <button class="sound-item" data-sound="lofi">🎧 Lo-Fi</button>
-            <button class="sound-item" data-sound="binaural">🧠 Binaural 40Hz</button>
+            <button type="button" class="sound-item active" data-sound="rain">🌧 Lluvia Valle Sagrado</button>
+            <button type="button" class="sound-item" data-sound="wind">🍃 Viento andino</button>
+            <button type="button" class="sound-item" data-sound="fire">🔥 Fogata andina</button>
+            <button type="button" class="sound-item" data-sound="night">🦗 Noche andina</button>
+            <button type="button" class="sound-item" data-sound="river">🌊 Río Urubamba</button>
+            <button type="button" class="sound-item" data-sound="lofi">🎧 Lo-Fi</button>
+            <button type="button" class="sound-item" data-sound="binaural">🧠 Binaural 40Hz</button>
           </div>
 
           <div class="alarm-settings-box">
@@ -614,207 +546,151 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
       <div class="card guided-break hidden" id="guidedBreak">
         <h2>Pausa guiada — <span id="breakClock">05:00</span></h2>
         <div class="row gap">
-          <button class="chip active" data-break="breath">Respiración 4-4-4-4</button>
-          <button class="chip" data-break="twenty">Regla 20-20-20</button>
-          <button class="chip" data-break="stretch">Estiramiento</button>
+          <button type="button" class="chip active" data-break="breath">Respiración 4-4-4-4</button>
+          <button type="button" class="chip" data-break="twenty">Regla 20-20-20</button>
+          <button type="button" class="chip" data-break="stretch">Estiramiento</button>
         </div>
         <div class="breath" id="breathCircle" data-phase="0" aria-hidden="true"></div>
         <p class="guided-text" id="guidedText">Inhala 4, sostén 4, exhala 4, espera 4. Suelta los hombros.</p>
-        <button class="btn primary" id="endBreak">Terminar pausa</button>
+        <button type="button" class="btn primary" id="endBreak">Terminar pausa</button>
       </div>
     </section>
 
-    <!-- ===== VISTA 4: BIOMA ===== -->
+    <!-- ===== VISTA: SANTUARIO ANDINO ===== -->
     <section id="view-biome" class="view">
       <header class="view-header">
-        <h1>Bioma Cusco & Amazonía</h1>
-        <p class="muted">Tu esfuerzo se convierte en impacto real.</p>
+        <h1>Santuario Andino</h1>
+        <p class="muted">Tu constancia florece en un ecosistema vivo y verificable.</p>
       </header>
 
-      <div class="card biome-live" id="biomeLive">
-        <div class="card-header">
-          <h3>Tu bioma en vivo</h3>
-          <div class="row gap">
-            <span class="pill" id="blWeatherChip">☀️</span>
-            <span class="pill violet" id="blSeasonChip">🌸</span>
-          </div>
-        </div>
-        <div class="bl-scene" id="blScene" data-weather="cloudy" data-season="primavera" role="img" aria-label="Escena del bioma">
-          <div class="bl-sun"></div>
-          <div class="bl-cloud c1">☁️</div><div class="bl-cloud c2">☁️</div><div class="bl-cloud c3">☁️</div>
-          <div class="bl-rainbow"></div>
-          <div class="bl-condor" id="blCondor" aria-hidden="true">🦅</div>
-          <div class="bl-hill h1"></div><div class="bl-hill h2"></div><div class="bl-hill h3"></div>
-          <div class="bl-ground"></div>
-          <div class="bl-plants" id="blPlants"></div>
-          <div class="bl-fauna" id="blFauna"></div>
-          <div class="bl-fog f1"></div><div class="bl-fog f2"></div>
-          <div class="bl-rain" id="blRain" aria-hidden="true"></div>
-        </div>
-        <p class="bl-caption" id="blCaption"></p>
-        <div class="bl-controls">
-          <button class="btn ghost sm" id="growthPlay">▶ Ver crecimiento</button>
-          <button class="btn eco sm" id="waterBiomeBtn">💧 Regar (-20 💧)</button>
-          <input type="range" id="growthRange" min="0" max="320" value="0" aria-label="Línea de crecimiento del bioma" />
-          <span class="muted small" id="growthLabel">0 puntos Tierra</span>
-        </div>
-        <div class="bl-stages" id="blStages"></div>
-        <ul class="bl-rules small muted">
-          <li>☀️ Sol: completaste todas tus misiones de hoy.</li>
-          <li>🌈 Arcoíris: llevas 3 días o más de racha y hoy ya avanzaste.</li>
-          <li>🌫️ Niebla: hoy aún no avanzas (o volviste tras unos días). Un bloque de 5 minutos la disipa.</li>
-          <li>🦅 Cóndor: sobrevuela cuando llevas 7 días seguidos. <strong id="condorHint"></strong></li>
-        </ul>
+      <div class="santuario-subtabs" role="tablist">
+        <button type="button" class="subtab-btn active" id="subtabSantuario" role="tab" aria-selected="true">Mi Santuario</button>
+        <button type="button" class="subtab-btn" id="subtabProgreso" role="tab" aria-selected="false">Mi Progreso</button>
       </div>
 
-      <div class="biome-metrics">
-        <div class="metric-card"><span class="muted">Gotas de riego</span><strong id="biomeDrops">1240</strong></div>
-        <div class="metric-card"><span class="muted">Puntos Tierra</span><strong id="biomeEarth">320</strong></div>
-        <div class="metric-card"><span class="muted">Árboles apadrinados (comunidad)</span><strong>412</strong></div>
-        <div class="metric-card"><span class="muted">m² verdes (comunidad)</span><strong>3,200</strong></div>
-      </div>
-
-      <div class="zones-grid">
-        <div class="card zone">
-          <div class="zone-art">🌺</div>
-          <h3>Zona botánica andina</h3>
-          <p class="muted">Cantuta · Queñual · Chachacoma</p>
-          <button class="btn ghost sm" data-fichas="flora">Ver fichas</button>
-        </div>
-        <div class="card zone">
-          <div class="zone-art">🦙</div>
-          <h3>Refugio de fauna local</h3>
-          <p class="muted">Alpaca · Vicuña · Cóndor · Oso de Anteojos</p>
-          <button class="btn ghost sm" data-fichas="fauna">Ver fichas</button>
-        </div>
-        <div class="card zone">
-          <div class="zone-art">🌳</div>
-          <h3>Infraestructura sostenible</h3>
-          <p class="muted">Parques · Ciclovías · Captación de agua</p>
-          <button class="btn ghost sm" data-fichas="infra">Ver fichas</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          <h3>Meta colectiva mensual</h3>
-          <span class="muted" id="collectiveText">8,420 / 12,000 h</span>
-        </div>
-        <div class="bar"><div class="bar-fill emerald" id="collectiveFill" style="width:70%"></div></div>
-        <p class="muted" style="margin-top:8px">Próximo hito: 10,000 h → 2 hectáreas apadrinadas en la Amazonía.</p>
-      </div>
-
-      <div class="card transparency">
-        <h3>Panel de transparencia</h3>
-        <div class="transp-grid">
-          <button type="button" class="transp-item" data-transp="arbio">
-            <span>📄</span><p>Certificado ARBIO Perú</p>
-          </button>
-          <button type="button" class="transp-item" data-transp="geo">
-            <span>📸</span><p>Foto geolocalizada</p>
-          </button>
-          <button type="button" class="transp-item" data-transp="co2">
-            <span>🌍</span><p>Huella CO₂ compensada</p>
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== VISTA 5: COMUNIDAD ===== -->
-    <section id="view-community" class="view">
-      <header class="view-header">
-        <h1>Comunidad</h1>
-        <p class="muted">Estudiar acompañado cambia todo.</p>
-      </header>
-
-      <div class="community-grid">
-        <div class="card">
-          <h3>Mis cuadrillas</h3>
-          <ul class="squad-list" id="squadList"></ul>
-          <button class="btn ghost sm" id="joinSquad">Unirse con código</button>
-        </div>
-
-        <div class="card">
-          <h3>Co-estudio sincronizado</h3>
-          <p class="muted">Sala: Código Andino</p>
-          <div class="avatars-row">
-            <span class="avatar sm emerald">🦙</span>
-            <span class="avatar sm emerald">🦙</span>
-            <span class="avatar sm amber">🦙</span>
-            <span class="avatar sm emerald">🦙</span>
-          </div>
-          <p class="muted">3 enfocados · 1 en pausa</p>
-          <button class="btn primary sm" id="groupPomodoro">Iniciar Pomodoro grupal</button>
-        </div>
-
-        <div class="card">
-          <h3>Tutores pares</h3>
-          <input class="input" id="tutorSearch" aria-label="Buscar tutor por curso" placeholder="Buscar por curso..." />
-          <ul class="tutor-list" id="tutorList"></ul>
-          <button class="btn ghost sm" id="askTutor">Solicitar orientación</button>
-        </div>
-
-        <div class="card">
-          <h3>Liga de grupos</h3>
-          <ol class="leaderboard" id="leaderboard">
-            <li><span>1</span><span>Ingeniería</span><strong>4,820 h</strong></li>
-            <li><span>2</span><span>Ciencias de la Empresa</span><strong>4,210 h</strong></li>
-            <li><span>3</span><span>Derecho</span><strong>3,980 h</strong></li>
-            <li><span>4</span><span>Humanidades</span><strong>3,450 h</strong></li>
-            <li><span>5</span><span>Ciencias de la Salud</span><strong>3,120 h</strong></li>
-          </ol>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== VISTA 6: PROGRESO ===== -->
-    <section id="view-progress" class="view">
-      <header class="view-header">
-        <h1>Mi Progreso & Mente</h1>
-        <p class="muted">Autoconocimiento, no presión.</p>
-      </header>
-
-      <div class="card">
-        <div class="card-header">
-          <h3>Progreso semanal</h3>
-          <span class="muted" id="weeklyTotal"></span>
-        </div>
-        <div class="chart" id="weeklyChart"></div>
-        <div class="chart-labels"><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span></div>
-      </div>
-
-      <div class="card timeline-card" id="emotionCard">
-        <div class="card-header"><h3>Línea de tiempo emocional</h3><span class="muted small">🔒 Notas cifradas en este dispositivo</span></div>
-        <div id="moodSpark" class="mood-spark"></div>
-        <div id="journalInsights" class="journal-insights"></div>
-        <ol class="mood-timeline" id="journalList"></ol>
-      </div>
-
-      <div class="progress-grid">
-        <div>
-          <div class="card insight" id="insightCard">
-            <span class="label-cyan">INSIGHT DE IA</span>
-            <p>Notamos que los miércoles después de las 6:00 PM sueles sentirte más agotado y aumentan tus intentos de abrir redes sociales. Te sugerimos tareas ligeras de lectura en ese horario y dejar los cálculos complejos para jueves a las 9:00 AM, donde tu tasa de enfoque es del 95%.</p>
+      <!-- Sub-panel 1: Mi Santuario -->
+      <div id="santuarioSubView">
+        <div class="card biome-live" id="biomeLive">
+          <div class="card-header">
+            <h3>Tu santuario en vivo</h3>
             <div class="row gap">
-              <button class="btn primary sm" id="acceptInsight">Aceptar sugerencia</button>
-              <button class="btn ghost sm" id="ignoreInsight">Ignorar por ahora</button>
+              <span class="pill" id="blWeatherChip">☀️</span>
+              <span class="pill violet" id="blSeasonChip">🌸</span>
             </div>
           </div>
+          <div class="bl-scene" id="blScene" data-weather="cloudy" data-season="primavera" role="img" aria-label="Escena del santuario">
+            <div class="bl-sun"></div>
+            <div class="bl-cloud c1">☁️</div><div class="bl-cloud c2">☁️</div><div class="bl-cloud c3">☁️</div>
+            <div class="bl-rainbow"></div>
+            <div class="bl-condor" id="blCondor" aria-hidden="true">🦅</div>
+            <div class="bl-hill h1"></div><div class="bl-hill h2"></div><div class="bl-hill h3"></div>
+            <div class="bl-ground"></div>
+            <div class="bl-plants" id="blPlants"></div>
+            <div class="bl-fauna" id="blFauna"></div>
+            <div class="bl-fog f1"></div><div class="bl-fog f2"></div>
+            <div class="bl-rain" id="blRain" aria-hidden="true"></div>
+          </div>
+          <p class="bl-caption" id="blCaption"></p>
+          <div class="bl-controls">
+            <button type="button" class="btn ghost sm" id="growthPlay">▶ Ver crecimiento</button>
+            <button type="button" class="btn eco sm" id="waterBiomeBtn">💧 Regar (-20 💧)</button>
+            <input type="range" id="growthRange" min="0" max="320" value="0" aria-label="Línea de crecimiento del santuario" />
+            <span class="muted small" id="growthLabel">0 puntos Tierra</span>
+          </div>
+          <div class="bl-stages" id="blStages"></div>
+          <ul class="bl-rules small muted">
+            <li>☀️ Sol: completaste tus misiones de hoy.</li>
+            <li>🌈 Arcoíris: llevas 3 días o más de racha y hoy ya avanzaste.</li>
+            <li>🌫️ Niebla: hoy aún no avanzas. Un bloque de 5 minutos la disipa sin culpa.</li>
+            <li>🦅 Cóndor: sobrevuela cuando llevas 7 días seguidos. <strong id="condorHint"></strong></li>
+          </ul>
+        </div>
 
-          <div class="card">
-            <div class="card-header"><h3>Tu historia en SYNCRO</h3><span class="muted small" id="achCount"></span></div>
-            <div class="ach-list" id="achList"></div>
+        <div class="biome-metrics">
+          <div class="metric-card"><span class="muted">Gotas de riego</span><strong id="biomeDrops">0</strong></div>
+          <div class="metric-card"><span class="muted">Puntos Tierra</span><strong id="biomeEarth">0</strong></div>
+          <div class="metric-card"><span class="muted">Especies nativas</span><strong id="biomeSpecies">1 / 7</strong></div>
+          <div class="metric-card"><span class="muted">Días activos</span><strong id="biomeStreak">0</strong></div>
+        </div>
+
+        <div class="zones-grid">
+          <div class="card zone">
+            <div class="zone-art">🌺</div>
+            <h3>Zona botánica andina</h3>
+            <p class="muted">Cantuta · Queñual · Chachacoma</p>
+            <button type="button" class="btn ghost sm" data-fichas="flora">Ver fichas</button>
+          </div>
+          <div class="card zone">
+            <div class="zone-art">🦙</div>
+            <h3>Refugio de fauna local</h3>
+            <p class="muted">Alpaca · Vicuña · Cóndor · Oso de Anteojos</p>
+            <button type="button" class="btn ghost sm" data-fichas="fauna">Ver fichas</button>
+          </div>
+          <div class="card zone">
+            <div class="zone-art">🌳</div>
+            <h3>Conservación responsable</h3>
+            <p class="muted">Reto colectivo auditable y Fondo ESG 10%</p>
+            <button type="button" class="btn ghost sm" data-fichas="infra">Ver detalles</button>
           </div>
         </div>
 
-        <div class="side-col">
-        <div class="card wellbeing">
-          <h3>Red de Bienestar</h3>
-          <p class="muted">Si tus ánimos de 1–2/10 se repiten varios días, el sistema te mostrará apoyo privado.</p>
-          <button class="btn secondary" id="bienestarBtn">Agendar con la Red de Bienestar</button>
-          <p class="muted small">100% privado y confidencial.</p>
+        <div class="card">
+          <div class="card-header">
+            <h3>Reto Colectivo de Conservación: 150 Horas Verificadas</h3>
+            <span class="muted" id="collectiveText">0 / 150 h</span>
+          </div>
+          <div class="bar"><div class="bar-fill emerald" id="collectiveFill" style="width:0%"></div></div>
+          <p class="muted small" style="margin-top:8px">
+            Cada hito colectivo alcanzado activa conservación financiada junto a ARBIO Perú con comprobante público auditable.
+          </p>
         </div>
 
+        <div class="card transparency">
+          <h3>Transparencia del Reto</h3>
+          <div class="transp-grid">
+            <button type="button" class="transp-item" data-transp="arbio"><span>📄</span><p>Comprobante del Reto</p></button>
+            <button type="button" class="transp-item" data-transp="geo"><span>📸</span><p>Santuario Virtual</p></button>
+            <button type="button" class="transp-item" data-transp="co2"><span>🤝</span><p>Fondo ESG Comercial</p></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-panel 2: Mi Progreso -->
+      <div id="progresoSubView" class="hidden">
+        <div class="card">
+          <div class="card-header">
+            <h3>Progreso semanal</h3>
+            <span class="muted" id="weeklyTotal">0 h esta semana</span>
+          </div>
+          <div class="chart" id="weeklyChart"></div>
+          <div class="chart-labels"><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span></div>
+        </div>
+
+        <div class="card timeline-card" id="emotionCard">
+          <div class="card-header">
+            <h3>Línea de tiempo emocional</h3>
+            <span class="muted small">🔒 Notas cifradas (AES-256) en este dispositivo</span>
+          </div>
+          <div id="moodSpark" class="mood-spark"></div>
+          <div id="journalInsights" class="journal-insights"></div>
+          <ol class="mood-timeline" id="journalList"></ol>
+        </div>
+
+        <div class="progress-grid">
+          <div>
+            <div class="card" id="achievementsCard">
+              <div class="card-header"><h3>Tu historia en SYNCRO</h3><span class="muted small" id="achCount"></span></div>
+              <div class="ach-list" id="achList"></div>
+            </div>
+          </div>
+          <div class="side-col">
+            <div class="card wellbeing">
+              <h3 id="wellbeingHeading">Red de Bienestar</h3>
+              <p class="muted">Si tus ánimos de 1–2/10 se repiten varios días, el sistema te mostrará orientación privada.</p>
+              <button type="button" class="btn secondary" id="bienestarBtn">Consultar orientación</button>
+              <p class="muted small">100% privado y confidencial.</p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -824,14 +700,14 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
       <header class="view-header">
         <div>
           <h1>Mi perfil</h1>
-          <p class="muted">Tu cuenta, tus preferencias y tu historia con SYNCRO.</p>
+          <p class="muted">Tu cuenta, tus preferencias, sensibilidad del escudo y control total sobre tus datos.</p>
         </div>
       </header>
 
       <div class="card profile-hero">
         <div class="profile-avatar"><span id="pfAvatar">G</span><span class="pf-guardian" id="pfGuardian">🦙</span></div>
         <div class="profile-id">
-          <h2 id="pfName">Estudiante</h2>
+          <h2 id="pfName">Usuario</h2>
           <p class="muted" id="pfHandle"></p>
           <p class="muted small" id="pfMeta"></p>
           <div class="row"><span class="pill violet" id="pfLevel"></span><span class="pill" id="pfStreak"></span><span class="pill emerald" id="pfAch"></span></div>
@@ -873,7 +749,7 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
                 <option value="50+">50 años o más</option>
               </select></label>
           </div>
-          <label class="pf-field"><span class="field-label">Universidad, centro o empresa</span><input class="input" id="pfInstitution" maxlength="48" /></label>
+          <label class="pf-field"><span class="field-label">Universidad, centro o empresa</span><input class="input" id="pfInstitution" maxlength="48" placeholder="Opcional · activa convenio B2B si aplica" /></label>
           <label class="pf-field"><span class="field-label">Objetivo grande de la semana</span><input class="input" id="pfGoal" maxlength="80" /></label>
           <div class="pf-row">
             <label class="pf-field"><span class="field-label">Lo que más me hace procrastinar</span>
@@ -906,7 +782,16 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
                 <option value="chachacoma">🌿 Chachacoma</option>
               </select></label>
           </div>
-          <label class="pf-field"><span class="field-label">Guardián</span><select class="input" id="pfGuardianSel"></select></label>
+          <div class="pf-row">
+            <label class="pf-field"><span class="field-label">Guardián</span><select class="input" id="pfGuardianSel"></select></label>
+            <label class="pf-field"><span class="field-label">Sensibilidad Escudo (salida del cursor)</span>
+              <select class="input" id="pfMouseLeave">
+                <option value="off">Desactivado (solo cambio de pestaña)</option>
+                <option value="normal">Normal (borde superior del navegador)</option>
+                <option value="strict">Estricto (cualquier salida de ventana)</option>
+              </select></label>
+          </div>
+          <label class="option"><input type="checkbox" id="pfJournalAiOptIn"> <span>Permitir análisis de patrones con IA sobre mis notas del diario (opt-in explícito)</span></label>
           <label class="option"><input type="checkbox" id="pfBienestar"> <span>Permitir conexión con la Red de Bienestar (resumen anónimo, siempre con mi consentimiento)</span></label>
           <label class="option"><input type="checkbox" id="pfReminder"> <span>Recordarme el check-in diario</span></label>
           <label class="option"><input type="checkbox" id="pfNotif"> <span>🔔 Notificaciones del sistema (al terminar bloques y pausas)</span></label>
@@ -918,19 +803,19 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
             <h3>Mi cuenta</h3>
             <p class="muted" id="accountInfo">—</p>
             <div class="row gap">
-              <button class="btn ghost sm" data-replay-tour>❔ Ver tutorial</button>
-              <button class="btn ghost sm" id="pfExport">⬇ Exportar mis datos</button>
-              <button class="btn ghost sm" id="pfImportBtn">⬆ Restaurar respaldo</button>
+              <button type="button" class="btn ghost sm" data-replay-tour>❔ Ver tutorial</button>
+              <button type="button" class="btn ghost sm" id="pfExport">⬇ Exportar mis datos (JSON)</button>
+              <button type="button" class="btn ghost sm" id="pfImportBtn">⬆ Restaurar respaldo</button>
               <input type="file" id="pfImportInput" accept=".json,application/json" class="hidden" style="display:none" />
-              <button class="btn ghost sm" data-logout>Cerrar sesión</button>
+              <button type="button" class="btn ghost sm" data-logout>Cerrar sesión</button>
             </div>
           </div>
           <div class="card">
-            <h3>Zona de privacidad</h3>
-            <p class="muted small">Tus notas del diario están cifradas y solo viven en este dispositivo.</p>
+            <h3>Zona de privacidad (LPDP / GDPR)</h3>
+            <p class="muted small">Tus notas del diario se cifran en este dispositivo con AES-256. Puedes exportar tus datos o ejercer tu derecho al olvido cuando quieras.</p>
             <div class="row gap">
-              <button class="btn ghost sm" id="pfClearJournal">Borrar mi diario</button>
-              <button class="btn ghost sm" id="pfDeleteAccount">Eliminar mi cuenta</button>
+              <button type="button" class="btn ghost sm" id="pfClearJournal">Borrar mi diario</button>
+              <button type="button" class="btn ghost sm" id="pfDeleteAccount">Eliminar mi cuenta</button>
             </div>
           </div>
         </div>
@@ -941,17 +826,27 @@ try { if (!localStorage.getItem('syncro_session')) location.replace('index.html'
 
   <!-- Barra inferior móvil -->
   <nav class="bottom-nav" aria-label="Navegación móvil">
-    <button class="bn-item active" data-view="dashboard">🏠<span>Dash</span></button>
-    <button class="bn-item" data-view="plan">📋<span>Plan</span></button>
-    <button class="bn-item" data-view="calendar">📅<span>Calendario</span></button>
-    <button class="bn-item" data-view="focus">⏱<span>Enfoque</span></button>
-    <button class="bn-item" data-view="biome">🌱<span>Bioma</span></button>
-    <button class="bn-item" data-view="community">👥<span>Comunidad</span></button>
-    <button class="bn-item" data-view="progress">📈<span>Progreso</span></button>
-    <button class="bn-item" data-view="profile">👤<span>Perfil</span></button>
+    <button type="button" class="bn-item active" data-view="dashboard">🏠<span>Hoy</span></button>
+    <button type="button" class="bn-item" data-view="focus">⏱<span>Enfoque</span></button>
+    <button type="button" class="bn-item" data-view="calendar">📅<span>Calendario</span></button>
+    <button type="button" class="bn-item" data-view="biome">🌱<span>Santuario</span></button>
+    <button type="button" class="bn-item" data-view="profile">👤<span>Perfil</span></button>
   </nav>
 </div>
 
-<script src="app.js?v=20261121_v7"></script>
+<script src="n8n-config.js"></script>
+<script>
+  (function () {
+    var s = document.createElement('script');
+    if (location.protocol === 'file:') {
+      s.src = 'dist/app.bundle.js';
+    } else {
+      s.type = 'module';
+      s.src = 'src/main.js';
+    }
+    document.body.appendChild(s);
+  })();
+</script>
+<script id="splashFailSafe">setTimeout(function(){var el=document.getElementById("appSplash");if(el){el.classList.add("done");el.style.display="none";}},1800);</script>
 </body>
 </html>

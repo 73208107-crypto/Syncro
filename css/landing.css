@@ -1,36 +1,4 @@
-﻿:root {
-  --navy-950: #060B19;
-  --navy-900: #0B132B;
-  --navy-800: #1C2541;
-  --navy-700: #243056;
-  --violet-700: #5A189A;
-  --violet-500: #7B2CBF;
-  --violet-400: #9D4EDD;
-  --emerald-600: #059669;
-  --emerald-500: #10B981;
-  --emerald-400: #34D399;
-  --cyan-600: #06B6D4;
-  --cyan-400: #22D3EE;
-  --amber-500: #F59E0B;
-  --coral-500: #EF4444;
-  --white: #FFFFFF;
-  --gray-300: #D1D5DB;
-  --gray-400: #9CA3AF;
-  --gray-500: #6B7280;
-  --gray-700: #374151;
-
-  --bg-base: var(--navy-900);
-  --bg-surface: var(--navy-800);
-  --bg-elevated: var(--navy-700);
-  --text-primary: var(--white);
-  --text-secondary: var(--gray-300);
-  --text-tertiary: var(--gray-400);
-  --border-subtle: rgba(255, 255, 255, 0.08);
-
-  --font: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-display: 'Space Grotesk', 'Inter', sans-serif;
-  --max-width: 1200px;
-}
+﻿/* Tokens imported from css/tokens.css */
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
@@ -1388,7 +1356,7 @@ img { max-width: 100%; display: block; }
 }
 .footer-inner {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
   gap: 48px;
   margin-bottom: 48px;
 }
@@ -1442,12 +1410,11 @@ img { max-width: 100%; display: block; }
 }
 
 /* ============ ANIMACIONES ============ */
-.reveal {
-  opacity: 0;
+html.js-reveal .reveal { opacity: 0;
   transform: translateY(24px);
   transition: opacity 0.7s ease, transform 0.7s ease;
 }
-.reveal.visible {
+html.js-reveal .reveal.visible, .reveal.visible {
   opacity: 1;
   transform: translateY(0);
 }
@@ -1472,10 +1439,17 @@ img { max-width: 100%; display: block; }
   .hero { padding: 100px 0 60px; }
   .hero-title { font-size: 36px; }
   .hero-sub { font-size: 17px; }
-  .hero-visual { min-height: auto; height: auto; padding: 25px 0; }
-  .floating-chip { padding: 8px 12px; font-size: 12px; }
-  .floating-chip-shield { top: -8px; left: 0; }
-  .floating-chip-impact { bottom: -8px; right: 0; }
+  .hero-visual { min-height: auto; height: auto; padding: 25px 0; flex-direction: column; }
+  .floating-chip {
+    position: static;
+    animation: none;
+    margin-top: 10px;
+    padding: 8px 12px;
+    font-size: 12px;
+    width: auto;
+  }
+  .floating-chip-shield { top: auto; left: auto; }
+  .floating-chip-impact { bottom: auto; right: auto; }
   .app-mockup-body { padding: 16px; gap: 12px; }
   .mockup-timer-display { font-size: 32px; }
   .mockup-timer-card { padding: 14px; }
@@ -1720,3 +1694,212 @@ body.auth-open { overflow: hidden; }
   .auth-row { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { .auth-card, .auth-spinner { animation: none; } }
+
+
+/* ============ PLANES Y PRECIOS (B2C + B2B) ============ */
+.pricing-section {
+  position: relative;
+}
+.billing-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  padding: 6px 14px;
+  border-radius: 999px;
+  margin: 0 auto 36px;
+}
+.billing-toggle-wrap {
+  display: flex;
+  justify-content: center;
+}
+.billing-opt {
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.billing-opt.active {
+  background: linear-gradient(135deg, var(--violet-500), var(--violet-400));
+  color: var(--white);
+  box-shadow: var(--glow-violet);
+}
+.billing-save-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--emerald-400);
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  align-items: stretch;
+}
+.plan-card {
+  background: rgba(28, 37, 65, 0.72);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 32px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  position: relative;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.plan-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+.plan-card.featured {
+  background: linear-gradient(180deg, rgba(123, 44, 191, 0.18), rgba(28, 37, 65, 0.92));
+  border-color: rgba(157, 78, 221, 0.55);
+  box-shadow: 0 18px 48px rgba(123, 44, 191, 0.22);
+}
+.plan-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(34, 211, 238, 0.14);
+  color: var(--cyan-400);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+}
+.plan-card.featured .plan-badge {
+  background: rgba(157, 78, 221, 0.24);
+  color: #E9D5FF;
+  border-color: rgba(157, 78, 221, 0.5);
+}
+.plan-card.b2b .plan-badge {
+  background: rgba(16, 185, 129, 0.14);
+  color: var(--emerald-400);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+.plan-name {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--white);
+}
+.plan-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+.plan-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.plan-price {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--white);
+  line-height: 1;
+}
+.plan-period {
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+.plan-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+.plan-features li {
+  font-size: 14px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  line-height: 1.45;
+}
+.plan-features li::before {
+  content: '✓';
+  color: var(--emerald-400);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.plan-cta {
+  width: 100%;
+  margin-top: auto;
+}
+
+/* 4-card diversified testimonials grid */
+.testimonials-grid.four-cols {
+  grid-template-columns: repeat(2, 1fr);
+}
+@media (max-width: 960px) {
+  .pricing-grid {
+    grid-template-columns: 1fr;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+}
+@media (max-width: 768px) {
+  .testimonials-grid.four-cols {
+    grid-template-columns: 1fr;
+  }
+  /* Keep primary CTA always visible next to hamburger menu on mobile */
+  .nav-cta-primary {
+    display: inline-flex !important;
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+}
+
+/* Impact live status badge */
+.impact-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: var(--emerald-400);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+.impact-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--emerald-400);
+  box-shadow: 0 0 8px var(--emerald-400);
+}
+
+/* B2B Demo Modal */
+.b2b-card {
+  max-width: 540px !important;
+  grid-template-columns: 1fr !important;
+}
+.b2b-success {
+  text-align: center;
+  padding: 24px 8px;
+}

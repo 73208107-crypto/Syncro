@@ -1,0 +1,108 @@
+/* SYNCRO — Base & Resets */
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow-x: clip;
+      max-width: 100vw;
+    }
+    body {
+      font-family: var(--font);
+      background: radial-gradient(circle at 85% 10%, rgba(123, 44, 191, 0.14), transparent 40%),
+                  radial-gradient(circle at 15% 85%, rgba(16, 185, 129, 0.1), transparent 40%),
+                  var(--bg-base);
+      color: var(--text-primary);
+      font-size: 15px;
+      line-height: 1.5;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: clip;
+      max-width: 100vw;
+    }
+
+    h1 { font-family: var(--font-display); font-size: 28px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.02em; }
+    h2 { font-family: var(--font-display); font-size: 22px; font-weight: 700; margin: 0 0 12px; }
+    h3 { font-size: 16px; font-weight: 600; margin: 0 0 12px; color: var(--text-primary); }
+    p { margin: 0 0 12px; }
+    .muted { color: var(--text-secondary); }
+    .small { font-size: 12px; }
+    .hidden { display: none !important; }
+    .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .row.gap { gap: 12px; }
+    .block { width: 100%; }
+    button { font-family: inherit; cursor: pointer; }
+
+    /* ============ BANNER SUPERIOR DE ENFOQUE ACTIVO ============ */
+    .focus-top-ribbon {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 36px;
+      background: linear-gradient(90deg, #059669, #06B6D4, #7B2CBF);
+      background-size: 200% 200%;
+      animation: gradientMove 6s ease infinite;
+      color: var(--white);
+      z-index: 90;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 0 16px;
+      box-shadow: 0 4px 20px rgba(6, 182, 212, 0.35);
+    }
+    @keyframes gradientMove {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    body.has-focus-ribbon .app {
+      padding-top: 36px;
+    }
+    body.has-focus-ribbon .sidebar {
+      top: 36px;
+      height: calc(100vh - 36px);
+    }
+
+/* ============ MICRO-TRANSICIÓN DE ARRANQUE ============ */
+.app-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: var(--bg-base);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  opacity: 1;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+.app-splash.done, .app-splash.hide {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.app-splash-mark {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--cyan-400), var(--violet-500));
+  display: grid;
+  place-items: center;
+  font-size: 30px;
+  box-shadow: var(--glow-cyan);
+  animation: splashPop 0.35s ease;
+}
+.app-splash-name {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-primary);
+}
+@keyframes splashPop {
+  from { opacity: 0; transform: scale(0.88); }
+  to { opacity: 1; transform: scale(1); }
+}
+

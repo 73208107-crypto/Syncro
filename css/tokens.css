@@ -1,0 +1,63 @@
+/* ==========================================================================
+   SYNCRO Design System — Unified Tokens (100% Dark Mode)
+   Shared across index.html, app.html, privacidad.html, terminos.html
+   ========================================================================== */
+
+:root {
+  /* Core Palette */
+  --navy-950: #060B19;
+  --navy-900: #0B132B;
+  --navy-800: #1C2541;
+  --navy-700: #243056;
+  --navy-600: #314170;
+
+  --violet-700: #5A189A;
+  --violet-500: #7B2CBF;
+  --violet-400: #9D4EDD;
+
+  --emerald-600: #059669;
+  --emerald-500: #10B981;
+  --emerald-400: #34D399;
+
+  --cyan-600: #06B6D4;
+  --cyan-400: #22D3EE;
+
+  --amber-500: #F59E0B;
+  --coral-600: #DC2626;
+  --coral-500: #EF4444;
+
+  --white: #FFFFFF;
+  --gray-300: #D1D5DB;
+  --gray-400: #9CA3AF;
+  --gray-500: #6B7280;
+  --gray-700: #374151;
+
+  /* Semantic Surfaces & Text */
+  --bg-base: var(--navy-900);
+  --bg-surface: var(--navy-800);
+  --bg-elevated: var(--navy-700);
+  --text-primary: var(--white);
+  --text-secondary: var(--gray-300);
+  --text-tertiary: var(--gray-400);
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  --border-landing: rgba(255, 255, 255, 0.08);
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  /* Shadows & Glows */
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 10px 30px rgba(0, 0, 0, 0.4);
+  --shadow-focus: 0 0 0 3px rgba(34, 211, 238, 0.4);
+  --glow-violet: 0 0 24px rgba(123, 44, 191, 0.45);
+  --glow-emerald: 0 0 24px rgba(16, 185, 129, 0.45);
+  --glow-cyan: 0 0 28px rgba(34, 211, 238, 0.4);
+  --glow-coral: 0 0 40px rgba(239, 68, 68, 0.65);
+
+  /* Typography & Layout */
+  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Space Grotesk', 'Inter', sans-serif;
+  --max-width: 1200px;
+}

@@ -10,64 +10,60 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
 <link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="css/tokens.css" />
 <style>
-:root { --navy-900:#0B132B; --navy-800:#1C2541; --cyan-400:#22D3EE; --white:#fff; --text-secondary:#D1D5DB; --text-tertiary:#9CA3AF; --border:rgba(255,255,255,.1); }
 * { box-sizing: border-box; }
-body { margin:0; background:var(--navy-900); color:var(--white); font-family:'Inter',system-ui,sans-serif; line-height:1.7; -webkit-font-smoothing:antialiased; }
+body { margin:0; background:var(--bg-base); color:var(--text-primary); font-family:var(--font); line-height:1.7; -webkit-font-smoothing:antialiased; }
 a { color:var(--cyan-400); }
-header { border-bottom:1px solid var(--border); }
+header { border-bottom:1px solid var(--border-subtle); }
 .wrap { max-width:760px; margin:0 auto; padding:0 24px; }
 header .wrap { height:64px; display:flex; align-items:center; justify-content:space-between; }
-.brand { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px; color:var(--white); text-decoration:none; }
+.brand { font-family:var(--font-display); font-weight:700; font-size:20px; color:var(--white); text-decoration:none; }
 main { padding:48px 0 80px; }
-h1 { font-family:'Space Grotesk',sans-serif; font-size:36px; line-height:1.15; margin:0 0 8px; letter-spacing:-.02em; }
+h1 { font-family:var(--font-display); font-size:36px; line-height:1.15; margin:0 0 8px; letter-spacing:-.02em; }
 h2 { font-size:20px; margin:36px 0 8px; }
 p, li { color:var(--text-secondary); font-size:15px; }
 .meta { color:var(--text-tertiary); font-size:13px; margin:0 0 24px; }
-.note { padding:14px 16px; border:1px solid rgba(245,158,11,.4); background:rgba(245,158,11,.08); border-radius:12px; color:#FDE68A; font-size:13px; }
-footer { border-top:1px solid var(--border); padding:24px 0; color:var(--text-tertiary); font-size:13px; }
+footer { border-top:1px solid var(--border-subtle); padding:24px 0; color:var(--text-tertiary); font-size:13px; }
 </style>
 </head>
 <body>
 <header><div class="wrap"><a class="brand" href="index.html">🌱 SYNCRO</a><a href="index.html">← Volver al inicio</a></div></header>
 <main><div class="wrap">
 <h1>Política de privacidad</h1>
-<p class="meta">Última actualización: 19 de noviembre de 2026</p>
-<p class="note">Borrador de política de privacidad para la fase piloto 2026. Cumple con principios de minimización de datos y cifrado local. Consultas: <a href="mailto:contacto@syncro.app">contacto@syncro.app</a>.</p>
+<p class="meta">Última actualización: 22 de noviembre de 2026 · Cumplimiento LPDP y estándares GDPR</p>
 
-<h2>1. Qué datos tratamos</h2>
+<h2>1. Principio de privacidad desde el diseño</h2>
+<p>SYNCRO minimiza la recolección de datos personales y aplica cifrado en cliente (AES-GCM de 256 bits con clave no extraíble en IndexedDB) para proteger tus notas emocionales.</p>
+
+<h2>2. Qué datos tratamos</h2>
 <ul>
-<li><strong>Cuenta:</strong> correo, nombre y nombre de usuario.</li>
-<li><strong>Perfil y preferencias:</strong> ocupación, rango de edad, institución, objetivos y ajustes que tú eliges.</li>
-<li><strong>Uso:</strong> misiones, bloques de enfoque, calendario, progreso y logros.</li>
-<li><strong>Datos emocionales:</strong> nivel de energía, estado de ánimo y notas del diario. Son datos sensibles y los tratamos con especial cuidado.</li>
+<li><strong>Cuenta:</strong> correo electrónico, nombre y credenciales de acceso (autenticación con correo o Google OAuth).</li>
+<li><strong>Perfil y preferencias:</strong> ocupación, horarios de energía, sensibilidad del Escudo de Pestaña y preferencias de notificaciones.</li>
+<li><strong>Actividad de enfoque:</strong> misiones, duración de bloques completados, calendario semanal, progreso del santuario y logros.</li>
+<li><strong>Datos emocionales (datos sensibles):</strong> nivel de energía, estado de ánimo y notas del diario. Se tratan bajo consentimiento granular explícito.</li>
 </ul>
 
-<h2>2. Dónde se guardan hoy</h2>
-<p>En esta versión, tu información se guarda en el almacenamiento de tu propio navegador (localStorage e IndexedDB). Las notas del diario se cifran en tu dispositivo con AES-GCM de 256 bits, con una clave no extraíble. Esto significa que no se sincronizan entre dispositivos, y que borrar los datos del navegador borra tu progreso.</p>
+<h2>3. Análisis por IA y consentimiento granular</h2>
+<p>Tus notas del diario permanecen cifradas en tu dispositivo por defecto. El análisis de patrones con IA requiere tu activación explícita (opt-in) en <strong>Perfil</strong>, la cual puedes revocar en cualquier momento.</p>
 
-<h2>3. Con quién se comparten</h2>
-<p>No vendemos tus datos ni los mostramos a otros usuarios. Si activas la conexión con una red de bienestar, solo se compartiría un resumen anónimo y siempre con tu consentimiento previo, que puedes retirar en Perfil.</p>
+<h2>4. Planes institucionales (B2B)</h2>
+<p>En convenios con universidades o empresas, los paneles institucionales muestran únicamente métricas agregadas y anónimas. Ninguna institución puede leer tus notas del diario ni tus estados emocionales individuales.</p>
 
-<h2>4. Tus derechos</h2>
+<h2>5. Tus derechos (Portabilidad y Derecho al Olvido)</h2>
 <ul>
-<li><strong>Acceso y portabilidad:</strong> exporta tus datos en JSON desde Perfil.</li>
-<li><strong>Borrado:</strong> borra tu diario o elimina tu cuenta y todo tu progreso desde Perfil.</li>
-<li><strong>Rectificación:</strong> edita tus datos desde Perfil.</li>
+<li><strong>Acceso y portabilidad:</strong> descarga una copia completa de tus datos en formato JSON desde Perfil.</li>
+<li><strong>Rectificación:</strong> actualiza tus preferencias e información de cuenta en cualquier momento.</li>
+<li><strong>Borrado total:</strong> elimina tu diario emocional o borra completamente tu cuenta y registros asociados desde la Zona de privacidad en Perfil.</li>
 </ul>
-
-<h2>5. Cambios futuros</h2>
-<p>Cuando SYNCRO incorpore sincronización en la nube o análisis con IA, actualizaremos esta política y te pediremos consentimiento explícito antes de usar tus notas para cualquier análisis.</p>
 
 <h2>6. Contacto</h2>
-<p>Para ejercer tus derechos o resolver dudas: <a href="mailto:contacto@syncro.app">contacto@syncro.app</a>.</p>
+<p>Para ejercer tus derechos de protección de datos o resolver consultas: <a href="mailto:contacto@syncro.app">contacto@syncro.app</a>.</p>
 </div></main>
 <footer><div class="wrap">© 2026 SYNCRO · <a href="terminos.html">Términos de uso</a> · <a href="privacidad.html">Política de privacidad</a></div></footer>
 <script>
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
-    });
+    window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
   }
 </script>
 </body>

@@ -1,18 +1,31 @@
 {
-  "name": "SYNCRO — Productividad sin culpa y reforestación",
+  "id": "./",
+  "name": "SYNCRO — Productividad sin culpa y enfoque",
   "short_name": "SYNCRO",
-  "description": "Regulación emocional por IA, enfoque protegido e impacto ecológico verificable.",
-  "start_url": "index.html",
+  "description": "Regulación emocional, enfoque protegido y Santuario Andino.",
+  "scope": "./",
+  "start_url": "./app.html?source=pwa",
   "display": "standalone",
   "background_color": "#0B132B",
   "theme_color": "#0B132B",
-  "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>",
-      "sizes": "192x192 512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
