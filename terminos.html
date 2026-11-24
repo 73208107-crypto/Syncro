@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#0B132B" />
 <title>Términos de uso · SYNCRO</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -25,6 +25,17 @@ h2 { font-size:20px; margin:36px 0 8px; }
 p, li { color:var(--text-secondary); font-size:15px; }
 .meta { color:var(--text-tertiary); font-size:13px; margin:0 0 24px; }
 footer { border-top:1px solid var(--border-subtle); padding:24px 0; color:var(--text-tertiary); font-size:13px; }
+@media (max-width: 640px) {
+  .wrap { padding: 0 16px; }
+  header .wrap { height: auto; min-height: 58px; padding: 10px 16px; gap: 10px; flex-wrap: wrap; }
+  .brand { font-size: 18px; }
+  main { padding: 28px 0 56px; }
+  h1 { font-size: 26px; }
+  h2 { font-size: 18px; margin: 26px 0 8px; }
+  p, li { font-size: 14.5px; }
+  ul { padding-left: 20px; }
+  footer { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+}
 </style>
 </head>
 <body>

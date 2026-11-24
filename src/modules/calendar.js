@@ -48,42 +48,68 @@ export function renderCalTray() {
 
 export function renderCalendar() {
   const grid = $('#calGrid');
+  const scrollWrap = grid?.closest('.cal-scroll');
   const dayChips = $('#calDayChips');
   if (!grid) return;
 
   renderCalTray();
 
+  const now = new Date();
+  const todayIdx = dayIdx();
+  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - todayIdx);
+
   if (dayChips) {
-    dayChips.innerHTML = DAYS.map(
-      (d, idx) =>
-        `<button type="button" class="chip ${selectedDayIdx === idx ? 'active' : ''}" data-day-idx="${idx}">${d}</button>`
-    ).join('');
+    dayChips.innerHTML = DAYS.map((d, idx) => {
+      const dateNum = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + idx).getDate();
+      const cls = ['cal-day-pill', todayIdx === idx ? 'today' : '', selectedDayIdx === idx ? 'active' : ''].filter(Boolean).join(' ');
+      return `<button type="button" class="${cls}" data-day-idx="${idx}" role="tab" aria-selected="${selectedDayIdx === idx}"><span>${d}</span><strong>${dateNum}</strong></button>`;
+    }).join('');
   }
 
   const lowHours = getLowEnergyHours();
   const peakHours = getPeakHours();
-  const visibleDays = fullWeekMode || window.innerWidth > 768 ? [0, 1, 2, 3, 4, 5, 6] : [selectedDayIdx];
+  const isMobileDay = window.innerWidth <= 768 && !fullWeekMode;
+  const visibleDays = isMobileDay ? [selectedDayIdx] : [0, 1, 2, 3, 4, 5, 6];
 
-  let html = `<div class="cal-head"></div>${visibleDays.map((d) => `<div class="cal-head">${DAYS[d]}</div>`).join('')}`;
+  grid.classList.toggle('mode-day', isMobileDay);
+  if (scrollWrap) scrollWrap.classList.toggle('mode-day-active', isMobileDay);
+
+  let html = `<div class="cal-head"></div>${visibleDays
+    .map((d) => {
+      const dateNum = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + d).getDate();
+      return `<div class="cal-head ${todayIdx === d ? 'today' : ''}">${DAYS[d]}<small>${dateNum}</small></div>`;
+    })
+    .join('')}`;
   HOURS.forEach((h) => {
-    html += `<div class="cal-time">${String(h).padStart(2, '0')}:00</div>`;
+    html += `<div class="cal-hour">${String(h).padStart(2, '0')}:00</div>`;
     visibleDays.forEach((d) => {
       const slot = (state.calendar.slots || []).find((s) => s.day === d && s.hour === h);
       const isLow = lowHours.includes(h);
       const isPeak = peakHours.includes(h);
-      const cls = ['cal-cell', isLow ? 'low' : '', isPeak ? 'peak' : '', slot?.done ? 'done' : ''].filter(Boolean).join(' ');
+      const cls = [
+        'cal-cell',
+        isLow ? 'low' : '',
+        isPeak ? 'peak' : '',
+        todayIdx === d ? 'today-col' : '',
+        selectedMissionId ? 'armed' : '',
+        slot?.done ? 'done' : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
       html += `
         <div class="${cls}" data-day="${d}" data-hour="${h}" tabindex="0" role="gridcell">
           ${
             slot
-              ? `<div class="cal-slot"><span>${esc(slot.title)}</span><button type="button" class="cal-rm" data-rm-slot="${d}-${h}" aria-label="Quitar">×</button></div>`
+              ? `<div class="cal-block ${slot.done ? 'done' : ''}"><span class="cb-title">${esc(slot.title)}</span><button type="button" class="cal-rm" data-rm-slot="${d}-${h}" aria-label="Quitar">×</button></div>`
               : ''
           }
         </div>`;
     });
   });
 
-  grid.style.gridTemplateColumns = `64px repeat(${visibleDays.length}, minmax(105px, 1fr))`;
+  grid.style.gridTemplateColumns = isMobileDay
+    ? '50px 1fr'
+    : `54px repeat(${visibleDays.length}, minmax(84px, 1fr))`;
   grid.innerHTML = html;
   renderHeatmap();
 }
@@ -168,7 +194,7 @@ export function initCalendarModule() {
     const chip = e.target.closest('[data-mid]');
     if (!chip) return;
     selectedMissionId = selectedMissionId === chip.dataset.mid ? null : chip.dataset.mid;
-    renderCalTray();
+    renderCalendar();
   });
 
   $('#calTray')?.addEventListener('dragstart', (e) => {
@@ -243,6 +269,14 @@ export function initCalendarModule() {
     saveState();
     renderCalendar();
     toast('✨ Semana planificada en tus horarios de mejor energía.');
+  });
+
+  let calResizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(calResizeTimer);
+    calResizeTimer = setTimeout(() => {
+      if ($('#view-calendar')?.classList.contains('active')) renderCalendar();
+    }, 120);
   });
 
   $('#calExportIcs')?.addEventListener('click', exportICS);

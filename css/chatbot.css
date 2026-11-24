@@ -103,11 +103,36 @@
 
 /* En la app, subir el botón para no tapar la barra inferior móvil */
 @media (max-width: 768px) {
-  .sbot--app { bottom: 86px; right: 14px; }
-  .sbot--landing { bottom: 14px; right: 14px; }
-  .sbot-panel { position: fixed; right: 8px; left: 8px; bottom: 8px; width: auto; height: min(78vh, 560px); }
-  .sbot--app .sbot-panel { bottom: 8px; }
+  .sbot--app { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); right: 12px; }
+  .sbot--landing { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); right: 14px; }
+  .sbot-fab { width: 50px; height: 50px; font-size: 22px; }
+  .sbot-panel {
+    position: fixed;
+    right: 8px;
+    left: 8px;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    width: auto;
+    height: min(82dvh, 560px);
+    border-radius: 18px;
+  }
+  .sbot--app .sbot-panel { bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+  .sbot-icon-btn { width: 38px; height: 38px; }
+  .sbot-input { font-size: 16px; }
+  .sbot-form { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
 }
 @media (prefers-reduced-motion: reduce) {
   .sbot-panel, .sbot-fab, .sbot-typing i { animation: none; transition: none; }
+}
+
+@media (max-width: 768px) {
+  .sbot--app {
+    bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+    right: 12px;
+  }
+  .sbot-fab {
+    width: 46px;
+    height: 46px;
+    font-size: 20px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), 0 0 14px rgba(123, 44, 191, 0.4);
+  }
 }

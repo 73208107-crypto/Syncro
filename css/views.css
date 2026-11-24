@@ -453,7 +453,7 @@
   border: 1px solid var(--border-subtle); cursor: grab; user-select: none;
 }
 .cal-chip.light { border-style: dashed; color: var(--emerald-400); }
-.cal-chip.sel { border-color: var(--cyan-400); box-shadow: var(--shadow-focus); }
+.cal-chip.sel, .cal-chip.selected { border-color: var(--cyan-400); box-shadow: var(--shadow-focus); }
 .cal-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cal-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 10px; }
 .cal-legend .lg { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 4px; }
@@ -1073,4 +1073,361 @@ button.transp-item:hover {
   background: rgba(34, 211, 238, 0.12);
   border: 1px solid rgba(34, 211, 238, 0.3);
   color: var(--cyan-400);
+}
+
+/* ============ VISTAS RESPONSIVAS MÓVIL (DASHBOARD, ENFOQUE, BIOMA, PERFIL) ============ */
+.cal-block .cal-rm {
+  background: rgba(255, 255, 255, 0.18);
+  border: 0;
+  color: #fff;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  font-size: 12px;
+  padding: 0;
+  line-height: 1;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+.cal-block .cal-rm:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+@media (max-width: 768px) {
+  /* Dashboard */
+  .dash-header {
+    gap: 12px;
+  }
+  .dash-meta {
+    gap: 8px;
+    width: 100%;
+  }
+  .streak {
+    padding: 6px 10px;
+    font-size: 12.5px;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .xp-block {
+    padding: 12px 14px;
+  }
+  .energy-value {
+    font-size: 30px;
+  }
+  .mood-chips {
+    gap: 6px;
+  }
+  .mood-chips .chip {
+    min-height: 38px;
+    height: auto;
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  .mission {
+    padding: 12px;
+    gap: 10px;
+  }
+  .mission-actions .icon-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+  .mission-add .btn {
+    flex-shrink: 0;
+  }
+  .biome-art {
+    height: 165px;
+  }
+  .biome-info .btn {
+    width: 100%;
+  }
+
+  /* Modo Enfoque */
+  .timer-card {
+    padding: 24px 16px;
+    gap: 12px;
+  }
+  .seed-stage {
+    width: 112px;
+    height: 112px;
+  }
+  .seed {
+    font-size: 52px;
+  }
+  .card-header-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .sound-item {
+    min-height: 42px;
+    height: auto;
+    padding: 8px 12px;
+  }
+  .guided-break .row {
+    gap: 8px;
+  }
+
+  /* Bioma & Progreso */
+  .santuario-subtabs {
+    width: 100%;
+  }
+  .subtab-btn {
+    flex: 1;
+    padding: 9px 12px;
+    text-align: center;
+  }
+  .bl-controls {
+    gap: 8px;
+  }
+  .bl-controls .btn {
+    flex: 1 1 calc(50% - 4px);
+  }
+  .bl-controls input[type="range"] {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  .metric-card {
+    padding: 12px 14px;
+  }
+  .metric-card strong {
+    font-size: 22px;
+  }
+  .transp-item {
+    padding: 12px;
+  }
+  .ach-item {
+    grid-template-columns: 38px 1fr;
+    gap: 10px;
+  }
+  .ach-item .ic {
+    font-size: 26px;
+  }
+
+  /* Perfil */
+  .profile-hero {
+    gap: 14px;
+  }
+  .profile-avatar {
+    width: 68px;
+    height: 68px;
+    font-size: 30px;
+  }
+  .pf-guardian {
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+  }
+  .profile-id {
+    flex: 1;
+    min-width: 0;
+  }
+  .profile-id p {
+    word-break: break-word;
+  }
+  #view-profile .side-col .card .row.gap .btn {
+    flex: 1 1 calc(50% - 6px);
+  }
+}
+
+@media (max-width: 480px) {
+  .timer {
+    font-size: 46px;
+  }
+  .timer-controls {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    width: 100%;
+    gap: 8px;
+  }
+  #startPauseBtn {
+    grid-column: 1 / -1;
+    min-height: 46px;
+    font-size: 15px;
+  }
+  #fsToggle {
+    grid-column: 1 / -1;
+  }
+  .chart {
+    height: 155px;
+    gap: 6px;
+  }
+  .chart-labels {
+    gap: 6px;
+    font-size: 11px;
+  }
+  .alarm-controls-grid {
+    flex-wrap: wrap;
+  }
+  .alarm-tone-select-wrap {
+    flex: 1 1 100%;
+  }
+  #testAlarmBtn {
+    width: 100%;
+  }
+  #view-profile .side-col .card .row.gap .btn {
+    flex: 1 1 100%;
+  }
+}
+
+/* ============ PULIDO VISUAL MÓVIL DE VISTAS ============ */
+#santuarioSubView,
+#progresoSubView {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  #santuarioSubView,
+  #progresoSubView {
+    gap: 16px;
+  }
+
+  /* Dashboard: ocultar botón duplicado de ayuda y alinear métricas limpiamente */
+  #dashTourBtn {
+    display: none;
+  }
+  .dash-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .dash-title h1 {
+    font-size: 23px;
+    line-height: 1.2;
+  }
+  .dash-title p {
+    margin-bottom: 4px;
+    font-size: 13.5px;
+  }
+  .dash-meta {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px;
+    width: 100%;
+    align-items: stretch;
+  }
+  .streak {
+    padding: 8px 11px;
+    font-size: 12.5px;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+  .streak .pill {
+    height: 22px;
+    padding: 0 8px;
+    font-size: 11px;
+    margin-left: auto;
+  }
+
+  /* Check-in slider más táctil */
+  input[type="range"] {
+    height: 8px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    width: 26px;
+    height: 26px;
+  }
+  .energy-value {
+    font-size: 32px;
+  }
+
+  /* Misiones más limpias y táctiles */
+  .mission {
+    grid-template-columns: 26px 1fr;
+    padding: 12px;
+    gap: 10px;
+  }
+  .mission-meta {
+    gap: 5px;
+  }
+  .mission-meta .pill {
+    height: 22px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
+  .mission-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 8px;
+    margin-top: 2px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .mission-actions .btn {
+    flex: 1;
+    min-height: 36px;
+  }
+  .mission-actions .icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Santuario: proporción armónica en celular */
+  .bl-scene {
+    height: 240px;
+  }
+  .bl-plant[data-stage="0"] { font-size: 18px; }
+  .bl-plant[data-stage="1"] { font-size: 26px; }
+  .bl-plant[data-stage="2"] { font-size: 38px; }
+  .bl-plant[data-stage="3"] { font-size: 50px; }
+  .bl-animal { font-size: 26px; }
+  .bl-animal.fly { font-size: 20px; bottom: 54px; }
+  .bl-condor { font-size: 30px; top: 28px; }
+  .bl-sun { width: 48px; height: 48px; top: 18px; right: 24px; }
+  .bl-rainbow { width: 260px; height: 130px; top: 32px; }
+  .bl-stage {
+    padding: 8px 6px;
+  }
+  .bl-stage .em {
+    font-size: 24px;
+  }
+  .biome-metrics {
+    gap: 10px;
+  }
+  .metric-card {
+    padding: 12px;
+    border-radius: 14px;
+  }
+  .metric-card span {
+    font-size: 12px;
+  }
+  .metric-card strong {
+    font-size: 21px;
+  }
+  .zone {
+    gap: 6px;
+  }
+  .zone-art {
+    font-size: 36px;
+    margin-bottom: 0;
+  }
+  .transp-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .transp-item {
+    padding: 12px 6px;
+  }
+  .transp-item span {
+    font-size: 24px;
+    margin-bottom: 4px;
+  }
+  .transp-item p {
+    font-size: 11.5px;
+    line-height: 1.25;
+  }
+}
+
+@media (max-width: 390px) {
+  .dash-meta {
+    grid-template-columns: 1fr;
+  }
+  .streak {
+    justify-content: space-between;
+  }
 }

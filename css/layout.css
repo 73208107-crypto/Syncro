@@ -306,10 +306,20 @@ html:fullscreen body.focus-running .seed { font-size: 80px; }
 body.focus-running .timer-card { min-height: 420px; justify-content: center; }
 
 @media (max-width: 768px) {
-  .toast-single { bottom: 84px; }
+  .toast-single { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
   .row.gap .input { flex: 1 1 100%; max-width: 100% !important; }
   .siren-badge { max-width: 100%; }
+  body.has-focus-ribbon .focus-top-ribbon {
+    height: auto;
+    min-height: 36px;
+    padding: 6px 12px;
+    font-size: 12px;
+    line-height: 1.3;
+    text-align: center;
+    flex-wrap: wrap;
+  }
   body.has-focus-ribbon .focus-top-ribbon span:nth-child(2) { display: none; }
+}
 
 /* =====================================================
    BARRA LATERAL: pie reorganizado + contraer a íconos
@@ -384,3 +394,168 @@ body.sidebar-collapsed .sidebar-offline-badge {
   50% { opacity: 0.45; }
 }
 
+/* ============ BARRA SUPERIOR MÓVIL & REFINAMIENTO RESPONSIVE ============ */
+.mobile-topbar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 45;
+    min-height: calc(54px + env(safe-area-inset-top, 0px));
+    padding: calc(8px + env(safe-area-inset-top, 0px)) 14px 8px;
+    background: rgba(11, 19, 43, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  body.has-focus-ribbon .mobile-topbar {
+    top: 36px;
+  }
+  .mobile-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--white);
+    text-decoration: none;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: 0.04em;
+  }
+  .mobile-brand .logo-mark {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    font-size: 15px;
+  }
+  .mobile-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .mobile-topbar .icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+  .main {
+    padding: 14px 12px 20px;
+    gap: 16px;
+  }
+  .view {
+    gap: 16px;
+  }
+  .view-header {
+    gap: 10px;
+  }
+  .bn-item {
+    touch-action: manipulation;
+    position: relative;
+  }
+  .bn-item.active {
+    box-shadow: inset 0 2px 0 var(--cyan-400);
+  }
+  .guest-mode-banner {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    line-height: 1.4;
+  }
+}
+
+@media (max-width: 380px) {
+  .main {
+    padding: 12px 10px 18px;
+  }
+  .bn-item {
+    font-size: 16px;
+    padding: 4px 2px;
+  }
+  .bn-item span {
+    font-size: 9.5px;
+  }
+}
+
+/* ============ PULIDO NATIVO MÓVIL (APP SHELL & BOTTOM NAV) ============ */
+@media (max-width: 768px) {
+  .app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+    padding-bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+  }
+  .mobile-topbar {
+    flex-shrink: 0;
+  }
+  .main {
+    flex: 1 0 auto;
+    padding: 14px 14px 86px;
+    gap: 16px;
+  }
+  .view-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+  .view-header h1 {
+    font-size: 23px;
+    line-height: 1.2;
+    margin-bottom: 2px;
+  }
+  .view-header p {
+    margin-bottom: 0;
+    font-size: 13.5px;
+    line-height: 1.45;
+  }
+  .bottom-nav {
+    height: calc(64px + env(safe-area-inset-bottom, 0px));
+    padding: 4px 6px calc(4px + env(safe-area-inset-bottom, 0px));
+    gap: 2px;
+    background: rgba(11, 19, 43, 0.96);
+  }
+  .bn-item {
+    border-radius: 12px;
+    gap: 3px;
+    padding: 6px 2px;
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+  .bn-item svg {
+    width: 21px;
+    height: 21px;
+    flex-shrink: 0;
+    transition: transform 0.18s ease;
+  }
+  .bn-item span {
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+  .bn-item.active {
+    color: var(--cyan-400);
+    background: rgba(34, 211, 238, 0.12);
+    box-shadow: none;
+    transform: none;
+  }
+  .bn-item.active svg {
+    transform: scale(1.06);
+  }
+}
+
+@media (max-width: 380px) {
+  .main {
+    padding: 12px 10px 84px;
+  }
+  .bn-item svg {
+    width: 19px;
+    height: 19px;
+  }
+  .bn-item span {
+    font-size: 9.5px;
+  }
+}
