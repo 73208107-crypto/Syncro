@@ -23,6 +23,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
+<script>(function(){try{var t=localStorage.getItem('syncro_theme');document.documentElement.dataset.theme=(t==='light'||t==='dark')?t:'dark';}catch(e){document.documentElement.dataset.theme='dark';}})();</script>
 <link rel="stylesheet" href="css/tokens.css" />
 <link rel="stylesheet" href="css/landing.css" />
 <link rel="stylesheet" href="css/chatbot.css" />
@@ -46,6 +47,7 @@
       <a href="#faq" class="nav-link">FAQ</a>
     </div>
     <div class="nav-actions">
+      <button type="button" class="theme-toggle-btn" data-theme-toggle aria-label="Cambiar a modo claro" title="Cambiar a modo claro" aria-pressed="false"><span data-theme-icon aria-hidden="true">☀️</span></button>
       <a href="app.html" class="nav-cta-ghost" data-auth="login">Iniciar sesión</a>
       <a href="app.html" class="nav-cta-primary" data-auth="signup">Comenzar gratis</a>
       <button type="button" class="nav-burger" id="navBurger" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobileMenu"><span></span><span></span><span></span></button>

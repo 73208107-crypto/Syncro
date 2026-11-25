@@ -1,3 +1,4 @@
+import { initTheme } from './core/theme.js';
 /**
  * SYNCRO — Controlador Modular de Landing (index.html)
  * Gestiona CRO, analítica de embudo, contadores de impacto conectados a ecoService,
@@ -734,4 +735,5 @@ if ('serviceWorker' in navigator) {
 }
 
 // ============ BOT n8n (chat de asistencia) ============
+initTheme();
 initChatbot({ surface: 'landing' });

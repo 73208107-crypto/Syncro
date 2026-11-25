@@ -32,6 +32,7 @@ import { analyticsService } from './services/analyticsService.js';
 import { $, $$, toast, openOverlay, closeOverlay, openInfo, celebrate, initModals } from './ui/modals.js';
 import { T, initTimerModule, updateTimerDuration, startTimer, requestViewLeave, Notify } from './modules/timer.js';
 import { initBiomeModule, renderBiome, unlockedSpeciesCount } from './modules/biome.js';
+import { initTheme } from './core/theme.js';
 import { initCalendarModule, renderCalendar, renderCalTray, markSlotsDone } from './modules/calendar.js';
 import { Journal, renderJournalTimeline } from './modules/journal.js';
 import { initChatbot } from './modules/chatbot.js';
@@ -946,6 +947,7 @@ function bootstrap() {
       checkAchievements();
     },
   });
+  initTheme();
   initCalendarModule();
   initCheckIn();
   initBreakdownAndPlan();

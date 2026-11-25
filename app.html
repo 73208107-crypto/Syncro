@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<script>(function(){try{var t=localStorage.getItem('syncro_theme');document.documentElement.dataset.theme=(t==='light'||t==='dark')?t:'dark';}catch(e){document.documentElement.dataset.theme='dark';}})();</script>
 <link rel="stylesheet" href="css/tokens.css" />
 <link rel="stylesheet" href="css/base.css" />
 <link rel="stylesheet" href="css/layout.css" />
@@ -283,6 +284,7 @@
         </div>
       </div>
       <div class="sidebar-actions">
+        <button class="btn ghost" data-theme-toggle type="button" title="Cambiar a modo claro" aria-pressed="false"><span class="act-ico" data-theme-icon aria-hidden="true">☀️</span><span class="act-lbl" data-theme-label>Modo claro</span></button>
         <button class="btn ghost" data-replay-tour type="button" title="Ver el tutorial"><span class="act-ico" aria-hidden="true">❔</span><span class="act-lbl">Tutorial</span></button>
         <button class="btn ghost" data-logout type="button" title="Cerrar sesión" aria-label="Cerrar sesión"><span class="act-ico act-ico-rail" aria-hidden="true">⎋</span><span class="act-lbl">Cerrar sesión</span></button>
       </div>
@@ -299,6 +301,7 @@
       <span id="mobileOfflineBadge" class="sidebar-offline-badge hidden" title="Modo sin conexión">📶 Offline</span>
     </div>
     <div class="mobile-topbar-actions">
+      <button type="button" class="icon-btn" data-theme-toggle aria-label="Cambiar a modo claro" title="Cambiar a modo claro" aria-pressed="false"><span data-theme-icon aria-hidden="true">☀️</span></button>
       <button type="button" class="icon-btn mobile-chat-btn hidden" id="mobileChatBtn" aria-label="Abrir asistente SYNCRO" aria-expanded="false" aria-controls="sbotPanel" title="Asistente SYNCRO">🤖</button>
       <button type="button" class="icon-btn" data-replay-tour aria-label="Ver tutorial" title="Ver tutorial">❔</button>
     </div>
