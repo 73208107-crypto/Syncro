@@ -385,14 +385,36 @@
 
       <!-- Santuario preview -->
       <div class="card biome-preview">
-        <div class="biome-art">
+        <div class="biome-art" id="dashBiomePreview" data-weather="fog" data-season="primavera" data-time="day">
+          <svg class="dash-biome-svg" viewBox="0 0 400 195" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+            <defs>
+              <linearGradient id="dashSky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--sky1, #38BDF8)"/>
+                <stop offset="60%" stop-color="var(--sky2, #BAE6FD)"/>
+                <stop offset="100%" stop-color="var(--sky3, #FEF3C7)"/>
+              </linearGradient>
+              <linearGradient id="dashLagoon" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.72"/>
+                <stop offset="100%" stop-color="#0EA5E9" stop-opacity="0.45"/>
+              </linearGradient>
+            </defs>
+            <rect width="400" height="195" fill="url(#dashSky)"/>
+            <circle cx="330" cy="44" r="22" fill="#FEF08A" opacity="0.28"/>
+            <circle cx="330" cy="44" r="13" fill="#FDE047"/>
+            <!-- Cordillera lejana -->
+            <path d="M-10 140 L55 70 L108 112 L178 48 L242 108 L305 64 L375 118 L415 95 L415 195 L-10 195 Z" fill="var(--mt-far, #334155)"/>
+            <path d="M178 48 L156 76 L172 72 L179 81 L188 71 L202 78 Z" fill="#F8FAFC" opacity="0.92"/>
+            <path d="M55 70 L41 88 L53 84 L62 91 L72 86 Z" fill="#E2E8F0" opacity="0.85"/>
+            <path d="M305 64 L291 83 L304 79 L314 86 L323 81 Z" fill="#F1F5F9" opacity="0.88"/>
+            <!-- Laderas andinas -->
+            <path d="M-10 154 Q95 106 210 144 T415 138 L415 195 L-10 195 Z" fill="var(--h1, #15803D)"/>
+            <path d="M-10 164 Q130 132 255 156 T415 152 L415 195 L-10 195 Z" fill="var(--h2, #16A34A)"/>
+            <ellipse cx="315" cy="172" rx="68" ry="16" fill="url(#dashLagoon)"/>
+            <path d="M-10 176 Q140 162 275 182 L415 178 L415 195 L-10 195 Z" fill="var(--gr, #14532D)"/>
+          </svg>
           <div class="scene">
-            <div class="sun"></div>
-            <div class="hill hill-1"></div>
-            <div class="hill hill-2"></div>
             <div class="flower" id="previewFlower">🌺</div>
             <div class="alpaca" id="previewGuardian">🦙</div>
-            <div class="tree">🌳</div>
           </div>
         </div>
         <div class="biome-info">
@@ -588,22 +610,131 @@
         <div class="card biome-live" id="biomeLive">
           <div class="card-header">
             <h3>Tu santuario en vivo</h3>
-            <div class="row gap">
-              <span class="pill" id="blWeatherChip">☀️</span>
-              <span class="pill violet" id="blSeasonChip">🌸</span>
+            <div class="row gap bl-chips-row">
+              <button type="button" class="pill time-pill" id="blTimeChip" title="Cambiar hora del cielo">☀️ Día</button>
+              <span class="pill" id="blWeatherChip">🌫️ Niebla suave</span>
+              <span class="pill violet" id="blSeasonChip">🌸 Primavera andina</span>
             </div>
           </div>
-          <div class="bl-scene" id="blScene" data-weather="cloudy" data-season="primavera" role="img" aria-label="Escena del santuario">
-            <div class="bl-sun"></div>
-            <div class="bl-cloud c1">☁️</div><div class="bl-cloud c2">☁️</div><div class="bl-cloud c3">☁️</div>
-            <div class="bl-rainbow"></div>
-            <div class="bl-condor" id="blCondor" aria-hidden="true">🦅</div>
-            <div class="bl-hill h1"></div><div class="bl-hill h2"></div><div class="bl-hill h3"></div>
-            <div class="bl-ground"></div>
+          <div class="bl-scene" id="blScene" data-weather="fog" data-season="primavera" data-time="day" role="region" aria-label="Escena interactiva del Santuario Andino">
+            <svg class="bl-backdrop" viewBox="0 0 800 340" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+              <defs>
+                <linearGradient id="blSkyGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="var(--sky1)"/>
+                  <stop offset="58%" stop-color="var(--sky2)"/>
+                  <stop offset="100%" stop-color="var(--sky3)"/>
+                </linearGradient>
+                <radialGradient id="blSunHalo" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#FEF9C3" stop-opacity="0.95"/>
+                  <stop offset="45%" stop-color="#FDE047" stop-opacity="0.4"/>
+                  <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
+                </radialGradient>
+                <linearGradient id="blLagoonGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="var(--water1)"/>
+                  <stop offset="100%" stop-color="var(--water2)"/>
+                </linearGradient>
+                <linearGradient id="blRainbowGrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#F43F5E"/>
+                  <stop offset="20%" stop-color="#F59E0B"/>
+                  <stop offset="40%" stop-color="#FDE047"/>
+                  <stop offset="60%" stop-color="#22C55E"/>
+                  <stop offset="80%" stop-color="#38BDF8"/>
+                  <stop offset="100%" stop-color="#A855F7"/>
+                </linearGradient>
+              </defs>
+
+              <!-- Cielo -->
+              <rect width="800" height="340" fill="url(#blSkyGrad)"/>
+
+              <!-- Estrellas (noche y atardecer) -->
+              <g class="bl-stars">
+                <circle cx="72" cy="42" r="1.6"/><circle cx="148" cy="28" r="1.2"/><circle cx="215" cy="56" r="1.8"/>
+                <circle cx="288" cy="30" r="1.3"/><circle cx="364" cy="48" r="1.5"/><circle cx="432" cy="24" r="2"/>
+                <circle cx="512" cy="52" r="1.4"/><circle cx="585" cy="32" r="1.7"/><circle cx="642" cy="64" r="1.3"/>
+                <circle cx="720" cy="38" r="1.6"/><circle cx="110" cy="84" r="1.1"/><circle cx="470" cy="76" r="1.2"/>
+                <circle cx="688" cy="92" r="1.4"/><circle cx="318" cy="74" r="1.1"/>
+              </g>
+
+              <!-- Luna (noche) -->
+              <g class="bl-moon">
+                <circle cx="660" cy="68" r="34" fill="#E0F2FE" opacity="0.14"/>
+                <path d="M666 46 A22 22 0 1 0 682 78 A18 18 0 1 1 666 46 Z" fill="#F8FAFC"/>
+              </g>
+
+              <!-- Sol (día / amanecer / atardecer) -->
+              <g class="bl-sun-svg">
+                <circle cx="662" cy="72" r="68" fill="url(#blSunHalo)"/>
+                <circle cx="662" cy="72" r="26" fill="#FEF08A"/>
+                <circle cx="662" cy="72" r="21" fill="#FDE047"/>
+              </g>
+
+              <!-- Arcoíris andino -->
+              <g class="bl-rainbow-svg" fill="none" stroke-linecap="round">
+                <path d="M160 245 A240 205 0 0 1 640 245" stroke="#EF4444" stroke-width="7" opacity="0.52"/>
+                <path d="M168 245 A232 197 0 0 1 632 245" stroke="#F59E0B" stroke-width="7" opacity="0.52"/>
+                <path d="M176 245 A224 189 0 0 1 624 245" stroke="#FDE047" stroke-width="7" opacity="0.52"/>
+                <path d="M184 245 A216 181 0 0 1 616 245" stroke="#22C55E" stroke-width="7" opacity="0.5"/>
+                <path d="M192 245 A208 173 0 0 1 608 245" stroke="#38BDF8" stroke-width="7" opacity="0.5"/>
+                <path d="M200 245 A200 165 0 0 1 600 245" stroke="#A855F7" stroke-width="7" opacity="0.48"/>
+              </g>
+
+              <!-- Nubes suaves en SVG -->
+              <g class="bl-cloud-svg c1">
+                <path d="M40 72 Q40 56 58 56 Q66 42 86 44 Q106 44 112 58 Q128 58 128 72 Z" fill="var(--cloud-fill)"/>
+              </g>
+              <g class="bl-cloud-svg c2">
+                <path d="M260 104 Q260 92 274 92 Q281 80 296 82 Q312 82 316 93 Q328 93 328 104 Z" fill="var(--cloud-fill)" opacity="0.82"/>
+              </g>
+              <g class="bl-cloud-svg c3">
+                <path d="M510 66 Q510 52 528 52 Q538 38 558 40 Q578 40 584 53 Q600 54 600 66 Z" fill="var(--cloud-fill)" opacity="0.88"/>
+              </g>
+
+              <!-- Capa 1: Cordillera nevada (Ausangate / Andes) -->
+              <path d="M-20 248 L65 144 L134 196 L228 104 L318 188 L398 118 L482 184 L574 92 L666 176 L748 134 L820 192 L820 340 L-20 340 Z" fill="var(--mt-far)"/>
+              <!-- Sombras de faceta de cordillera -->
+              <path d="M228 104 L265 188 L318 188 Z M574 92 L616 178 L666 176 Z M398 118 L434 182 L482 184 Z" fill="var(--mt-shadow)" opacity="0.35"/>
+              <!-- Cumbres nevadas -->
+              <path d="M228 104 L196 140 L216 134 L229 147 L242 135 L258 142 Z" fill="var(--snow)"/>
+              <path d="M574 92 L540 132 L560 125 L574 139 L589 126 L608 134 Z" fill="var(--snow)"/>
+              <path d="M398 118 L374 146 L390 141 L400 150 L412 141 L424 147 Z" fill="var(--snow)" opacity="0.92"/>
+              <path d="M65 144 L44 170 L60 165 L71 173 L84 166 Z" fill="var(--snow)" opacity="0.86"/>
+
+              <!-- Capa 2: Montañas medias -->
+              <path d="M-20 256 Q110 186 245 224 T520 212 T820 228 L820 340 L-20 340 Z" fill="var(--h1)"/>
+
+              <!-- Capa 3: Laderas y andenes andinos -->
+              <path d="M-20 272 Q155 214 335 250 T670 236 T820 254 L820 340 L-20 340 Z" fill="var(--h2)"/>
+              <path d="M36 254 Q145 236 260 252 M56 268 Q160 252 270 266" stroke="rgba(255,255,255,0.12)" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+              <!-- Capa 4: Valle y laguna altoandina (Cocha) -->
+              <path d="M-20 282 Q210 254 440 276 T820 268 L820 340 L-20 340 Z" fill="var(--h3)"/>
+              <ellipse cx="628" cy="306" rx="142" ry="26" fill="url(#blLagoonGrad)"/>
+              <path d="M548 302 L614 302 M586 312 L668 312 M632 296 L696 296" stroke="rgba(255,255,255,0.34)" stroke-width="2" stroke-linecap="round" class="bl-water-shimmer"/>
+              <!-- Ondas al regar -->
+              <ellipse cx="628" cy="306" rx="28" ry="6" fill="none" stroke="#BAE6FD" stroke-width="2" class="bl-ripple r1"/>
+              <ellipse cx="628" cy="306" rx="54" ry="11" fill="none" stroke="#E0F2FE" stroke-width="1.6" class="bl-ripple r2"/>
+
+              <!-- Suelo frontal -->
+              <path d="M-20 306 Q190 282 415 314 Q530 330 690 326 L820 318 L820 340 L-20 340 Z" fill="var(--gr)"/>
+            </svg>
+
+            <button type="button" class="bl-condor locked" id="blCondor" aria-label="Cóndor andino" title="Toca para saludar al Cóndor"></button>
             <div class="bl-plants" id="blPlants"></div>
             <div class="bl-fauna" id="blFauna"></div>
-            <div class="bl-fog f1"></div><div class="bl-fog f2"></div>
+            <div class="bl-fireflies" aria-hidden="true">
+              <span style="left:16%;bottom:24%;--ff-d:0s"></span>
+              <span style="left:29%;bottom:36%;--ff-d:1.2s"></span>
+              <span style="left:44%;bottom:22%;--ff-d:2.4s"></span>
+              <span style="left:58%;bottom:32%;--ff-d:0.7s"></span>
+              <span style="left:72%;bottom:26%;--ff-d:1.9s"></span>
+              <span style="left:84%;bottom:38%;--ff-d:2.8s"></span>
+            </div>
+            <div class="bl-fog f1"></div>
+            <div class="bl-fog f2"></div>
             <div class="bl-rain" id="blRain" aria-hidden="true"></div>
+            <div class="bl-sparkles" id="blSparkles" aria-hidden="true"></div>
+            <div class="bl-bubble" id="blBubble" role="status" aria-live="polite"></div>
+            <span class="bl-tap-hint">Toca a tus guardianes ✨</span>
           </div>
           <p class="bl-caption" id="blCaption"></p>
           <div class="bl-controls">
