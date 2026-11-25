@@ -1887,6 +1887,9 @@
         const cls = ["cal-day-pill", todayIdx === idx ? "today" : "", selectedDayIdx === idx ? "active" : ""].filter(Boolean).join(" ");
         return `<button type="button" class="${cls}" data-day-idx="${idx}" role="tab" aria-selected="${selectedDayIdx === idx}"><span>${d}</span><strong>${dateNum}</strong></button>`;
       }).join("");
+      requestAnimationFrame(() => {
+        dayChips.querySelector(".cal-day-pill.active")?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      });
     }
     const lowHours = getLowEnergyHours();
     const peakHours = getPeakHours();
@@ -1911,7 +1914,7 @@
         </div>`;
       });
     });
-    grid.style.gridTemplateColumns = isMobileDay ? "50px 1fr" : `54px repeat(${visibleDays.length}, minmax(84px, 1fr))`;
+    grid.style.gridTemplateColumns = isMobileDay ? "56px 1fr" : `54px repeat(${visibleDays.length}, minmax(84px, 1fr))`;
     grid.innerHTML = html;
     renderHeatmap();
   }
@@ -2354,6 +2357,7 @@
     let history = loadHistory();
     let busy = false;
     const root = el("div", { id: "sbotRoot", class: `sbot sbot--${surface}` });
+    const backdrop = el("div", { class: "sbot-backdrop", hidden: "", "aria-hidden": "true" });
     const fab = el("button", {
       type: "button",
       class: "sbot-fab",
@@ -2362,6 +2366,14 @@
       "aria-controls": "sbotPanel"
     });
     fab.append(el("span", { class: "sbot-fab-ico", "aria-hidden": "true" }, cfg.botAvatar));
+    const mobileTrigger = surface === "app" ? document.getElementById("mobileChatBtn") : null;
+    if (mobileTrigger) {
+      mobileTrigger.classList.remove("hidden");
+      mobileTrigger.textContent = "";
+      mobileTrigger.append(el("span", { "aria-hidden": "true" }, cfg.botAvatar));
+      mobileTrigger.setAttribute("aria-label", `Abrir chat con ${cfg.botName}`);
+      mobileTrigger.setAttribute("aria-expanded", "false");
+    }
     const panel = el("section", {
       id: "sbotPanel",
       class: "sbot-panel",
@@ -2390,7 +2402,7 @@
     const sendBtn = el("button", { type: "submit", class: "sbot-send", "aria-label": "Enviar mensaje" }, "\u27A4");
     form.append(input, sendBtn);
     panel.append(head, log, chips, form);
-    root.append(fab, panel);
+    root.append(backdrop, fab, panel);
     document.body.appendChild(root);
     function addBubble(role, text, { persist = true } = {}) {
       const row = el("div", { class: `sbot-msg sbot-msg--${role}` });
@@ -2455,18 +2467,31 @@
     }
     function open() {
       panel.hidden = false;
+      backdrop.hidden = false;
       root.classList.add("is-open");
       fab.setAttribute("aria-expanded", "true");
+      if (mobileTrigger) {
+        mobileTrigger.setAttribute("aria-expanded", "true");
+        mobileTrigger.classList.add("is-open");
+      }
       input.focus();
       log.scrollTop = log.scrollHeight;
     }
     function close() {
       panel.hidden = true;
+      backdrop.hidden = true;
       root.classList.remove("is-open");
       fab.setAttribute("aria-expanded", "false");
-      fab.focus();
+      if (mobileTrigger) {
+        mobileTrigger.setAttribute("aria-expanded", "false");
+        mobileTrigger.classList.remove("is-open");
+      }
+      if (mobileTrigger && fab.offsetParent === null) mobileTrigger.focus();
+      else fab.focus();
     }
     fab.addEventListener("click", () => panel.hidden ? open() : close());
+    mobileTrigger?.addEventListener("click", () => panel.hidden ? open() : close());
+    backdrop.addEventListener("click", close);
     closeBtn.addEventListener("click", close);
     resetBtn.addEventListener("click", () => {
       history = [];
@@ -2532,7 +2557,7 @@
     if ($("#greeting")) $("#greeting").textContent = first ? `${sal}, ${first}!` : `${sal}!`;
     if ($("#sidebarName")) $("#sidebarName").textContent = u.name || "Invitado";
     if ($("#sidebarLevel")) $("#sidebarLevel").textContent = `Nivel ${u.level}`;
-    if ($("#sidebarAvatar")) $("#sidebarAvatar").textContent = (u.name || "\u{1F331}").charAt(0).toUpperCase();
+    if ($("#sidebarAvatar")) $("#sidebarAvatar").textContent = (Array.from(u.name || "\u{1F331}")[0] || "S").toUpperCase();
     if ($("#sidebarGuardianMini")) $("#sidebarGuardianMini").textContent = guardian();
     if ($("#dashDrops")) $("#dashDrops").textContent = state.biome.drops;
     if ($("#dropsCount")) $("#dropsCount").textContent = state.biome.drops;
@@ -2875,7 +2900,7 @@
     const u = state.user;
     const p = state.profile;
     const ses = authService.getSession() || {};
-    if ($("#pfAvatar")) $("#pfAvatar").textContent = (u.name || "\u{1F331}").charAt(0).toUpperCase();
+    if ($("#pfAvatar")) $("#pfAvatar").textContent = (Array.from(u.name || "\u{1F331}")[0] || "S").toUpperCase();
     if ($("#pfGuardian")) $("#pfGuardian").textContent = guardian();
     if ($("#pfName")) $("#pfName").textContent = u.name || "Estudiante";
     if ($("#pfHandle")) $("#pfHandle").textContent = ses.username ? `@${ses.username} \xB7 ${ses.email}` : ses.email || "Modo prueba local";
@@ -3193,6 +3218,7 @@
     });
     const updateOnline = () => {
       $("#sidebarOfflineBadge")?.classList.toggle("hidden", navigator.onLine);
+      $("#mobileOfflineBadge")?.classList.toggle("hidden", navigator.onLine);
     };
     window.addEventListener("online", updateOnline);
     window.addEventListener("offline", updateOnline);

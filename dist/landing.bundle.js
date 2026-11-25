@@ -695,6 +695,7 @@
     let history = loadHistory();
     let busy = false;
     const root = el("div", { id: "sbotRoot", class: `sbot sbot--${surface}` });
+    const backdrop = el("div", { class: "sbot-backdrop", hidden: "", "aria-hidden": "true" });
     const fab = el("button", {
       type: "button",
       class: "sbot-fab",
@@ -703,6 +704,14 @@
       "aria-controls": "sbotPanel"
     });
     fab.append(el("span", { class: "sbot-fab-ico", "aria-hidden": "true" }, cfg.botAvatar));
+    const mobileTrigger = surface === "app" ? document.getElementById("mobileChatBtn") : null;
+    if (mobileTrigger) {
+      mobileTrigger.classList.remove("hidden");
+      mobileTrigger.textContent = "";
+      mobileTrigger.append(el("span", { "aria-hidden": "true" }, cfg.botAvatar));
+      mobileTrigger.setAttribute("aria-label", `Abrir chat con ${cfg.botName}`);
+      mobileTrigger.setAttribute("aria-expanded", "false");
+    }
     const panel = el("section", {
       id: "sbotPanel",
       class: "sbot-panel",
@@ -731,7 +740,7 @@
     const sendBtn = el("button", { type: "submit", class: "sbot-send", "aria-label": "Enviar mensaje" }, "\u27A4");
     form.append(input, sendBtn);
     panel.append(head, log, chips, form);
-    root.append(fab, panel);
+    root.append(backdrop, fab, panel);
     document.body.appendChild(root);
     function addBubble(role, text, { persist = true } = {}) {
       const row = el("div", { class: `sbot-msg sbot-msg--${role}` });
@@ -796,18 +805,31 @@
     }
     function open() {
       panel.hidden = false;
+      backdrop.hidden = false;
       root.classList.add("is-open");
       fab.setAttribute("aria-expanded", "true");
+      if (mobileTrigger) {
+        mobileTrigger.setAttribute("aria-expanded", "true");
+        mobileTrigger.classList.add("is-open");
+      }
       input.focus();
       log.scrollTop = log.scrollHeight;
     }
     function close() {
       panel.hidden = true;
+      backdrop.hidden = true;
       root.classList.remove("is-open");
       fab.setAttribute("aria-expanded", "false");
-      fab.focus();
+      if (mobileTrigger) {
+        mobileTrigger.setAttribute("aria-expanded", "false");
+        mobileTrigger.classList.remove("is-open");
+      }
+      if (mobileTrigger && fab.offsetParent === null) mobileTrigger.focus();
+      else fab.focus();
     }
     fab.addEventListener("click", () => panel.hidden ? open() : close());
+    mobileTrigger?.addEventListener("click", () => panel.hidden ? open() : close());
+    backdrop.addEventListener("click", close);
     closeBtn.addEventListener("click", close);
     resetBtn.addEventListener("click", () => {
       history = [];

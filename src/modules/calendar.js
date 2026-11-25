@@ -64,6 +64,9 @@ export function renderCalendar() {
       const cls = ['cal-day-pill', todayIdx === idx ? 'today' : '', selectedDayIdx === idx ? 'active' : ''].filter(Boolean).join(' ');
       return `<button type="button" class="${cls}" data-day-idx="${idx}" role="tab" aria-selected="${selectedDayIdx === idx}"><span>${d}</span><strong>${dateNum}</strong></button>`;
     }).join('');
+    requestAnimationFrame(() => {
+      dayChips.querySelector('.cal-day-pill.active')?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    });
   }
 
   const lowHours = getLowEnergyHours();
@@ -108,7 +111,7 @@ export function renderCalendar() {
   });
 
   grid.style.gridTemplateColumns = isMobileDay
-    ? '50px 1fr'
+    ? '56px 1fr'
     : `54px repeat(${visibleDays.length}, minmax(84px, 1fr))`;
   grid.innerHTML = html;
   renderHeatmap();

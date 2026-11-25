@@ -3,7 +3,7 @@
  * Cachea el shell modular (HTML, css/, src/) y omite llamadas a APIs externas o analítica.
  */
 
-const CACHE_NAME = 'syncro-commercial-v3-n8n';
+const CACHE_NAME = 'syncro-commercial-v4-mobile';
 const PRECACHE_ASSETS = [
   './',
   './index.html',

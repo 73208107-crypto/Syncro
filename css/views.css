@@ -519,89 +519,106 @@
   #calAutoPlan {
     grid-column: 1 / -1;
     width: 100%;
-    height: 42px;
-    font-size: 13.5px;
+    min-height: 44px;
+    font-size: 14px;
     justify-content: center;
     box-sizing: border-box;
   }
   #calExportIcs, #calExportGoogle {
     width: 100%;
-    height: 36px;
-    font-size: 11.5px;
-    padding: 0 4px;
+    min-height: 42px;
+    font-size: 13px;
+    padding: 8px 10px;
     justify-content: center;
-    white-space: nowrap;
+    white-space: normal;
+    line-height: 1.25;
     box-sizing: border-box;
   }
   .cal-card {
-    padding: 12px 10px;
+    padding: 16px 14px;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
     overflow-x: hidden;
     border-radius: 18px;
   }
-  /* Bandeja de misiones móvil: carrusel swipe horizontal */
+  /* Bandeja de misiones móvil: chips envolventes con texto completo */
   #calTray {
     display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-    gap: 6px;
-    padding: 2px 0 6px;
+    flex-wrap: wrap;
+    overflow-x: visible;
+    gap: 8px;
+    padding: 2px 0 4px;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
   }
-  #calTray::-webkit-scrollbar {
-    display: none;
-  }
   #calTray .cal-chip {
-    flex: 0 0 auto;
-    max-width: 200px;
-    font-size: 11.5px;
-    padding: 5px 9px;
-    white-space: nowrap;
+    flex: 0 1 auto;
+    max-width: 100%;
+    font-size: 13.5px;
+    line-height: 1.35;
+    padding: 9px 13px;
+    min-height: 40px;
+    border-radius: 14px;
+    white-space: normal;
+    text-align: left;
+    word-break: break-word;
     box-sizing: border-box;
+  }
+  #calTray .cal-chip span {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
   }
   .cal-day-picker {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    margin-bottom: 10px;
+    gap: 8px;
+    margin-bottom: 12px;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
   }
-  /* Barra de 7 días 100% encuadrada en pantalla: 24px flecha + 7 píldoras + 24px flecha */
+  /* Tira de 7 días sin solapamientos: 7 píldoras arriba, flechas ‹ › debajo */
   .cal-day-nav {
-    display: grid;
-    grid-template-columns: 24px repeat(7, 1fr) 24px;
-    gap: 3px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
     width: 100%;
     max-width: 100%;
-    align-items: center;
-    box-sizing: border-box;
-  }
-  .cal-nav-arrow {
-    width: 24px;
-    height: 38px;
-    font-size: 14px;
-    font-weight: 700;
-    padding: 0;
-    display: grid;
-    place-items: center;
-    border-radius: 6px;
     box-sizing: border-box;
   }
   .cal-days-chips {
-    display: contents; /* Desempaqueta las 7 píldoras para que encajen en el grid */
+    order: 1;
+    flex: 1 1 100%;
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+    min-width: 0;
+    padding: 2px 0;
+  }
+  .cal-nav-arrow {
+    order: 2;
+    flex: 1 1 0;
+    min-height: 40px;
+    height: 40px;
+    font-size: 18px;
+    font-weight: 700;
+    padding: 0 12px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    box-sizing: border-box;
   }
   .cal-day-pill {
-    padding: 4px 1px;
-    border-radius: 6px;
-    background: rgba(11, 19, 43, 0.6);
+    min-width: 0;
+    width: 100%;
+    height: 52px;
+    padding: 6px 2px;
+    border-radius: 10px;
+    background: rgba(11, 19, 43, 0.65);
     border: 1px solid var(--border-subtle);
     color: var(--text-secondary);
     cursor: pointer;
@@ -609,25 +626,40 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-width: 0;
-    width: 100%;
-    height: 38px;
+    gap: 2px;
     box-sizing: border-box;
     transition: all 0.15s;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
   }
   .cal-day-pill span {
-    font-size: 9px;
+    font-size: 12px;
     font-weight: 600;
-    line-height: 1;
+    line-height: 1.1;
     color: var(--text-tertiary);
     text-transform: uppercase;
   }
   .cal-day-pill strong {
-    font-size: 12px;
+    font-size: 15px;
     line-height: 1.2;
     color: var(--text-primary);
+  }
+  @media (max-width: 350px) {
+    .cal-days-chips {
+      display: flex;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x proximity;
+    }
+    .cal-days-chips::-webkit-scrollbar {
+      display: none;
+    }
+    .cal-day-pill {
+      flex: 0 0 44px;
+      width: 44px;
+      scroll-snap-align: center;
+    }
   }
   .cal-day-pill.today {
     border-color: rgba(34, 211, 238, 0.6);
@@ -638,7 +670,10 @@
   .cal-day-pill.active {
     background: rgba(34, 211, 238, 0.22);
     border-color: var(--cyan-400);
-    box-shadow: 0 0 8px rgba(34, 211, 238, 0.35);
+    box-shadow: 0 0 10px rgba(34, 211, 238, 0.35);
+  }
+  .cal-day-pill.active span {
+    color: var(--cyan-400);
   }
   .cal-day-pill.active strong {
     color: #fff;
@@ -651,20 +686,21 @@
     margin-top: 2px;
   }
   .cal-view-toggle .btn {
-    font-size: 11px;
-    height: 28px;
-    padding: 0 10px;
+    font-size: 13px;
+    min-height: 38px;
+    height: auto;
+    padding: 6px 12px;
     width: auto;
   }
   .cal-legend {
-    font-size: 10.5px;
-    gap: 6px 10px;
+    font-size: 12.5px;
+    gap: 8px 14px;
     width: 100%;
     flex-wrap: wrap;
-    line-height: 1.25;
+    line-height: 1.35;
   }
 
-  /* Modo Día: Celda a 100% de ancho de pantalla móvil */
+  /* Modo Día: Celda expansible con título completo */
   .cal-scroll {
     width: 100%;
     max-width: 100%;
@@ -675,44 +711,55 @@
     width: 100%;
   }
   .cal-grid.mode-day {
-    grid-template-columns: 50px 1fr !important;
+    grid-template-columns: 56px 1fr !important;
     min-width: 0 !important;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
   }
   .cal-grid.mode-day .cal-head {
-    font-size: 12.5px;
-    padding: 8px 6px;
+    font-size: 14px;
+    padding: 10px 8px;
     box-sizing: border-box;
   }
   .cal-grid.mode-day .cal-hour {
-    font-size: 11px;
-    padding: 4px 4px;
+    font-size: 12.5px;
+    padding: 8px 6px;
     text-align: right;
-    width: 50px;
+    width: 56px;
     box-sizing: border-box;
   }
   .cal-grid.mode-day .cal-cell {
-    min-height: 48px;
-    padding: 3px 4px;
+    min-height: 54px;
+    padding: 4px;
     box-sizing: border-box;
   }
   .cal-grid.mode-day .cal-block {
-    min-height: 40px;
-    padding: 4px 8px;
-    font-size: 12.5px;
+    min-height: 46px;
+    height: auto;
+    padding: 8px 10px;
+    font-size: 14px;
+    gap: 8px;
     box-sizing: border-box;
   }
   .cal-grid.mode-day .cal-block .cb-title {
-    -webkit-line-clamp: 2;
-    font-size: 12px;
+    display: block;
+    -webkit-line-clamp: unset;
+    overflow: visible;
+    white-space: normal;
+    word-break: break-word;
+    font-size: 14px;
+    line-height: 1.35;
   }
   .cal-grid.mode-day .cal-block button {
-    width: 26px;
-    height: 26px;
-    font-size: 12px;
-    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    font-size: 15px;
+    border-radius: 8px;
+  }
+  .heat-legend {
+    font-size: 12.5px;
+    flex-wrap: wrap;
   }
 }
 
@@ -1254,7 +1301,7 @@ button.transp-item:hover {
   }
   .chart-labels {
     gap: 6px;
-    font-size: 11px;
+    font-size: 12px;
   }
   .alarm-controls-grid {
     flex-wrap: wrap;
@@ -1284,46 +1331,53 @@ button.transp-item:hover {
     gap: 16px;
   }
 
-  /* Dashboard: ocultar botón duplicado de ayuda y alinear métricas limpiamente */
+  /* Dashboard: ocultar botón duplicado de ayuda y alinear métricas sin recortes */
   #dashTourBtn {
     display: none;
   }
   .dash-header {
     flex-direction: column;
     align-items: stretch;
-    gap: 10px;
+    gap: 12px;
   }
   .dash-title h1 {
-    font-size: 23px;
+    font-size: 24px;
     line-height: 1.2;
   }
   .dash-title p {
     margin-bottom: 4px;
-    font-size: 13.5px;
+    font-size: 14.5px;
   }
   .dash-meta {
-    display: grid;
-    grid-template-columns: auto 1fr;
+    display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     width: 100%;
-    align-items: stretch;
   }
   .streak {
-    padding: 8px 11px;
-    font-size: 12.5px;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 9px 12px;
+    font-size: 13.5px;
     gap: 6px;
-    justify-content: center;
-    flex-wrap: nowrap;
-    white-space: nowrap;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    white-space: normal;
   }
   .streak .pill {
-    height: 22px;
-    padding: 0 8px;
-    font-size: 11px;
+    min-height: 26px;
+    height: auto;
+    padding: 3px 9px;
+    font-size: 12px;
     margin-left: auto;
   }
+  .xp-label {
+    font-size: 13.5px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
 
-  /* Check-in slider más táctil */
+  /* Check-in slider más táctil y legible */
   input[type="range"] {
     height: 8px;
   }
@@ -1334,40 +1388,139 @@ button.transp-item:hover {
   .energy-value {
     font-size: 32px;
   }
+  .energy-scale {
+    font-size: 12.5px;
+  }
+  .mood-chips .chip {
+    min-height: 42px;
+    height: auto;
+    padding: 8px 14px;
+    font-size: 14px;
+  }
 
   /* Misiones más limpias y táctiles */
   .mission {
     grid-template-columns: 26px 1fr;
-    padding: 12px;
+    padding: 14px 12px;
     gap: 10px;
   }
+  .mission-title {
+    font-size: 15px;
+    line-height: 1.4;
+    word-break: break-word;
+  }
   .mission-meta {
-    gap: 5px;
+    gap: 6px;
   }
   .mission-meta .pill {
-    height: 22px;
-    padding: 0 8px;
-    font-size: 11px;
+    min-height: 26px;
+    height: auto;
+    padding: 3px 9px;
+    font-size: 12px;
   }
   .mission-actions {
     grid-column: 1 / -1;
     display: flex;
     align-items: center;
     gap: 8px;
-    padding-top: 8px;
+    padding-top: 10px;
     margin-top: 2px;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
   }
   .mission-actions .btn {
     flex: 1;
-    min-height: 36px;
+    min-height: 42px;
+    font-size: 14px;
   }
   .mission-actions .icon-btn {
-    width: 36px;
-    height: 36px;
+    width: 42px;
+    height: 42px;
+    font-size: 16px;
+  }
+  .mission-add {
+    flex-wrap: wrap;
+  }
+  .mission-add .input {
+    min-width: 180px;
+    height: 44px;
+  }
+  .mission-add .btn {
+    min-height: 44px;
   }
 
-  /* Santuario: proporción armónica en celular */
+  /* Modo Enfoque */
+  .timer {
+    font-size: clamp(46px, 14vw, 64px);
+  }
+  .timer-mode,
+  .active-mission {
+    font-size: 14px;
+    line-height: 1.4;
+    text-align: center;
+  }
+  .timer-controls {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    width: 100%;
+    gap: 8px;
+  }
+  #startPauseBtn {
+    grid-column: 1 / -1;
+    min-height: 48px;
+    font-size: 15.5px;
+  }
+  #fsToggle {
+    grid-column: 1 / -1;
+    min-height: 44px;
+  }
+  .shield-tier-head {
+    flex-wrap: wrap;
+    font-size: 14px;
+  }
+  .shield-tier p {
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+  .institution-badge {
+    font-size: 12.5px;
+  }
+  .sound-item {
+    min-height: 46px;
+    height: auto;
+    padding: 10px 14px;
+    font-size: 14.5px;
+  }
+  .volume-label {
+    font-size: 12.5px;
+    min-width: 38px;
+  }
+  .alarm-settings-title {
+    font-size: 12.5px;
+  }
+  .alarm-controls-grid {
+    flex-wrap: wrap;
+  }
+  .alarm-tone-select-wrap {
+    flex: 1 1 100%;
+  }
+  .alarm-tone-select-wrap select {
+    height: 42px;
+    font-size: 14.5px;
+  }
+  #testAlarmBtn {
+    width: 100%;
+    min-height: 42px;
+  }
+  .guided-break .row .chip {
+    min-height: 40px;
+    font-size: 13.5px;
+  }
+
+  /* Santuario & Progreso */
+  .subtab-btn {
+    min-height: 44px;
+    font-size: 14px;
+  }
   .bl-scene {
     height: 240px;
   }
@@ -1380,54 +1533,133 @@ button.transp-item:hover {
   .bl-condor { font-size: 30px; top: 28px; }
   .bl-sun { width: 48px; height: 48px; top: 18px; right: 24px; }
   .bl-rainbow { width: 260px; height: 130px; top: 32px; }
+  .bl-caption {
+    font-size: 14.5px;
+  }
+  .bl-rules {
+    font-size: 13.5px;
+    line-height: 1.5;
+    gap: 6px;
+  }
+  .bl-controls .btn {
+    min-height: 44px;
+    font-size: 13.5px;
+    white-space: nowrap;
+    flex: 1 1 auto;
+  }
   .bl-stage {
-    padding: 8px 6px;
+    padding: 10px 8px;
   }
   .bl-stage .em {
-    font-size: 24px;
+    font-size: 26px;
+  }
+  .bl-stage small {
+    font-size: 12px;
+    margin-top: 2px;
   }
   .biome-metrics {
     gap: 10px;
   }
   .metric-card {
-    padding: 12px;
+    padding: 14px 12px;
     border-radius: 14px;
   }
   .metric-card span {
-    font-size: 12px;
+    font-size: 13px;
   }
   .metric-card strong {
-    font-size: 21px;
+    font-size: 22px;
   }
   .zone {
-    gap: 6px;
+    gap: 8px;
   }
   .zone-art {
     font-size: 36px;
     margin-bottom: 0;
   }
+  /* Transparencia en 1 columna cómoda sin apretar 3 columnas con 11.5px */
   .transp-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    grid-template-columns: 1fr;
+    gap: 10px;
   }
-  .transp-item {
-    padding: 12px 6px;
+  button.transp-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
+    padding: 14px 16px;
+    min-height: 52px;
   }
   .transp-item span {
     font-size: 24px;
-    margin-bottom: 4px;
+    margin-bottom: 0;
+    flex-shrink: 0;
   }
   .transp-item p {
-    font-size: 11.5px;
-    line-height: 1.25;
+    font-size: 14.5px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .chart-labels {
+    font-size: 12.5px;
+  }
+  .mood-timeline .mt-head {
+    font-size: 13px;
+  }
+  .mood-timeline .mt-text {
+    font-size: 15px;
+  }
+  .ach-item h4 {
+    font-size: 15px;
+  }
+  .ach-item p {
+    font-size: 13.5px;
+  }
+  .ach-item .reward {
+    font-size: 12.5px;
+  }
+
+  /* Perfil */
+  .option {
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 14.5px;
+  }
+  #view-profile .side-col .card .row.gap .btn {
+    min-height: 44px;
+    font-size: 13.5px;
   }
 }
 
-@media (max-width: 390px) {
-  .dash-meta {
+@media (max-width: 420px) {
+  .biome-metrics {
     grid-template-columns: 1fr;
   }
-  .streak {
-    justify-content: space-between;
+  .mission-add .btn {
+    width: 100%;
+  }
+}
+
+/* Reafirmar quiebre de grillas principales después de sus definiciones en views.css */
+@media (max-width: 1024px) {
+  .dash-grid,
+  .plan-grid,
+  .focus-grid,
+  .biome-preview,
+  .zones-grid,
+  .progress-grid,
+  .community-grid {
+    grid-template-columns: 1fr;
+  }
+  .biome-metrics,
+  .achievements {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 420px) {
+  .biome-metrics,
+  .achievements {
+    grid-template-columns: 1fr;
   }
 }

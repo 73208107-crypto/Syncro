@@ -79,7 +79,7 @@ function renderDashboard() {
   if ($('#greeting')) $('#greeting').textContent = first ? `${sal}, ${first}!` : `${sal}!`;
   if ($('#sidebarName')) $('#sidebarName').textContent = u.name || 'Invitado';
   if ($('#sidebarLevel')) $('#sidebarLevel').textContent = `Nivel ${u.level}`;
-  if ($('#sidebarAvatar')) $('#sidebarAvatar').textContent = (u.name || '🌱').charAt(0).toUpperCase();
+  if ($('#sidebarAvatar')) $('#sidebarAvatar').textContent = (Array.from(u.name || '🌱')[0] || 'S').toUpperCase();
   if ($('#sidebarGuardianMini')) $('#sidebarGuardianMini').textContent = guardian();
 
   if ($('#dashDrops')) $('#dashDrops').textContent = state.biome.drops;
@@ -482,7 +482,7 @@ function renderProfile() {
   const p = state.profile;
   const ses = authService.getSession() || {};
 
-  if ($('#pfAvatar')) $('#pfAvatar').textContent = (u.name || '🌱').charAt(0).toUpperCase();
+  if ($('#pfAvatar')) $('#pfAvatar').textContent = (Array.from(u.name || '🌱')[0] || 'S').toUpperCase();
   if ($('#pfGuardian')) $('#pfGuardian').textContent = guardian();
   if ($('#pfName')) $('#pfName').textContent = u.name || 'Estudiante';
   if ($('#pfHandle')) $('#pfHandle').textContent = ses.username ? `@${ses.username} · ${ses.email}` : ses.email || 'Modo prueba local';
@@ -846,6 +846,7 @@ function bootstrap() {
   // Monitor Online/Offline
   const updateOnline = () => {
     $('#sidebarOfflineBadge')?.classList.toggle('hidden', navigator.onLine);
+    $('#mobileOfflineBadge')?.classList.toggle('hidden', navigator.onLine);
   };
   window.addEventListener('online', updateOnline);
   window.addEventListener('offline', updateOnline);

@@ -291,11 +291,15 @@
 
   <!-- Barra superior móvil (oculta en escritorio) -->
   <header class="mobile-topbar" aria-label="Barra superior móvil">
-    <a class="mobile-brand" href="index.html" title="Volver al inicio">
-      <span class="logo-mark">🌱</span>
-      <span>SYNCRO</span>
-    </a>
+    <div class="mobile-topbar-left">
+      <a class="mobile-brand" href="index.html" title="Volver al inicio">
+        <span class="logo-mark">🌱</span>
+        <span>SYNCRO</span>
+      </a>
+      <span id="mobileOfflineBadge" class="sidebar-offline-badge hidden" title="Modo sin conexión">📶 Offline</span>
+    </div>
     <div class="mobile-topbar-actions">
+      <button type="button" class="icon-btn mobile-chat-btn hidden" id="mobileChatBtn" aria-label="Abrir asistente SYNCRO" aria-expanded="false" aria-controls="sbotPanel" title="Asistente SYNCRO">🤖</button>
       <button type="button" class="icon-btn" data-replay-tour aria-label="Ver tutorial" title="Ver tutorial">❔</button>
     </div>
   </header>
