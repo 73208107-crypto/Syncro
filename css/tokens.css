@@ -372,3 +372,5 @@ html[data-theme="light"] .footer {
   background: #EDF2F8;
   border-top-color: var(--border-subtle);
 }
+
+html[data-theme="light"] .mobile-brand { color: var(--text-primary); }

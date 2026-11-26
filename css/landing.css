@@ -2374,3 +2374,81 @@ body.auth-open { overflow: hidden; }
     grid-template-columns: 1fr;
   }
 }
+
+/* ============ FIX DIAGNÓSTICO: [hidden] + espaciado + modo claro ============ */
+.diag-options[hidden],
+.diag-final-wrapper[hidden],
+.auth-panel[hidden] {
+  display: none !important;
+}
+.auth-tabs {
+  max-width: calc(100% - 44px);
+  flex-wrap: wrap;
+}
+.diag-option-btn {
+  align-items: flex-start;
+  min-height: 58px;
+}
+.diag-option-icon {
+  margin-top: 2px;
+}
+html[data-theme="light"] .auth-overlay {
+  background: rgba(15, 23, 42, 0.52);
+}
+html[data-theme="light"] .auth-card {
+  background: #FFFFFF;
+  border-color: rgba(15, 23, 42, 0.12);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.2);
+}
+html[data-theme="light"] .auth-side {
+  background:
+    radial-gradient(circle at 20% 0%, rgba(124, 58, 237, 0.14), transparent 60%),
+    radial-gradient(circle at 80% 100%, rgba(16, 185, 129, 0.14), transparent 60%),
+    #F1F5F9;
+  color: var(--text-primary);
+}
+html[data-theme="light"] .auth-side h3,
+html[data-theme="light"] .auth-side-brand,
+html[data-theme="light"] .auth-main h2,
+html[data-theme="light"] .diag-question-title,
+html[data-theme="light"] .diag-option-title,
+html[data-theme="light"] .diag-result-profile {
+  color: var(--text-primary);
+}
+html[data-theme="light"] .auth-close {
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--text-secondary);
+}
+html[data-theme="light"] .auth-close:hover {
+  background: rgba(15, 23, 42, 0.12);
+  color: var(--text-primary);
+}
+html[data-theme="light"] .diag-progress-step {
+  background: rgba(15, 23, 42, 0.12);
+}
+html[data-theme="light"] .diag-option-btn {
+  background: #F8FAFC;
+  border-color: rgba(15, 23, 42, 0.12);
+  color: var(--text-primary);
+}
+html[data-theme="light"] .diag-option-btn:hover {
+  background: rgba(2, 132, 199, 0.08);
+  border-color: var(--cyan-600);
+}
+html[data-theme="light"] .diag-result-card {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.08), rgba(5, 150, 105, 0.1));
+  border-color: rgba(2, 132, 199, 0.3);
+}
+html[data-theme="light"] .auth-input {
+  background: #F8FAFC;
+  color: var(--text-primary);
+  border-color: rgba(15, 23, 42, 0.16);
+}
+html[data-theme="light"] .btn-google {
+  border-color: rgba(15, 23, 42, 0.18);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+html[data-theme="light"] .g-account {
+  background: #F8FAFC;
+  color: var(--text-primary);
+}

@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
-<script>(function(){try{var t=localStorage.getItem('syncro_theme');document.documentElement.dataset.theme=(t==='light'||t==='dark')?t:'dark';}catch(e){document.documentElement.dataset.theme='dark';}})();</script>
+<script>(function(){try{var t=localStorage.getItem('syncro_theme');if(t!=='light'&&t!=='dark'){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark';}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='dark';}})();</script>
 <link rel="stylesheet" href="css/tokens.css" />
 <link rel="stylesheet" href="css/base.css" />
 <link rel="stylesheet" href="css/layout.css" />
@@ -496,7 +496,6 @@
           <button type="button" class="btn secondary" id="startPauseBtn">Iniciar</button>
           <button type="button" class="btn ghost" id="resetBtn">Reiniciar</button>
           <button type="button" class="btn ghost" id="addFiveBtn">+5 min</button>
-          <button type="button" class="btn ghost" id="fsToggle" aria-pressed="false">⛶ Pantalla completa</button>
         </div>
       </div>
 
@@ -506,7 +505,6 @@
           <label class="option"><input type="radio" name="mode" value="classic" checked> <span>Clásico 25 / 5</span></label>
           <label class="option"><input type="radio" name="mode" value="deep"> <span>Profundo 50 / 10</span></label>
           <label class="option"><input type="radio" name="mode" value="noPerfection"> <span>Avance sin perfección 5 min</span></label>
-          <label class="option" style="border-top:1px solid var(--border-subtle); margin-top:6px"><input type="checkbox" id="autoFs"> <span>Pantalla completa al iniciar</span></label>
           <label class="option"><input type="checkbox" id="notifToggle"> <span>🔔 Notificaciones del sistema</span></label>
         </div>
 
@@ -944,6 +942,7 @@
           <label class="option"><input type="checkbox" id="pfBienestar"> <span>Permitir conexión con la Red de Bienestar (resumen anónimo, siempre con mi consentimiento)</span></label>
           <label class="option"><input type="checkbox" id="pfReminder"> <span>Recordarme el check-in diario</span></label>
           <label class="option"><input type="checkbox" id="pfNotif"> <span>🔔 Notificaciones del sistema (al terminar bloques y pausas)</span></label>
+          <label class="option"><input type="checkbox" id="pfTutorials" checked> <span>❔ Mostrar tutorial contextual al entrar a cada sección</span></label>
           <div class="row gap"><button class="btn primary" type="submit">Guardar cambios</button><span class="muted small" id="pfSaved" role="status"></span></div>
         </form>
 

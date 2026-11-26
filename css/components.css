@@ -793,3 +793,169 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ============ TUTORIAL GUIADO INTERACTIVO (SPOTLIGHT POR SECCIÓN) ============ */
+.sec-tut-spotlight {
+  position: fixed;
+  z-index: 135;
+  border-radius: 16px;
+  border: 2px solid var(--cyan-400);
+  box-shadow: 0 0 0 9999px rgba(6, 11, 25, 0.58), 0 0 28px rgba(34, 211, 238, 0.45);
+  pointer-events: none;
+  transition: top 0.28s cubic-bezier(0.2, 0.9, 0.3, 1), left 0.28s cubic-bezier(0.2, 0.9, 0.3, 1), width 0.28s cubic-bezier(0.2, 0.9, 0.3, 1), height 0.28s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.22s ease;
+}
+.sec-tut-spotlight.hidden { display: none !important; }
+html[data-theme="light"] .sec-tut-spotlight {
+  border-color: var(--cyan-600);
+  box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.38), 0 0 24px rgba(2, 132, 199, 0.35);
+}
+.sec-tut-highlight {
+  position: relative;
+  z-index: 136;
+}
+
+.sec-tut {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: min(380px, calc(100vw - 32px));
+  background: rgba(16, 24, 48, 0.97);
+  border: 1px solid rgba(34, 211, 238, 0.55);
+  border-radius: 18px;
+  padding: 16px 18px 14px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 145;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: secTutIn 0.24s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+}
+.sec-tut.hidden { display: none !important; }
+@keyframes secTutIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.sec-tut-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sec-tut-badge {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--cyan-400);
+  background: rgba(34, 211, 238, 0.14);
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.sec-tut-dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: auto;
+}
+.sec-tut-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  transition: width 0.2s ease, background 0.2s ease;
+}
+.sec-tut-dots span.active {
+  width: 18px;
+  background: var(--cyan-400);
+}
+.sec-tut-close {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  font-size: 13px;
+}
+.sec-tut-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.sec-tut-ico {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(34, 211, 238, 0.14);
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.sec-tut-copy strong {
+  display: block;
+  font-size: 15px;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  line-height: 1.25;
+}
+.sec-tut-copy p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+.sec-tut-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+.sec-tut-actions .btn { flex: 1; justify-content: center; }
+.sec-tut-foot {
+  display: flex;
+  justify-content: center;
+}
+.sec-tut-link {
+  background: transparent;
+  border: 0;
+  padding: 2px 6px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.sec-tut-link:hover { color: var(--text-primary); }
+
+html[data-theme="light"] .sec-tut {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: rgba(2, 132, 199, 0.42);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.22);
+}
+html[data-theme="light"] .sec-tut-dots span { background: rgba(15, 23, 42, 0.18); }
+html[data-theme="light"] .sec-tut-dots span.active { background: var(--cyan-600); }
+
+@media (max-width: 768px) {
+  .sec-tut {
+    left: 12px;
+    right: 12px;
+    width: auto;
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    padding: 14px;
+  }
+}
+
+html[data-theme="light"] .onb-diag-banner {
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.1), rgba(124, 58, 237, 0.1));
+  color: var(--text-primary);
+}
+html[data-theme="light"] .option-grid .option {
+  background: #F8FAFC;
+  border-color: rgba(15, 23, 42, 0.1);
+  color: var(--text-primary);
+}
+html[data-theme="light"] .option-grid .option:has(input:checked) {
+  background: rgba(124, 58, 237, 0.12);
+  border-color: var(--violet-500);
+}

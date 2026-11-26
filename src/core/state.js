@@ -67,7 +67,7 @@ export function defaultState() {
     focus: {
       mode: 'classic',
       shield: true,
-      autoFs: false,
+      autoFs: true,
       soundOn: false,
       sound: 'rain',
       soundVolume: 70,

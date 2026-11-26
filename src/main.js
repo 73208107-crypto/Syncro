@@ -33,6 +33,7 @@ import { $, $$, toast, openOverlay, closeOverlay, openInfo, celebrate, initModal
 import { T, initTimerModule, updateTimerDuration, startTimer, requestViewLeave, Notify } from './modules/timer.js';
 import { initBiomeModule, renderBiome, unlockedSpeciesCount } from './modules/biome.js';
 import { initTheme } from './core/theme.js';
+import { initSectionTutorial, showSectionTutorial, hideSectionTutorial } from './modules/tutorial.js';
 import { initCalendarModule, renderCalendar, renderCalTray, markSlotsDone } from './modules/calendar.js';
 import { Journal, renderJournalTimeline } from './modules/journal.js';
 import { initChatbot } from './modules/chatbot.js';
@@ -68,6 +69,9 @@ function switchView(view, force = false) {
   }
   if (view === 'calendar') renderCalendar();
   if (view === 'profile') renderProfile();
+
+  hideSectionTutorial(false);
+  showSectionTutorial(view, { manual: false });
 }
 
 // ============ DASHBOARD ============
@@ -907,20 +911,8 @@ function bootstrap() {
     toast('✨ ¡5 minutos sin perfección! El reloj está oculto para quitar presión.');
   });
 
-  // Tutorial rápido
-  $$('[data-replay-tour]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      openInfo(
-        'Guía rápida de SYNCRO',
-        `<ol style="padding-left:18px;margin:0;display:flex;flex-direction:column;gap:8px;">
-          <li><strong>Check-in diario:</strong> indica tu energía y estado de ánimo para calibrar la duración de tus bloques.</li>
-          <li><strong>Misiones de hoy:</strong> crea, edita o desglosa tareas grandes en micro-pasos manejables.</li>
-          <li><strong>Enfoque protegido:</strong> inicia un bloque de 5, 25 o 50 minutos con bioacústica andina y pausas guiadas.</li>
-          <li><strong>Santuario Andino:</strong> riega tu ecosistema con tus gotas y sigue tu línea de tiempo emocional cifrada.</li>
-        </ol>`
-      );
-    });
-  });
+  // Tutorial contextual por sección
+  initSectionTutorial();
 
   // Cerrar sesión
   $$('[data-logout]').forEach((btn) => {
@@ -959,6 +951,7 @@ function bootstrap() {
   renderProgress();
   initOnboarding();
   checkRescueModal();
+  if (state.user.onboarded) setTimeout(() => showSectionTutorial('dashboard', { manual: false }), 450);
   initChatbot({
     surface: 'app',
     getView: () => document.querySelector('.view.active')?.id?.replace('view-', '') || '',

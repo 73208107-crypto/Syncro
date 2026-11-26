@@ -1,17 +1,33 @@
 /**
  * SYNCRO — Controlador de Tema (Modo Claro y Modo Oscuro)
- * Persiste la preferencia en localStorage ("syncro_theme"), sincroniza entre pestañas
- * y actualiza todos los botones [data-theme-toggle] y la meta theme-color móvil.
+ * Detecta automáticamente la preferencia del sistema (prefers-color-scheme) si el usuario
+ * aún no eligió manualmente, persiste la elección manual en localStorage ("syncro_theme"),
+ * sincroniza entre pestañas y actualiza la meta theme-color móvil.
  */
 
 const THEME_STORAGE_KEY = 'syncro_theme';
 
-export function getTheme() {
+function getSystemTheme() {
+  try {
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+      return 'light';
+    }
+  } catch (_) {}
+  return 'dark';
+}
+
+function getSavedTheme() {
   try {
     const saved = localStorage.getItem(THEME_STORAGE_KEY);
     if (saved === 'light' || saved === 'dark') return saved;
   } catch (_) {}
-  return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+  return null;
+}
+
+export function getTheme() {
+  const saved = getSavedTheme();
+  if (saved) return saved;
+  return getSystemTheme();
 }
 
 export function applyTheme(theme, { persist = true } = {}) {
@@ -24,13 +40,11 @@ export function applyTheme(theme, { persist = true } = {}) {
     } catch (_) {}
   }
 
-  // Actualizar barra de estado móvil (PWA / navegadores móviles)
   const metaTheme = document.querySelector('meta[name="theme-color"]');
   if (metaTheme) {
     metaTheme.setAttribute('content', next === 'light' ? '#F4F7FB' : '#0B132B');
   }
 
-  // Actualizar todos los botones e íconos de cambio de tema
   const isLight = next === 'light';
   document.querySelectorAll('[data-theme-toggle]').forEach((btn) => {
     btn.setAttribute('aria-pressed', String(isLight));
@@ -48,13 +62,12 @@ export function applyTheme(theme, { persist = true } = {}) {
 }
 
 export function toggleTheme() {
-  return applyTheme(getTheme() === 'light' ? 'dark' : 'light');
+  return applyTheme(getTheme() === 'light' ? 'dark' : 'light', { persist: true });
 }
 
 export function initTheme() {
   applyTheme(getTheme(), { persist: false });
 
-  // Activar transiciones suaves solo después del primer pintado (evita parpadeo al cargar)
   requestAnimationFrame(() => {
     document.documentElement.setAttribute('data-theme-ready', '1');
   });
@@ -67,9 +80,21 @@ export function initTheme() {
     });
   });
 
+  // Si el usuario no eligió tema manual, acompañar cambios automáticos del sistema
+  try {
+    const mq = window.matchMedia('(prefers-color-scheme: light)');
+    const onSysChange = (e) => {
+      if (!getSavedTheme()) {
+        applyTheme(e.matches ? 'light' : 'dark', { persist: false });
+      }
+    };
+    if (mq.addEventListener) mq.addEventListener('change', onSysChange);
+    else if (mq.addListener) mq.addListener(onSysChange);
+  } catch (_) {}
+
   window.addEventListener('storage', (e) => {
-    if (e.key === THEME_STORAGE_KEY && (e.newValue === 'light' || e.newValue === 'dark')) {
-      applyTheme(e.newValue, { persist: false });
+    if (e.key === THEME_STORAGE_KEY) {
+      applyTheme(e.newValue === 'light' || e.newValue === 'dark' ? e.newValue : getSystemTheme(), { persist: false });
     }
   });
 }

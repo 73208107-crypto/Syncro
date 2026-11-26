@@ -333,8 +333,11 @@ export function renderTimer() {
 export function startTimer() {
   if (T.running) return;
   T.running = true;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('syncro:focus-started'));
+  }
   T.endAt = Date.now() + T.remaining * 1000;
-  if (state.focus.autoFs && !fsEl()) enterFullscreen();
+  if (!fsEl()) enterFullscreen();
   if (state.focus.soundOn) Sound.play(state.focus.sound);
 
   clearInterval(T.interval);
@@ -526,7 +529,7 @@ export function initTimerModule({ onComplete, onSwitchView }) {
     const active = Boolean(fsEl());
     const btn = $('#fsToggle');
     if (btn) btn.setAttribute('aria-pressed', String(active));
-    if (!active && T.running && state.focus.shield && state.focus.autoFs) {
+    if (!active && T.running && state.focus.shield) {
       triggerExitAlert('Saliste de pantalla completa durante el enfoque');
     }
   });
