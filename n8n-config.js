@@ -18,7 +18,7 @@
  */
 window.SYNCRO_N8N = {
   // ▼▼▼ PEGA AQUÍ EL ENLACE DE CONEXIÓN DE n8n ▼▼▼
-  WEBHOOK_URL: 'https://guillermo29.app.n8n.cloud/webhook/ad660383-481a-4ee0-8237-76a82d86671c/chat',
+  WEBHOOK_URL: 'https://zoran29.app.n8n.cloud/webhook/8da409a8-3dc3-43cd-b72f-7ffa6f132e04/chat',
   // ▲▲▲ Ejemplo: 'https://tu-instancia.app.n8n.cloud/webhook/syncro-bot' ▲▲▲
 
   // Opcional: si tu Webhook usa "Header Auth", completa nombre y valor.
