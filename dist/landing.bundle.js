@@ -140,17 +140,27 @@
   };
 
   // src/services/authService.js
-  var USERS_KEY = "syncro_users";
-  var SESSION_KEY = "syncro_session";
-  var STATE_KEY = "syncro_state_v3";
-  var readJSON = (k, fb) => {
+  /**
+   * SYNCRO — Servicio de Autenticación
+   * Conectado a Supabase Auth (JWT + refresh token + Google OAuth + recuperación por correo)
+   * con respaldo local cifrado (SHA-256) cuando no hay backend configurado.
+   */
+
+
+
+  const USERS_KEY = 'syncro_users';
+  const SESSION_KEY = 'syncro_session';
+  const STATE_KEY = 'syncro_state_v3';
+
+  const readJSON = (k, fb) => {
     try {
       return JSON.parse(localStorage.getItem(k)) ?? fb;
     } catch {
       return fb;
     }
   };
-  var writeJSON = (k, v) => {
+
+  const writeJSON = (k, v) => {
     try {
       localStorage.setItem(k, JSON.stringify(v));
       return true;
@@ -158,193 +168,304 @@
       return false;
     }
   };
+
   async function hashPassword(text) {
     try {
-      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("syncro::" + text));
-      return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('syncro::' + text));
+      return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
     } catch {
-      const bytes = new TextEncoder().encode("syncro::" + text);
-      return "plain::" + btoa(String.fromCharCode(...bytes));
+      const bytes = new TextEncoder().encode('syncro::' + text);
+      return 'plain::' + btoa(String.fromCharCode(...bytes));
     }
   }
+
   function deriveUserIdentity(email, existingUsers = []) {
-    const local = email.split("@")[0] || "usuario";
-    const name = local.replace(/[._\d]+/g, " ").trim().replace(/\b\w/g, (c) => c.toUpperCase()) || "Usuario";
-    const base = local.replace(/[^a-z0-9._]/gi, "").slice(0, 16) || "usuario";
+    const local = email.split('@')[0] || 'usuario';
+    const name =
+      local
+        .replace(/[._\d]+/g, ' ')
+        .trim()
+        .replace(/\b\w/g, (c) => c.toUpperCase()) || 'Usuario';
+    const base = local.replace(/[^a-z0-9._]/gi, '').slice(0, 16) || 'usuario';
     let username = base;
     let n = 1;
-    while (existingUsers.some((u) => (u.username || "").toLowerCase() === username.toLowerCase())) {
+    while (existingUsers.some((u) => (u.username || '').toLowerCase() === username.toLowerCase())) {
       username = base + ++n;
     }
     return { name, username };
   }
-  function resolveInstitutionFromEmail(email = "") {
-    const domain = String(email).split("@")[1]?.toLowerCase() || "";
+
+  function resolveInstitutionFromEmail(email = '') {
+    const domain = String(email).split('@')[1]?.toLowerCase() || '';
     return CONFIG.institutions[domain] || null;
   }
-  var authService = {
+
+  const authService = {
     getSession() {
       return readJSON(SESSION_KEY, null);
     },
+
     ensureGuestSession() {
       const ses = this.getSession();
       if (ses) return ses;
       const guest = {
-        mode: "guest",
-        name: "Invitado",
-        id: "guest_" + Date.now().toString(36),
-        plan: "free",
-        since: Date.now()
+        mode: 'guest',
+        name: 'Invitado',
+        id: 'guest_' + Date.now().toString(36),
+        plan: 'free',
+        since: Date.now(),
       };
       writeJSON(SESSION_KEY, guest);
       return guest;
     },
+
     getUsers() {
       return readJSON(USERS_KEY, []);
     },
+
     async signUpWithEmail({ email, password, diagnostic = null }) {
       const cleanEmail = email.trim().toLowerCase();
+
+      // Ruta BaaS real (Supabase Auth)
       if (CONFIG.supabase.enabled) {
         const res = await fetch(`${CONFIG.supabase.url}/auth/v1/signup`, {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
-            apikey: CONFIG.supabase.anonKey
+            'Content-Type': 'application/json',
+            apikey: CONFIG.supabase.anonKey,
           },
           body: JSON.stringify({
             email: cleanEmail,
             password,
-            data: { diagnostic }
-          })
+            data: { diagnostic },
+          }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.msg || data.error_description || "No se pudo crear la cuenta.");
-        const { name: name2, username: username2 } = deriveUserIdentity(cleanEmail);
-        const sessionObj2 = {
-          id: data.user?.id || "u" + Date.now().toString(36),
-          name: name2,
-          username: username2,
+        if (!res.ok) throw new Error(data.msg || data.error_description || data.message || 'No se pudo crear la cuenta.');
+        const { name, username } = deriveUserIdentity(cleanEmail);
+        const userObj = data.user || data;
+        const sessionObj = {
+          id: userObj?.id || 'u' + Date.now().toString(36),
+          name: userObj?.user_metadata?.name || name,
+          username,
           email: cleanEmail,
-          provider: "email",
-          plan: resolveInstitutionFromEmail(cleanEmail)?.plan || "free",
+          provider: 'email',
+          plan: resolveInstitutionFromEmail(cleanEmail)?.plan || 'free',
           accessToken: data.access_token || null,
-          since: Date.now()
+          refreshToken: data.refresh_token || null,
+          expiresAt: data.expires_in ? Date.now() + Number(data.expires_in) * 1000 : null,
+          since: Date.now(),
         };
-        this._persistSession(sessionObj2, { fresh: true, diagnostic });
-        analyticsService.track("signup_completed", { provider: "email", backend: "supabase" });
-        return sessionObj2;
+        this._persistSession(sessionObj, { fresh: true, diagnostic });
+        analyticsService.track('signup_completed', { provider: 'email', backend: 'supabase' });
+        return sessionObj;
       }
+
+      // Respaldo local (sin backend configurado)
       const users = this.getUsers();
       if (users.some((u) => u.email === cleanEmail)) {
-        throw new Error("Ese correo ya tiene cuenta. Inicia sesi\xF3n.");
+        throw new Error('Ese correo ya tiene cuenta. Inicia sesión.');
       }
       const { name, username } = deriveUserIdentity(cleanEmail, users);
       const user = {
-        id: "u" + Date.now().toString(36),
+        id: 'u' + Date.now().toString(36),
         name,
         username,
         email: cleanEmail,
         passHash: await hashPassword(password),
-        provider: "email",
-        plan: resolveInstitutionFromEmail(cleanEmail)?.plan || "free",
-        createdAt: Date.now()
+        provider: 'email',
+        plan: resolveInstitutionFromEmail(cleanEmail)?.plan || 'free',
+        createdAt: Date.now(),
       };
       users.push(user);
       if (!writeJSON(USERS_KEY, users)) {
-        throw new Error("No pudimos guardar tu cuenta: el navegador bloquea el almacenamiento.");
+        throw new Error('No pudimos guardar tu cuenta: el navegador bloquea el almacenamiento.');
       }
       const sessionObj = {
         id: user.id,
         name: user.name,
         username: user.username,
         email: user.email,
-        provider: "email",
+        provider: 'email',
         plan: user.plan,
-        since: Date.now()
+        since: Date.now(),
       };
       this._persistSession(sessionObj, { fresh: true, diagnostic });
-      analyticsService.track("signup_completed", { provider: "email", backend: "local" });
+      analyticsService.track('signup_completed', { provider: 'email', backend: 'local' });
       return sessionObj;
     },
+
     async signInWithEmail({ identifier, password }) {
       const id = identifier.trim().toLowerCase();
+
       if (CONFIG.supabase.enabled) {
         const res = await fetch(`${CONFIG.supabase.url}/auth/v1/token?grant_type=password`, {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
-            apikey: CONFIG.supabase.anonKey
+            'Content-Type': 'application/json',
+            apikey: CONFIG.supabase.anonKey,
           },
-          body: JSON.stringify({ email: id, password })
+          body: JSON.stringify({ email: id, password }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error("Correo o contrase\xF1a incorrectos.");
+        if (!res.ok) throw new Error(data.error_description || data.msg || 'Correo o contraseña incorrectos.');
         const { name, username } = deriveUserIdentity(id);
-        const sessionObj2 = {
-          id: data.user?.id || "u" + Date.now().toString(36),
+        const sessionObj = {
+          id: data.user?.id || 'u' + Date.now().toString(36),
           name: data.user?.user_metadata?.name || name,
           username,
           email: id,
-          provider: "email",
-          plan: resolveInstitutionFromEmail(id)?.plan || "free",
+          provider: 'email',
+          plan: resolveInstitutionFromEmail(id)?.plan || 'free',
           accessToken: data.access_token || null,
-          since: Date.now()
+          refreshToken: data.refresh_token || null,
+          expiresAt: data.expires_in ? Date.now() + Number(data.expires_in) * 1000 : null,
+          since: Date.now(),
         };
-        this._persistSession(sessionObj2, { fresh: false });
-        return sessionObj2;
+        this._persistSession(sessionObj, { fresh: false });
+        return sessionObj;
       }
-      const user = this.getUsers().find((u) => (u.email === id || (u.username || "").toLowerCase() === id) && u.passHash);
-      const ok = user && user.passHash === await hashPassword(password);
+
+      const user = this.getUsers().find((u) => (u.email === id || (u.username || '').toLowerCase() === id) && u.passHash);
+      const ok = user && user.passHash === (await hashPassword(password));
       if (!ok) {
-        throw new Error("Usuario o contrase\xF1a incorrectos. Revisa los datos o crea una cuenta.");
+        throw new Error('Usuario o contraseña incorrectos. Revisa los datos o crea una cuenta.');
       }
       const sessionObj = {
         id: user.id,
         name: user.name,
         username: user.username,
         email: user.email,
-        provider: user.provider || "email",
-        plan: user.plan || resolveInstitutionFromEmail(user.email)?.plan || "free",
-        since: Date.now()
+        provider: user.provider || 'email',
+        plan: user.plan || resolveInstitutionFromEmail(user.email)?.plan || 'free',
+        since: Date.now(),
       };
       this._persistSession(sessionObj, { fresh: false });
       return sessionObj;
     },
+
+    /**
+     * Renueva silenciosamente el JWT de Supabase antes de expirar.
+     */
+    async refreshSessionIfNeeded() {
+      if (!CONFIG.supabase.enabled) return this.getSession();
+      const ses = this.getSession();
+      if (!ses || ses.mode === 'guest' || !ses.refreshToken) return ses;
+      if (ses.accessToken && ses.expiresAt && Date.now() < ses.expiresAt - 5 * 60 * 1000) {
+        return ses;
+      }
+      try {
+        const res = await fetch(`${CONFIG.supabase.url}/auth/v1/token?grant_type=refresh_token`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: CONFIG.supabase.anonKey,
+          },
+          body: JSON.stringify({ refresh_token: ses.refreshToken }),
+        });
+        if (!res.ok) return ses;
+        const data = await res.json();
+        if (data.access_token) {
+          const updated = {
+            ...ses,
+            accessToken: data.access_token,
+            refreshToken: data.refresh_token || ses.refreshToken,
+            expiresAt: data.expires_in ? Date.now() + Number(data.expires_in) * 1000 : ses.expiresAt,
+          };
+          writeJSON(SESSION_KEY, updated);
+          return updated;
+        }
+      } catch {
+        // mantener sesión actual offline
+      }
+      return ses;
+    },
+
+    /**
+     * Procesa el hash #access_token=... devuelto por Supabase tras Google OAuth.
+     */
+    async handleOAuthCallback() {
+      if (!CONFIG.supabase.enabled || typeof window === 'undefined') return null;
+      const rawHash = window.location.hash || '';
+      if (!rawHash.includes('access_token=')) return null;
+      try {
+        const params = new URLSearchParams(rawHash.replace(/^#/, ''));
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+        const expiresIn = Number(params.get('expires_in') || 3600);
+        if (!accessToken) return null;
+
+        const res = await fetch(`${CONFIG.supabase.url}/auth/v1/user`, {
+          headers: {
+            apikey: CONFIG.supabase.anonKey,
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+        if (!res.ok) return null;
+        const user = await res.json();
+        const email = (user.email || '').toLowerCase();
+        const { name, username } = deriveUserIdentity(email || 'usuario');
+        const sessionObj = {
+          id: user.id,
+          name: user.user_metadata?.full_name || user.user_metadata?.name || name,
+          username,
+          email,
+          provider: user.app_metadata?.provider || 'google',
+          plan: resolveInstitutionFromEmail(email)?.plan || 'free',
+          accessToken,
+          refreshToken: refreshToken || null,
+          expiresAt: Date.now() + expiresIn * 1000,
+          since: Date.now(),
+        };
+        this._persistSession(sessionObj, { fresh: false });
+        try {
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        } catch {
+          // ignore
+        }
+        return sessionObj;
+      } catch {
+        return null;
+      }
+    },
+
     /**
      * Inicia Google OAuth real vía Supabase cuando está configurado.
-     * Si el proyecto se ejecuta sin backend configurado, indica al flujo de UI
-     * que solicite acceso directo con correo sin banners de simulación.
      */
     signInWithGoogle() {
       if (CONFIG.supabase.enabled) {
-        const redirectTo = encodeURIComponent(new URL("app.html", window.location.href).toString());
+        const redirectTo = encodeURIComponent(new URL('app.html', window.location.href).toString());
         window.location.href = `${CONFIG.supabase.url}/auth/v1/authorize?provider=google&redirect_to=${redirectTo}`;
         return { redirected: true };
       }
       return { redirected: false, needsEmailFallback: true };
     },
+
     async requestPasswordReset(email) {
       const cleanEmail = email.trim().toLowerCase();
       if (CONFIG.supabase.enabled) {
         const res = await fetch(`${CONFIG.supabase.url}/auth/v1/recover`, {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
-            apikey: CONFIG.supabase.anonKey
+            'Content-Type': 'application/json',
+            apikey: CONFIG.supabase.anonKey,
           },
-          body: JSON.stringify({ email: cleanEmail })
+          body: JSON.stringify({ email: cleanEmail }),
         });
-        if (!res.ok) throw new Error("No pudimos enviar el enlace de recuperaci\xF3n.");
+        if (!res.ok) throw new Error('No pudimos enviar el enlace de recuperación.');
         return true;
       }
       return true;
     },
+
     signOut() {
       try {
         localStorage.removeItem(SESSION_KEY);
       } catch {
+        // ignore
       }
     },
+
     deleteLocalAccount() {
       const ses = this.getSession();
       try {
@@ -355,12 +476,14 @@
         localStorage.removeItem(SESSION_KEY);
         localStorage.removeItem(STATE_KEY);
       } catch {
+        // ignore
       }
     },
+
     _persistSession(sessionObj, { fresh = false, diagnostic = null } = {}) {
       try {
         const st = readJSON(STATE_KEY, null);
-        if (fresh || st && st.accountEmail && st.accountEmail !== sessionObj.email) {
+        if (fresh || (st && st.accountEmail && st.accountEmail !== sessionObj.email)) {
           localStorage.removeItem(STATE_KEY);
         }
         if (diagnostic) {
@@ -369,14 +492,15 @@
           next.profile.trigger = diagnostic.trigger;
           next.profile.role = diagnostic.role;
           next.profile.schedule = diagnostic.schedule;
-          next.profile.seed = next.profile.seed || "cantuta";
-          next.profile.guardian = next.profile.guardian || "alpaca";
+          next.profile.seed = next.profile.seed || 'cantuta';
+          next.profile.guardian = next.profile.guardian || 'alpaca';
           writeJSON(STATE_KEY, next);
         }
       } catch {
+        // ignore
       }
       writeJSON(SESSION_KEY, sessionObj);
-    }
+    },
   };
 
   // src/services/ecoService.js
@@ -431,24 +555,38 @@
   };
 
   // src/services/dbService.js
-  var B2B_LOCAL_KEY = "syncro_b2b_leads_v1";
-  function authHeaders() {
-    const ses = authService.getSession();
-    const token = ses?.accessToken || CONFIG.supabase.anonKey;
-    return {
-      "Content-Type": "application/json",
+  /**
+   * SYNCRO — Servicio de Persistencia en la Nube (Supabase PostgreSQL + RLS)
+   * Sincronización bidireccional (subida + descarga entre dispositivos) de progreso,
+   * sesiones de enfoque, check-ins emocionales y leads B2B.
+   * Compatible con claves Publishable (sb_publishable_...) y Legacy anon.
+   */
+
+
+
+  const B2B_LOCAL_KEY = 'syncro_b2b_leads_v1';
+
+  function authHeaders(ses = authService.getSession()) {
+    const headers = {
+      'Content-Type': 'application/json',
       apikey: CONFIG.supabase.anonKey,
-      Authorization: `Bearer ${token}`
     };
+    // Solo enviar Authorization: Bearer cuando hay un JWT real de usuario autenticado
+    if (ses?.accessToken) {
+      headers.Authorization = `Bearer ${ses.accessToken}`;
+    }
+    return headers;
   }
-  var dbService = {
+
+  const dbService = {
     loadLocalState() {
       try {
-        return JSON.parse(localStorage.getItem(STATE_KEY) || "null");
+        return JSON.parse(localStorage.getItem(STATE_KEY) || 'null');
       } catch {
         return null;
       }
     },
+
     saveLocalState(state) {
       try {
         localStorage.setItem(STATE_KEY, JSON.stringify(state));
@@ -457,50 +595,117 @@
         return false;
       }
     },
+
     /**
-     * Sincroniza el progreso de bioma y sesiones con Supabase (no bloqueante).
+     * Descarga el progreso guardado en Supabase para el usuario autenticado.
+     */
+    async loadStateFromCloud() {
+      if (!CONFIG.supabase.enabled) return { ok: false, mode: 'local' };
+      const ses = await authService.refreshSessionIfNeeded();
+      if (!ses || ses.mode === 'guest' || !ses.accessToken) return { ok: false, mode: 'guest' };
+
+      try {
+        const url = `${CONFIG.supabase.url}/rest/v1/biome_progress?user_id=eq.${encodeURIComponent(ses.id)}&select=drops,earth_points,streak,total_minutes,state_json,updated_at&limit=1`;
+        const res = await fetch(url, {
+          method: 'GET',
+          headers: authHeaders(ses),
+        });
+        if (!res.ok) return { ok: false, mode: 'error', status: res.status };
+        const rows = await res.json();
+        const row = Array.isArray(rows) ? rows[0] : null;
+        if (!row) return { ok: true, empty: true, mode: 'cloud' };
+
+        const cloudState = row.state_json && typeof row.state_json === 'object' ? row.state_json : null;
+        const updatedMs = row.updated_at ? Date.parse(row.updated_at) : 0;
+        return {
+          ok: true,
+          empty: false,
+          mode: 'cloud',
+          updatedAt: updatedMs || cloudState?.updatedAt || 0,
+          state: cloudState,
+          summary: {
+            drops: row.drops,
+            earth: row.earth_points,
+            streak: row.streak,
+            minutes: row.total_minutes,
+          },
+        };
+      } catch {
+        return { ok: false, mode: 'offline' };
+      }
+    },
+
+    /**
+     * Sincroniza el progreso completo (bioma, misiones, calendario, perfil) con Supabase.
      */
     async syncStateToCloud(state) {
-      if (!CONFIG.supabase.enabled) return { synced: false, mode: "local" };
-      const ses = authService.getSession();
-      if (!ses || ses.mode === "guest" || !ses.accessToken) return { synced: false, mode: "guest" };
+      if (!CONFIG.supabase.enabled) return { synced: false, mode: 'local' };
+      const ses = await authService.refreshSessionIfNeeded();
+      if (!ses || ses.mode === 'guest' || !ses.accessToken) return { synced: false, mode: 'guest' };
+
       try {
-        await fetch(`${CONFIG.supabase.url}/rest/v1/biome_progress`, {
-          method: "POST",
-          headers: { ...authHeaders(), Prefer: "resolution=merge-duplicates" },
+        const snapshot = { ...state, updatedAt: state.updatedAt || Date.now() };
+        const res = await fetch(`${CONFIG.supabase.url}/rest/v1/biome_progress?on_conflict=user_id`, {
+          method: 'POST',
+          headers: { ...authHeaders(ses), Prefer: 'resolution=merge-duplicates,return=minimal' },
           body: JSON.stringify({
             user_id: ses.id,
-            drops: state.biome.drops,
-            earth_points: state.biome.earth,
-            streak: state.user.streak,
-            total_minutes: state.stats.minutes,
-            updated_at: (/* @__PURE__ */ new Date()).toISOString()
-          })
+            drops: state.biome?.drops || 0,
+            earth_points: state.biome?.earth || 0,
+            streak: state.user?.streak || 0,
+            total_minutes: state.stats?.minutes || 0,
+            state_json: snapshot,
+            updated_at: new Date().toISOString(),
+          }),
         });
-        return { synced: true, mode: "cloud" };
+        return { synced: res.ok, mode: res.ok ? 'cloud' : 'error', status: res.status };
       } catch {
-        return { synced: false, mode: "offline" };
+        return { synced: false, mode: 'offline' };
       }
     },
+
     async logFocusSession({ durationMinutes, mode, missionId = null }) {
       if (!CONFIG.supabase.enabled) return;
-      const ses = authService.getSession();
-      if (!ses || ses.mode === "guest" || !ses.accessToken) return;
+      const ses = await authService.refreshSessionIfNeeded();
+      if (!ses || ses.mode === 'guest' || !ses.accessToken) return;
       try {
         await fetch(`${CONFIG.supabase.url}/rest/v1/focus_sessions`, {
-          method: "POST",
-          headers: authHeaders(),
+          method: 'POST',
+          headers: { ...authHeaders(ses), Prefer: 'return=minimal' },
           body: JSON.stringify({
             user_id: ses.id,
-            duration_minutes: durationMinutes,
-            mode,
+            duration_minutes: Math.max(1, Math.round(Number(durationMinutes) || 1)),
+            mode: mode || 'classic',
             mission_id: missionId,
-            completed_at: (/* @__PURE__ */ new Date()).toISOString()
-          })
+            completed_at: new Date().toISOString(),
+          }),
         });
       } catch {
+        // silent fallback
       }
     },
+
+    async logMood({ energy, mood, loggedDate = null }) {
+      if (!CONFIG.supabase.enabled) return;
+      const ses = await authService.refreshSessionIfNeeded();
+      if (!ses || ses.mode === 'guest' || !ses.accessToken) return;
+      try {
+        const clampedEnergy = Math.min(10, Math.max(1, Math.round(Number(energy) || 5)));
+        await fetch(`${CONFIG.supabase.url}/rest/v1/mood_logs`, {
+          method: 'POST',
+          headers: { ...authHeaders(ses), Prefer: 'return=minimal' },
+          body: JSON.stringify({
+            user_id: ses.id,
+            energy: clampedEnergy,
+            mood: String(mood || 'tranquilo'),
+            ...(loggedDate ? { logged_date: loggedDate } : {}),
+          }),
+        });
+      } catch {
+        // silent fallback
+      }
+    },
+
     async submitB2BLead({ organization, contactName, email, role, size, message }) {
       const payload = {
         organization: organization.trim(),
@@ -509,41 +714,52 @@
         role: role.trim(),
         team_size: size,
         message: message.trim(),
-        created_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: new Date().toISOString(),
       };
+
       if (CONFIG.supabase.enabled && CONFIG.endpoints.b2bLeads) {
-        const res = await fetch(CONFIG.endpoints.b2bLeads, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: CONFIG.supabase.anonKey
-          },
-          body: JSON.stringify(payload)
-        });
-        if (res.ok) return { ok: true, mode: "cloud" };
+        try {
+          const res = await fetch(CONFIG.endpoints.b2bLeads, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              apikey: CONFIG.supabase.anonKey,
+              Prefer: 'return=minimal',
+            },
+            body: JSON.stringify(payload),
+          });
+          if (res.ok) return { ok: true, mode: 'cloud' };
+        } catch {
+          // fallback local
+        }
       }
+
+      // Respaldo local para pruebas / entorno estático
       try {
-        const list = JSON.parse(localStorage.getItem(B2B_LOCAL_KEY) || "[]");
+        const list = JSON.parse(localStorage.getItem(B2B_LOCAL_KEY) || '[]');
         list.push(payload);
         localStorage.setItem(B2B_LOCAL_KEY, JSON.stringify(list));
       } catch {
+        // ignore
       }
-      return { ok: true, mode: "local" };
+      return { ok: true, mode: 'local' };
     },
+
     async deleteAccountData() {
       if (CONFIG.supabase.enabled) {
-        const ses = authService.getSession();
+        const ses = await authService.refreshSessionIfNeeded();
         if (ses?.accessToken) {
           try {
             await fetch(`${CONFIG.supabase.url}/functions/v1/delete-account`, {
-              method: "POST",
-              headers: authHeaders()
+              method: 'POST',
+              headers: authHeaders(ses),
             });
           } catch {
+            // continuar borrado local
           }
         }
       }
-    }
+    },
   };
 
   // src/services/n8nService.js

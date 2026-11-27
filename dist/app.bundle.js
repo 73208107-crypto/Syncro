@@ -140,17 +140,27 @@
   };
 
   // src/services/authService.js
-  var USERS_KEY = "syncro_users";
-  var SESSION_KEY = "syncro_session";
-  var STATE_KEY = "syncro_state_v3";
-  var readJSON = (k, fb) => {
+  /**
+   * SYNCRO — Servicio de Autenticación
+   * Conectado a Supabase Auth (JWT + refresh token + Google OAuth + recuperación por correo)
+   * con respaldo local cifrado (SHA-256) cuando no hay backend configurado.
+   */
+
+
+
+  const USERS_KEY = 'syncro_users';
+  const SESSION_KEY = 'syncro_session';
+  const STATE_KEY = 'syncro_state_v3';
+
+  const readJSON = (k, fb) => {
     try {
       return JSON.parse(localStorage.getItem(k)) ?? fb;
     } catch {
       return fb;
     }
   };
-  var writeJSON = (k, v) => {
+
+  const writeJSON = (k, v) => {
     try {
       localStorage.setItem(k, JSON.stringify(v));
       return true;
@@ -158,193 +168,304 @@
       return false;
     }
   };
+
   async function hashPassword(text) {
     try {
-      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("syncro::" + text));
-      return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('syncro::' + text));
+      return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
     } catch {
-      const bytes = new TextEncoder().encode("syncro::" + text);
-      return "plain::" + btoa(String.fromCharCode(...bytes));
+      const bytes = new TextEncoder().encode('syncro::' + text);
+      return 'plain::' + btoa(String.fromCharCode(...bytes));
     }
   }
+
   function deriveUserIdentity(email, existingUsers = []) {
-    const local = email.split("@")[0] || "usuario";
-    const name = local.replace(/[._\d]+/g, " ").trim().replace(/\b\w/g, (c) => c.toUpperCase()) || "Usuario";
-    const base = local.replace(/[^a-z0-9._]/gi, "").slice(0, 16) || "usuario";
+    const local = email.split('@')[0] || 'usuario';
+    const name =
+      local
+        .replace(/[._\d]+/g, ' ')
+        .trim()
+        .replace(/\b\w/g, (c) => c.toUpperCase()) || 'Usuario';
+    const base = local.replace(/[^a-z0-9._]/gi, '').slice(0, 16) || 'usuario';
     let username = base;
     let n = 1;
-    while (existingUsers.some((u) => (u.username || "").toLowerCase() === username.toLowerCase())) {
+    while (existingUsers.some((u) => (u.username || '').toLowerCase() === username.toLowerCase())) {
       username = base + ++n;
     }
     return { name, username };
   }
-  function resolveInstitutionFromEmail(email = "") {
-    const domain = String(email).split("@")[1]?.toLowerCase() || "";
+
+  function resolveInstitutionFromEmail(email = '') {
+    const domain = String(email).split('@')[1]?.toLowerCase() || '';
     return CONFIG.institutions[domain] || null;
   }
-  var authService = {
+
+  const authService = {
     getSession() {
       return readJSON(SESSION_KEY, null);
     },
+
     ensureGuestSession() {
       const ses = this.getSession();
       if (ses) return ses;
       const guest = {
-        mode: "guest",
-        name: "Invitado",
-        id: "guest_" + Date.now().toString(36),
-        plan: "free",
-        since: Date.now()
+        mode: 'guest',
+        name: 'Invitado',
+        id: 'guest_' + Date.now().toString(36),
+        plan: 'free',
+        since: Date.now(),
       };
       writeJSON(SESSION_KEY, guest);
       return guest;
     },
+
     getUsers() {
       return readJSON(USERS_KEY, []);
     },
+
     async signUpWithEmail({ email, password, diagnostic = null }) {
       const cleanEmail = email.trim().toLowerCase();
+
+      // Ruta BaaS real (Supabase Auth)
       if (CONFIG.supabase.enabled) {
         const res = await fetch(`${CONFIG.supabase.url}/auth/v1/signup`, {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
-            apikey: CONFIG.supabase.anonKey
+            'Content-Type': 'application/json',
+            apikey: CONFIG.supabase.anonKey,
           },
           body: JSON.stringify({
             email: cleanEmail,
             password,
-            data: { diagnostic }
-          })
+            data: { diagnostic },
+          }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.msg || data.error_description || "No se pudo crear la cuenta.");
-        const { name: name2, username: username2 } = deriveUserIdentity(cleanEmail);
-        const sessionObj2 = {
-          id: data.user?.id || "u" + Date.now().toString(36),
-          name: name2,
-          username: username2,
+        if (!res.ok) throw new Error(data.msg || data.error_description || data.message || 'No se pudo crear la cuenta.');
+        const { name, username } = deriveUserIdentity(cleanEmail);
+        const userObj = data.user || data;
+        const sessionObj = {
+          id: userObj?.id || 'u' + Date.now().toString(36),
+          name: userObj?.user_metadata?.name || name,
+          username,
           email: cleanEmail,
-          provider: "email",
-          plan: resolveInstitutionFromEmail(cleanEmail)?.plan || "free",
+          provider: 'email',
+          plan: resolveInstitutionFromEmail(cleanEmail)?.plan || 'free',
           accessToken: data.access_token || null,
-          since: Date.now()
+          refreshToken: data.refresh_token || null,
+          expiresAt: data.expires_in ? Date.now() + Number(data.expires_in) * 1000 : null,
+          since: Date.now(),
         };
-        this._persistSession(sessionObj2, { fresh: true, diagnostic });
-        analyticsService.track("signup_completed", { provider: "email", backend: "supabase" });
-        return sessionObj2;
+        this._persistSession(sessionObj, { fresh: true, diagnostic });
+        analyticsService.track('signup_completed', { provider: 'email', backend: 'supabase' });
+        return sessionObj;
       }
+
+      // Respaldo local (sin backend configurado)
       const users = this.getUsers();
       if (users.some((u) => u.email === cleanEmail)) {
-        throw new Error("Ese correo ya tiene cuenta. Inicia sesi\xF3n.");
+        throw new Error('Ese correo ya tiene cuenta. Inicia sesión.');
       }
       const { name, username } = deriveUserIdentity(cleanEmail, users);
       const user = {
-        id: "u" + Date.now().toString(36),
+        id: 'u' + Date.now().toString(36),
         name,
         username,
         email: cleanEmail,
         passHash: await hashPassword(password),
-        provider: "email",
-        plan: resolveInstitutionFromEmail(cleanEmail)?.plan || "free",
-        createdAt: Date.now()
+        provider: 'email',
+        plan: resolveInstitutionFromEmail(cleanEmail)?.plan || 'free',
+        createdAt: Date.now(),
       };
       users.push(user);
       if (!writeJSON(USERS_KEY, users)) {
-        throw new Error("No pudimos guardar tu cuenta: el navegador bloquea el almacenamiento.");
+        throw new Error('No pudimos guardar tu cuenta: el navegador bloquea el almacenamiento.');
       }
       const sessionObj = {
         id: user.id,
         name: user.name,
         username: user.username,
         email: user.email,
-        provider: "email",
+        provider: 'email',
         plan: user.plan,
-        since: Date.now()
+        since: Date.now(),
       };
       this._persistSession(sessionObj, { fresh: true, diagnostic });
-      analyticsService.track("signup_completed", { provider: "email", backend: "local" });
+      analyticsService.track('signup_completed', { provider: 'email', backend: 'local' });
       return sessionObj;
     },
+
     async signInWithEmail({ identifier, password }) {
       const id = identifier.trim().toLowerCase();
+
       if (CONFIG.supabase.enabled) {
         const res = await fetch(`${CONFIG.supabase.url}/auth/v1/token?grant_type=password`, {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
-            apikey: CONFIG.supabase.anonKey
+            'Content-Type': 'application/json',
+            apikey: CONFIG.supabase.anonKey,
           },
-          body: JSON.stringify({ email: id, password })
+          body: JSON.stringify({ email: id, password }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error("Correo o contrase\xF1a incorrectos.");
+        if (!res.ok) throw new Error(data.error_description || data.msg || 'Correo o contraseña incorrectos.');
         const { name, username } = deriveUserIdentity(id);
-        const sessionObj2 = {
-          id: data.user?.id || "u" + Date.now().toString(36),
+        const sessionObj = {
+          id: data.user?.id || 'u' + Date.now().toString(36),
           name: data.user?.user_metadata?.name || name,
           username,
           email: id,
-          provider: "email",
-          plan: resolveInstitutionFromEmail(id)?.plan || "free",
+          provider: 'email',
+          plan: resolveInstitutionFromEmail(id)?.plan || 'free',
           accessToken: data.access_token || null,
-          since: Date.now()
+          refreshToken: data.refresh_token || null,
+          expiresAt: data.expires_in ? Date.now() + Number(data.expires_in) * 1000 : null,
+          since: Date.now(),
         };
-        this._persistSession(sessionObj2, { fresh: false });
-        return sessionObj2;
+        this._persistSession(sessionObj, { fresh: false });
+        return sessionObj;
       }
-      const user = this.getUsers().find((u) => (u.email === id || (u.username || "").toLowerCase() === id) && u.passHash);
-      const ok = user && user.passHash === await hashPassword(password);
+
+      const user = this.getUsers().find((u) => (u.email === id || (u.username || '').toLowerCase() === id) && u.passHash);
+      const ok = user && user.passHash === (await hashPassword(password));
       if (!ok) {
-        throw new Error("Usuario o contrase\xF1a incorrectos. Revisa los datos o crea una cuenta.");
+        throw new Error('Usuario o contraseña incorrectos. Revisa los datos o crea una cuenta.');
       }
       const sessionObj = {
         id: user.id,
         name: user.name,
         username: user.username,
         email: user.email,
-        provider: user.provider || "email",
-        plan: user.plan || resolveInstitutionFromEmail(user.email)?.plan || "free",
-        since: Date.now()
+        provider: user.provider || 'email',
+        plan: user.plan || resolveInstitutionFromEmail(user.email)?.plan || 'free',
+        since: Date.now(),
       };
       this._persistSession(sessionObj, { fresh: false });
       return sessionObj;
     },
+
+    /**
+     * Renueva silenciosamente el JWT de Supabase antes de expirar.
+     */
+    async refreshSessionIfNeeded() {
+      if (!CONFIG.supabase.enabled) return this.getSession();
+      const ses = this.getSession();
+      if (!ses || ses.mode === 'guest' || !ses.refreshToken) return ses;
+      if (ses.accessToken && ses.expiresAt && Date.now() < ses.expiresAt - 5 * 60 * 1000) {
+        return ses;
+      }
+      try {
+        const res = await fetch(`${CONFIG.supabase.url}/auth/v1/token?grant_type=refresh_token`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: CONFIG.supabase.anonKey,
+          },
+          body: JSON.stringify({ refresh_token: ses.refreshToken }),
+        });
+        if (!res.ok) return ses;
+        const data = await res.json();
+        if (data.access_token) {
+          const updated = {
+            ...ses,
+            accessToken: data.access_token,
+            refreshToken: data.refresh_token || ses.refreshToken,
+            expiresAt: data.expires_in ? Date.now() + Number(data.expires_in) * 1000 : ses.expiresAt,
+          };
+          writeJSON(SESSION_KEY, updated);
+          return updated;
+        }
+      } catch {
+        // mantener sesión actual offline
+      }
+      return ses;
+    },
+
+    /**
+     * Procesa el hash #access_token=... devuelto por Supabase tras Google OAuth.
+     */
+    async handleOAuthCallback() {
+      if (!CONFIG.supabase.enabled || typeof window === 'undefined') return null;
+      const rawHash = window.location.hash || '';
+      if (!rawHash.includes('access_token=')) return null;
+      try {
+        const params = new URLSearchParams(rawHash.replace(/^#/, ''));
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+        const expiresIn = Number(params.get('expires_in') || 3600);
+        if (!accessToken) return null;
+
+        const res = await fetch(`${CONFIG.supabase.url}/auth/v1/user`, {
+          headers: {
+            apikey: CONFIG.supabase.anonKey,
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+        if (!res.ok) return null;
+        const user = await res.json();
+        const email = (user.email || '').toLowerCase();
+        const { name, username } = deriveUserIdentity(email || 'usuario');
+        const sessionObj = {
+          id: user.id,
+          name: user.user_metadata?.full_name || user.user_metadata?.name || name,
+          username,
+          email,
+          provider: user.app_metadata?.provider || 'google',
+          plan: resolveInstitutionFromEmail(email)?.plan || 'free',
+          accessToken,
+          refreshToken: refreshToken || null,
+          expiresAt: Date.now() + expiresIn * 1000,
+          since: Date.now(),
+        };
+        this._persistSession(sessionObj, { fresh: false });
+        try {
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        } catch {
+          // ignore
+        }
+        return sessionObj;
+      } catch {
+        return null;
+      }
+    },
+
     /**
      * Inicia Google OAuth real vía Supabase cuando está configurado.
-     * Si el proyecto se ejecuta sin backend configurado, indica al flujo de UI
-     * que solicite acceso directo con correo sin banners de simulación.
      */
     signInWithGoogle() {
       if (CONFIG.supabase.enabled) {
-        const redirectTo = encodeURIComponent(new URL("app.html", window.location.href).toString());
+        const redirectTo = encodeURIComponent(new URL('app.html', window.location.href).toString());
         window.location.href = `${CONFIG.supabase.url}/auth/v1/authorize?provider=google&redirect_to=${redirectTo}`;
         return { redirected: true };
       }
       return { redirected: false, needsEmailFallback: true };
     },
+
     async requestPasswordReset(email) {
       const cleanEmail = email.trim().toLowerCase();
       if (CONFIG.supabase.enabled) {
         const res = await fetch(`${CONFIG.supabase.url}/auth/v1/recover`, {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
-            apikey: CONFIG.supabase.anonKey
+            'Content-Type': 'application/json',
+            apikey: CONFIG.supabase.anonKey,
           },
-          body: JSON.stringify({ email: cleanEmail })
+          body: JSON.stringify({ email: cleanEmail }),
         });
-        if (!res.ok) throw new Error("No pudimos enviar el enlace de recuperaci\xF3n.");
+        if (!res.ok) throw new Error('No pudimos enviar el enlace de recuperación.');
         return true;
       }
       return true;
     },
+
     signOut() {
       try {
         localStorage.removeItem(SESSION_KEY);
       } catch {
+        // ignore
       }
     },
+
     deleteLocalAccount() {
       const ses = this.getSession();
       try {
@@ -355,12 +476,14 @@
         localStorage.removeItem(SESSION_KEY);
         localStorage.removeItem(STATE_KEY);
       } catch {
+        // ignore
       }
     },
+
     _persistSession(sessionObj, { fresh = false, diagnostic = null } = {}) {
       try {
         const st = readJSON(STATE_KEY, null);
-        if (fresh || st && st.accountEmail && st.accountEmail !== sessionObj.email) {
+        if (fresh || (st && st.accountEmail && st.accountEmail !== sessionObj.email)) {
           localStorage.removeItem(STATE_KEY);
         }
         if (diagnostic) {
@@ -369,87 +492,169 @@
           next.profile.trigger = diagnostic.trigger;
           next.profile.role = diagnostic.role;
           next.profile.schedule = diagnostic.schedule;
-          next.profile.seed = next.profile.seed || "cantuta";
-          next.profile.guardian = next.profile.guardian || "alpaca";
+          next.profile.seed = next.profile.seed || 'cantuta';
+          next.profile.guardian = next.profile.guardian || 'alpaca';
           writeJSON(STATE_KEY, next);
         }
       } catch {
+        // ignore
       }
       writeJSON(SESSION_KEY, sessionObj);
-    }
+    },
   };
 
   // src/services/dbService.js
-  var B2B_LOCAL_KEY = "syncro_b2b_leads_v1";
-  function authHeaders() {
-    const ses = authService.getSession();
-    const token = ses?.accessToken || CONFIG.supabase.anonKey;
-    return {
-      "Content-Type": "application/json",
+  /**
+   * SYNCRO — Servicio de Persistencia en la Nube (Supabase PostgreSQL + RLS)
+   * Sincronización bidireccional (subida + descarga entre dispositivos) de progreso,
+   * sesiones de enfoque, check-ins emocionales y leads B2B.
+   * Compatible con claves Publishable (sb_publishable_...) y Legacy anon.
+   */
+
+
+
+  const B2B_LOCAL_KEY = 'syncro_b2b_leads_v1';
+
+  function authHeaders(ses = authService.getSession()) {
+    const headers = {
+      'Content-Type': 'application/json',
       apikey: CONFIG.supabase.anonKey,
-      Authorization: `Bearer ${token}`
     };
+    // Solo enviar Authorization: Bearer cuando hay un JWT real de usuario autenticado
+    if (ses?.accessToken) {
+      headers.Authorization = `Bearer ${ses.accessToken}`;
+    }
+    return headers;
   }
-  var dbService = {
+
+  const dbService = {
     loadLocalState() {
       try {
-        return JSON.parse(localStorage.getItem(STATE_KEY) || "null");
+        return JSON.parse(localStorage.getItem(STATE_KEY) || 'null');
       } catch {
         return null;
       }
     },
-    saveLocalState(state2) {
+
+    saveLocalState(state) {
       try {
-        localStorage.setItem(STATE_KEY, JSON.stringify(state2));
+        localStorage.setItem(STATE_KEY, JSON.stringify(state));
         return true;
       } catch {
         return false;
       }
     },
+
     /**
-     * Sincroniza el progreso de bioma y sesiones con Supabase (no bloqueante).
+     * Descarga el progreso guardado en Supabase para el usuario autenticado.
      */
-    async syncStateToCloud(state2) {
-      if (!CONFIG.supabase.enabled) return { synced: false, mode: "local" };
-      const ses = authService.getSession();
-      if (!ses || ses.mode === "guest" || !ses.accessToken) return { synced: false, mode: "guest" };
+    async loadStateFromCloud() {
+      if (!CONFIG.supabase.enabled) return { ok: false, mode: 'local' };
+      const ses = await authService.refreshSessionIfNeeded();
+      if (!ses || ses.mode === 'guest' || !ses.accessToken) return { ok: false, mode: 'guest' };
+
       try {
-        await fetch(`${CONFIG.supabase.url}/rest/v1/biome_progress`, {
-          method: "POST",
-          headers: { ...authHeaders(), Prefer: "resolution=merge-duplicates" },
-          body: JSON.stringify({
-            user_id: ses.id,
-            drops: state2.biome.drops,
-            earth_points: state2.biome.earth,
-            streak: state2.user.streak,
-            total_minutes: state2.stats.minutes,
-            updated_at: (/* @__PURE__ */ new Date()).toISOString()
-          })
+        const url = `${CONFIG.supabase.url}/rest/v1/biome_progress?user_id=eq.${encodeURIComponent(ses.id)}&select=drops,earth_points,streak,total_minutes,state_json,updated_at&limit=1`;
+        const res = await fetch(url, {
+          method: 'GET',
+          headers: authHeaders(ses),
         });
-        return { synced: true, mode: "cloud" };
+        if (!res.ok) return { ok: false, mode: 'error', status: res.status };
+        const rows = await res.json();
+        const row = Array.isArray(rows) ? rows[0] : null;
+        if (!row) return { ok: true, empty: true, mode: 'cloud' };
+
+        const cloudState = row.state_json && typeof row.state_json === 'object' ? row.state_json : null;
+        const updatedMs = row.updated_at ? Date.parse(row.updated_at) : 0;
+        return {
+          ok: true,
+          empty: false,
+          mode: 'cloud',
+          updatedAt: updatedMs || cloudState?.updatedAt || 0,
+          state: cloudState,
+          summary: {
+            drops: row.drops,
+            earth: row.earth_points,
+            streak: row.streak,
+            minutes: row.total_minutes,
+          },
+        };
       } catch {
-        return { synced: false, mode: "offline" };
+        return { ok: false, mode: 'offline' };
       }
     },
+
+    /**
+     * Sincroniza el progreso completo (bioma, misiones, calendario, perfil) con Supabase.
+     */
+    async syncStateToCloud(state) {
+      if (!CONFIG.supabase.enabled) return { synced: false, mode: 'local' };
+      const ses = await authService.refreshSessionIfNeeded();
+      if (!ses || ses.mode === 'guest' || !ses.accessToken) return { synced: false, mode: 'guest' };
+
+      try {
+        const snapshot = { ...state, updatedAt: state.updatedAt || Date.now() };
+        const res = await fetch(`${CONFIG.supabase.url}/rest/v1/biome_progress?on_conflict=user_id`, {
+          method: 'POST',
+          headers: { ...authHeaders(ses), Prefer: 'resolution=merge-duplicates,return=minimal' },
+          body: JSON.stringify({
+            user_id: ses.id,
+            drops: state.biome?.drops || 0,
+            earth_points: state.biome?.earth || 0,
+            streak: state.user?.streak || 0,
+            total_minutes: state.stats?.minutes || 0,
+            state_json: snapshot,
+            updated_at: new Date().toISOString(),
+          }),
+        });
+        return { synced: res.ok, mode: res.ok ? 'cloud' : 'error', status: res.status };
+      } catch {
+        return { synced: false, mode: 'offline' };
+      }
+    },
+
     async logFocusSession({ durationMinutes, mode, missionId = null }) {
       if (!CONFIG.supabase.enabled) return;
-      const ses = authService.getSession();
-      if (!ses || ses.mode === "guest" || !ses.accessToken) return;
+      const ses = await authService.refreshSessionIfNeeded();
+      if (!ses || ses.mode === 'guest' || !ses.accessToken) return;
       try {
         await fetch(`${CONFIG.supabase.url}/rest/v1/focus_sessions`, {
-          method: "POST",
-          headers: authHeaders(),
+          method: 'POST',
+          headers: { ...authHeaders(ses), Prefer: 'return=minimal' },
           body: JSON.stringify({
             user_id: ses.id,
-            duration_minutes: durationMinutes,
-            mode,
+            duration_minutes: Math.max(1, Math.round(Number(durationMinutes) || 1)),
+            mode: mode || 'classic',
             mission_id: missionId,
-            completed_at: (/* @__PURE__ */ new Date()).toISOString()
-          })
+            completed_at: new Date().toISOString(),
+          }),
         });
       } catch {
+        // silent fallback
       }
     },
+
+    async logMood({ energy, mood, loggedDate = null }) {
+      if (!CONFIG.supabase.enabled) return;
+      const ses = await authService.refreshSessionIfNeeded();
+      if (!ses || ses.mode === 'guest' || !ses.accessToken) return;
+      try {
+        const clampedEnergy = Math.min(10, Math.max(1, Math.round(Number(energy) || 5)));
+        await fetch(`${CONFIG.supabase.url}/rest/v1/mood_logs`, {
+          method: 'POST',
+          headers: { ...authHeaders(ses), Prefer: 'return=minimal' },
+          body: JSON.stringify({
+            user_id: ses.id,
+            energy: clampedEnergy,
+            mood: String(mood || 'tranquilo'),
+            ...(loggedDate ? { logged_date: loggedDate } : {}),
+          }),
+        });
+      } catch {
+        // silent fallback
+      }
+    },
+
     async submitB2BLead({ organization, contactName, email, role, size, message }) {
       const payload = {
         organization: organization.trim(),
@@ -458,108 +663,131 @@
         role: role.trim(),
         team_size: size,
         message: message.trim(),
-        created_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: new Date().toISOString(),
       };
+
       if (CONFIG.supabase.enabled && CONFIG.endpoints.b2bLeads) {
-        const res = await fetch(CONFIG.endpoints.b2bLeads, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: CONFIG.supabase.anonKey
-          },
-          body: JSON.stringify(payload)
-        });
-        if (res.ok) return { ok: true, mode: "cloud" };
+        try {
+          const res = await fetch(CONFIG.endpoints.b2bLeads, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              apikey: CONFIG.supabase.anonKey,
+              Prefer: 'return=minimal',
+            },
+            body: JSON.stringify(payload),
+          });
+          if (res.ok) return { ok: true, mode: 'cloud' };
+        } catch {
+          // fallback local
+        }
       }
+
+      // Respaldo local para pruebas / entorno estático
       try {
-        const list = JSON.parse(localStorage.getItem(B2B_LOCAL_KEY) || "[]");
+        const list = JSON.parse(localStorage.getItem(B2B_LOCAL_KEY) || '[]');
         list.push(payload);
         localStorage.setItem(B2B_LOCAL_KEY, JSON.stringify(list));
       } catch {
+        // ignore
       }
-      return { ok: true, mode: "local" };
+      return { ok: true, mode: 'local' };
     },
+
     async deleteAccountData() {
       if (CONFIG.supabase.enabled) {
-        const ses = authService.getSession();
+        const ses = await authService.refreshSessionIfNeeded();
         if (ses?.accessToken) {
           try {
             await fetch(`${CONFIG.supabase.url}/functions/v1/delete-account`, {
-              method: "POST",
-              headers: authHeaders()
+              method: 'POST',
+              headers: authHeaders(ses),
             });
           } catch {
+            // continuar borrado local
           }
         }
       }
-    }
+    },
   };
 
   // src/core/state.js
-  var SEEDS = {
-    cantuta: { name: "Cantuta", stages: ["\u{1F331}", "\u{1F33F}", "\u{1F337}", "\u{1F33A}"] },
-    "que\xF1ual": { name: "Que\xF1ual", stages: ["\u{1F331}", "\u{1F33F}", "\u{1F332}", "\u{1F333}"] },
-    chachacoma: { name: "Chachacoma", stages: ["\u{1F331}", "\u{1F33F}", "\u{1F340}", "\u{1FAB4}"] }
+  /**
+   * SYNCRO — Estado Reactivo Centralizado y Catálogo de Dominio
+   * Consolida el estado de usuario, perfil, misiones, calendario, bioma,
+   * logros y sincronización local/remota a través de dbService.
+   */
+
+
+
+
+  const SEEDS = {
+    cantuta: { name: 'Cantuta', stages: ['🌱', '🌿', '🌷', '🌺'] },
+    'queñual': { name: 'Queñual', stages: ['🌱', '🌿', '🌲', '🌳'] },
+    chachacoma: { name: 'Chachacoma', stages: ['🌱', '🌿', '🍀', '🪴'] },
   };
-  var GUARDIANS = { alpaca: "\u{1F999}", vicuna: "\u{1F98C}", condor: "\u{1F985}", oso: "\u{1F43B}" };
-  var GUARDIAN_NAMES = {
-    alpaca: "Alpaca",
-    vicuna: "Vicu\xF1a",
-    condor: "C\xF3ndor andino",
-    oso: "Oso de anteojos"
+
+  const GUARDIANS = { alpaca: '🦙', vicuna: '🦌', condor: '🦅', oso: '🐻' };
+  const GUARDIAN_NAMES = {
+    alpaca: 'Alpaca',
+    vicuna: 'Vicuña',
+    condor: 'Cóndor andino',
+    oso: 'Oso de anteojos',
   };
-  var GUARDIAN_LOCK = { vicuna: "blocks_3", condor: "streak_7", oso: "species_4" };
-  var ACHIEVEMENTS = [
-    { id: "first_block", icon: "\u{1F331}", name: "Primera semilla", desc: "Completaste tu primer bloque de enfoque." },
-    { id: "first_checkin", icon: "\u{1F324}", name: "Te escuchaste", desc: "Hiciste tu primer check-in emocional." },
-    { id: "no_perf", icon: "\u2728", name: "Avance sin perfecci\xF3n", desc: "Empezaste con 5 minutos sin exigirte el 100%." },
-    { id: "blocks_3", icon: "\u{1F98C}", name: "Vicu\xF1a curiosa", desc: "Completaste 3 bloques. Desbloqueas al guardi\xE1n Vicu\xF1a." },
-    { id: "journal_1", icon: "\u{1F512}", name: "Soltaste la mente", desc: "Escribiste tu primera nota en el diario cifrado." },
-    { id: "streak_3", icon: "\u{1F308}", name: "Arco\xEDris andino", desc: "Mantuviste tu constancia 3 d\xEDas seguidos." },
-    { id: "streak_7", icon: "\u{1F985}", name: "Vuelo del c\xF3ndor", desc: "7 d\xEDas de constancia. Desbloqueas al guardi\xE1n C\xF3ndor." },
-    { id: "species_4", icon: "\u{1F43B}", name: "Santuario diverso", desc: "Desbloqueaste 4 especies nativas y al Oso de Anteojos." },
-    { id: "water_3", icon: "\u{1F4A7}", name: "Manos que riegan", desc: "Regaste tu santuario 3 veces con tus gotas." }
+  const GUARDIAN_LOCK = { vicuna: 'blocks_3', condor: 'streak_7', oso: 'species_4' };
+
+  const ACHIEVEMENTS = [
+    { id: 'first_block', icon: '🌱', name: 'Primera semilla', desc: 'Completaste tu primer bloque de enfoque.' },
+    { id: 'first_checkin', icon: '🌤', name: 'Te escuchaste', desc: 'Hiciste tu primer check-in emocional.' },
+    { id: 'no_perf', icon: '✨', name: 'Avance sin perfección', desc: 'Empezaste con 5 minutos sin exigirte el 100%.' },
+    { id: 'blocks_3', icon: '🦌', name: 'Vicuña curiosa', desc: 'Completaste 3 bloques. Desbloqueas al guardián Vicuña.' },
+    { id: 'journal_1', icon: '🔒', name: 'Soltaste la mente', desc: 'Escribiste tu primera nota en el diario cifrado.' },
+    { id: 'streak_3', icon: '🌈', name: 'Arcoíris andino', desc: 'Mantuviste tu constancia 3 días seguidos.' },
+    { id: 'streak_7', icon: '🦅', name: 'Vuelo del cóndor', desc: '7 días de constancia. Desbloqueas al guardián Cóndor.' },
+    { id: 'species_4', icon: '🐻', name: 'Santuario diverso', desc: 'Desbloqueaste 4 especies nativas y al Oso de Anteojos.' },
+    { id: 'water_3', icon: '💧', name: 'Manos que riegan', desc: 'Regaste tu santuario 3 veces con tus gotas.' },
   ];
-  var BASE_MISSIONS = [
-    { id: "m1", base: true, title: "Hacer tu check-in emocional del d\xEDa", xp: 20, drops: 5, target: 1, progress: 0, done: false },
-    { id: "m2", base: true, title: "Completar 1 bloque de enfoque sin culpa", xp: 35, drops: 10, target: 1, progress: 0, done: false },
-    { id: "m3", base: true, title: "Regar tu santuario o planificar 1 bloque", xp: 25, drops: 5, target: 1, progress: 0, done: false }
+
+  const BASE_MISSIONS = [
+    { id: 'm1', base: true, title: 'Hacer tu check-in emocional del día', xp: 20, drops: 5, target: 1, progress: 0, done: false },
+    { id: 'm2', base: true, title: 'Completar 1 bloque de enfoque sin culpa', xp: 35, drops: 10, target: 1, progress: 0, done: false },
+    { id: 'm3', base: true, title: 'Regar tu santuario o planificar 1 bloque', xp: 25, drops: 5, target: 1, progress: 0, done: false },
   ];
+
   function defaultState() {
     return {
       accountEmail: null,
-      user: { name: "", xp: 0, level: 1, streak: 0, shields: 2, onboarded: false, toured: false, lastActive: null },
+      user: { name: '', xp: 0, level: 1, streak: 0, shields: 2, onboarded: false, toured: false, lastActive: null },
       profile: {
         role: null,
-        ageRange: "",
-        institution: "",
-        goal: "",
+        ageRange: '',
+        institution: '',
+        goal: '',
         trigger: null,
         schedule: null,
-        blockPref: "classic",
-        seed: "cantuta",
-        guardian: "alpaca",
+        blockPref: 'classic',
+        seed: 'cantuta',
+        guardian: 'alpaca',
         bienestarConsent: false,
         journalAiOptIn: false,
         reminder: true,
         notifications: false,
-        mouseleaveSensitivity: "normal"
-        // 'off' | 'normal' | 'strict'
+        mouseleaveSensitivity: 'normal', // 'off' | 'normal' | 'strict'
       },
       checkIn: { energy: 5, mood: null, lowEnergy: false, date: null },
       missions: BASE_MISSIONS.map((m) => ({ ...m })),
-      plan: { est: 10, real: 6, task: "", days: 10, steps: [] },
+      plan: { est: 10, real: 6, task: '', days: 10, steps: [] },
       focus: {
-        mode: "classic",
+        mode: 'classic',
         shield: true,
         autoFs: true,
         soundOn: false,
-        sound: "rain",
+        sound: 'rain',
         soundVolume: 70,
-        alarmTone: "chime",
+        alarmTone: 'chime',
         alarmVolume: 80,
         alarmMuted: false,
-        activeMission: null
+        activeMission: null,
       },
       biome: { drops: 0, earth: 0, collectiveHours: 0, waters: 0 },
       calendar: { slots: [], weekOffset: 0 },
@@ -569,63 +797,95 @@
       weekly: [0, 0, 0, 0, 0, 0, 0],
       moodLogs: [],
       achievements: {},
-      ui: { sidebarCollapsed: false }
+      ui: { sidebarCollapsed: false },
     };
   }
-  function keyOf(d = /* @__PURE__ */ new Date()) {
+
+  function keyOf(d = new Date()) {
     const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
   }
-  function dayIdx(d = /* @__PURE__ */ new Date()) {
+
+  function dayIdx(d = new Date()) {
     return (d.getDay() + 6) % 7;
   }
+
   function esc(s) {
-    return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
+
   function deepMerge(base, patch) {
-    if (!patch || typeof patch !== "object") return base;
+    if (!patch || typeof patch !== 'object') return base;
     const out = Array.isArray(base) ? [...base] : { ...base };
     for (const [k, v] of Object.entries(patch)) {
-      if (v && typeof v === "object" && !Array.isArray(v) && base[k] && typeof base[k] === "object" && !Array.isArray(base[k])) {
+      if (v && typeof v === 'object' && !Array.isArray(v) && base[k] && typeof base[k] === 'object' && !Array.isArray(base[k])) {
         out[k] = deepMerge(base[k], v);
-      } else if (v !== void 0) {
+      } else if (v !== undefined) {
         out[k] = v;
       }
     }
     return out;
   }
-  var listeners = /* @__PURE__ */ new Set();
-  var state = loadInitialState();
+
+  const listeners = new Set();
+
+  let state = loadInitialState();
+
   function loadInitialState() {
     const saved = dbService.loadLocalState();
     const merged = deepMerge(defaultState(), saved || {});
     const ses = authService.ensureGuestSession();
+
     if (ses?.email && !merged.accountEmail) {
       merged.accountEmail = ses.email;
     }
-    if (ses?.name && ses.mode !== "guest" && !merged.user.name) {
+    if (ses?.name && ses.mode !== 'guest' && !merged.user.name) {
       merged.user.name = ses.name;
     }
+
+    // Limpiar contadores diarios si cambió la fecha
     const today = keyOf();
     if (merged.daily.date !== today) {
       merged.daily = { date: today, distractions: 0, blocks: 0 };
     }
     return merged;
   }
+
   function replaceState(next) {
     state = deepMerge(defaultState(), next);
     saveState();
     return state;
   }
-  var cloudSyncTimer = null;
-  function saveState() {
+
+  function replaceStateSilent(next) {
+    state = deepMerge(defaultState(), next);
     dbService.saveLocalState(state);
     listeners.forEach((fn) => {
       try {
         fn(state);
       } catch {
+        // ignore
+      }
+    });
+    return state;
+  }
+
+  function subscribe(fn) {
+    listeners.add(fn);
+    return () => listeners.delete(fn);
+  }
+
+  let cloudSyncTimer = null;
+  function saveState() {
+    state.updatedAt = Date.now();
+    dbService.saveLocalState(state);
+    listeners.forEach((fn) => {
+      try {
+        fn(state);
+      } catch {
+        // ignore
       }
     });
     clearTimeout(cloudSyncTimer);
@@ -633,25 +893,31 @@
       dbService.syncStateToCloud(state);
     }, 1500);
   }
+
   function seed() {
     return SEEDS[state.profile.seed] || SEEDS.cantuta;
   }
+
   function guardian() {
-    return GUARDIANS[state.profile.guardian] || "\u{1F999}";
+    return GUARDIANS[state.profile.guardian] || '🦙';
   }
+
   function achUnlocked(id) {
     return Boolean(state.achievements[id]);
   }
+
   function guardianLocked(key) {
     const req = GUARDIAN_LOCK[key];
     return req ? !achUnlocked(req) : false;
   }
+
   function levelTitle(lvl) {
-    if (lvl < 3) return "Iniciando";
-    if (lvl < 6) return "Constante";
-    if (lvl < 10) return "Guardi\xE1n del Enfoque";
-    return "Protector Andino";
+    if (lvl < 3) return 'Iniciando';
+    if (lvl < 6) return 'Constante';
+    if (lvl < 10) return 'Guardián del Enfoque';
+    return 'Protector Andino';
   }
+
   function addXP(amount) {
     let ups = 0;
     state.user.xp += amount;
@@ -662,15 +928,17 @@
     }
     return ups;
   }
+
   function addDrops(amount) {
     state.biome.drops += amount;
     state.stats.dropsEarned += amount;
   }
+
   function markActive() {
     const today = keyOf();
     state.history[today] = (state.history[today] || 0) + 1;
     if (state.user.lastActive === today) return;
-    const yesterday = keyOf(new Date(Date.now() - 864e5));
+    const yesterday = keyOf(new Date(Date.now() - 86400000));
     if (state.user.lastActive === yesterday) {
       state.user.streak += 1;
     } else if (!state.user.lastActive) {
@@ -683,15 +951,16 @@
     }
     state.user.lastActive = today;
   }
+
   function bestStreak() {
     const dates = Object.keys(state.history || {}).sort();
     if (!dates.length) return state.user.streak || 0;
     let best = 1;
     let cur = 1;
     for (let i = 1; i < dates.length; i++) {
-      const prev = /* @__PURE__ */ new Date(dates[i - 1] + "T12:00:00");
-      const curr = /* @__PURE__ */ new Date(dates[i] + "T12:00:00");
-      const diff = Math.round((curr - prev) / 864e5);
+      const prev = new Date(dates[i - 1] + 'T12:00:00');
+      const curr = new Date(dates[i] + 'T12:00:00');
+      const diff = Math.round((curr - prev) / 86400000);
       if (diff === 1) {
         cur += 1;
         if (cur > best) best = cur;
@@ -701,26 +970,33 @@
     }
     return Math.max(best, state.user.streak || 0);
   }
+
+  /**
+   * Resuelve dinámicamente el nombre de red de bienestar / convenio B2B
+   * a partir del correo institucional o institución declarada en el perfil.
+   */
   function resolveActiveInstitution() {
     const ses = authService.getSession();
-    const byEmail = resolveInstitutionFromEmail(ses?.email || "");
+    const byEmail = resolveInstitutionFromEmail(ses?.email || '');
     if (byEmail) return byEmail;
-    const customInst = (state.profile.institution || "").trim();
+
+    const customInst = (state.profile.institution || '').trim();
     if (customInst) {
       return {
         name: customInst,
-        wellbeingLabel: `Red de Bienestar \xB7 ${customInst}`,
-        communityLabel: `Comunidad \xB7 ${customInst}`,
-        plan: ses?.plan || "free"
+        wellbeingLabel: `Red de Bienestar · ${customInst}`,
+        communityLabel: `Comunidad · ${customInst}`,
+        plan: ses?.plan || 'free',
       };
     }
     return {
       name: null,
-      wellbeingLabel: "Red de Bienestar",
-      communityLabel: "Comunidad",
-      plan: ses?.plan || "free"
+      wellbeingLabel: 'Red de Bienestar',
+      communityLabel: 'Comunidad',
+      plan: ses?.plan || 'free',
     };
   }
+
   function isDevMode() {
     return CONFIG.devMode;
   }
@@ -3557,124 +3833,167 @@
   }
 
   // src/main.js
-  var ROLE_LABEL = {
-    universitario: "Estudiante universitario",
-    remoto: "Trabajador remoto",
-    emprendedor: "Emprendedor/a",
-    opositor: "Preparando un examen",
-    mayor: "Aprendiendo a mi ritmo",
-    otro: "Otro"
+  /**
+   * SYNCRO — Punto de Entrada Principal de la Aplicación (app.html)
+   * Orquesta módulos ES desacoplados: estado, servicios, temporizador,
+   * bioma vivo, calendario inteligente, diario cifrado y accesibilidad.
+   */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const ROLE_LABEL = {
+    universitario: 'Estudiante universitario',
+    remoto: 'Trabajador remoto',
+    emprendedor: 'Emprendedor/a',
+    opositor: 'Preparando un examen',
+    mayor: 'Aprendiendo a mi ritmo',
+    otro: 'Otro',
   };
-  var BREAKDOWN_TEMPLATES = {
-    estudio: ["Revisar temario y subrayar conceptos clave", "Resumir ideas principales en 1 p\xE1gina", "Resolver 5 ejercicios pr\xE1cticos sin apuntes", "Repasar errores con t\xE9cnica activa"],
-    tesis: ["Definir esquema de subt\xEDtulos (sin redactar a\xFAn)", "Reunir 3 fuentes acad\xE9micas verificadas", "Escribir primer borrador imperfecto de 200 palabras", "Revisar citas y coherencia final"],
-    tecnico: ["Definir requisitos m\xEDnimos y casos borde", "Crear estructura base del m\xF3dulo", "Implementar versi\xF3n funcional m\xEDnima", "Probar y refactorizar detalles"],
-    remoto: ["Listar entregables cr\xEDticos de hoy", "Bloquear 25 min sin Slack ni correo para avance central", "Enviar avance parcial para feedback temprano", "Cerrar pendientes menores y documentar"]
+
+  const BREAKDOWN_TEMPLATES = {
+    estudio: ['Revisar temario y subrayar conceptos clave', 'Resumir ideas principales en 1 página', 'Resolver 5 ejercicios prácticos sin apuntes', 'Repasar errores con técnica activa'],
+    tesis: ['Definir esquema de subtítulos (sin redactar aún)', 'Reunir 3 fuentes académicas verificadas', 'Escribir primer borrador imperfecto de 200 palabras', 'Revisar citas y coherencia final'],
+    tecnico: ['Definir requisitos mínimos y casos borde', 'Crear estructura base del módulo', 'Implementar versión funcional mínima', 'Probar y refactorizar detalles'],
+    remoto: ['Listar entregables críticos de hoy', 'Bloquear 25 min sin Slack ni correo para avance central', 'Enviar avance parcial para feedback temprano', 'Cerrar pendientes menores y documentar'],
   };
+
+  // ============ NAVEGACIÓN ============
   function switchView(view, force = false) {
-    if (T.running && state.focus.shield && view !== "focus" && !force) {
+    if (T.running && state.focus.shield && view !== 'focus' && !force) {
       requestViewLeave(view);
       return;
     }
-    $$(".view").forEach((v) => v.classList.toggle("active", v.id === `view-${view}`));
-    $$(".nav-item, .bn-item").forEach((b) => b.classList.toggle("active", b.dataset.view === view));
-    if (view === "biome") {
+    $$('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${view}`));
+    $$('.nav-item, .bn-item').forEach((b) => b.classList.toggle('active', b.dataset.view === view));
+
+    if (view === 'biome') {
       renderBiome();
       renderProgress();
     }
-    if (view === "calendar") renderCalendar();
-    if (view === "profile") renderProfile();
+    if (view === 'calendar') renderCalendar();
+    if (view === 'profile') renderProfile();
+
     hideSectionTutorial(false);
     showSectionTutorial(view, { manual: false });
   }
+
+  // ============ DASHBOARD ============
   function renderDashboard() {
     const u = state.user;
-    const h = (/* @__PURE__ */ new Date()).getHours();
-    const sal = h < 12 ? "\xA1Buenos d\xEDas" : h < 19 ? "\xA1Buenas tardes" : "\xA1Buenas noches";
-    const first = (u.name || "").split(" ")[0];
-    if ($("#greeting")) $("#greeting").textContent = first ? `${sal}, ${first}!` : `${sal}!`;
-    if ($("#sidebarName")) $("#sidebarName").textContent = u.name || "Invitado";
-    if ($("#sidebarLevel")) $("#sidebarLevel").textContent = `Nivel ${u.level}`;
-    if ($("#sidebarAvatar")) $("#sidebarAvatar").textContent = (Array.from(u.name || "\u{1F331}")[0] || "S").toUpperCase();
-    if ($("#sidebarGuardianMini")) $("#sidebarGuardianMini").textContent = guardian();
-    if ($("#dashDrops")) $("#dashDrops").textContent = state.biome.drops;
-    if ($("#dropsCount")) $("#dropsCount").textContent = state.biome.drops;
-    if ($("#earthCount")) $("#earthCount").textContent = state.biome.earth;
-    if ($("#streakDays")) $("#streakDays").textContent = u.streak;
-    if ($("#shieldsCount")) $("#shieldsCount").textContent = u.shields;
-    if ($("#levelTag")) $("#levelTag").textContent = `Nivel ${u.level} \xB7 ${levelTitle(u.level)}`;
-    if ($("#xpText")) $("#xpText").textContent = `${u.xp} / 300 XP`;
-    if ($("#xpFill")) $("#xpFill").style.width = `${Math.min(100, Math.round(u.xp / 300 * 100))}%`;
-    const schedTip = $("#scheduleTip");
+    const h = new Date().getHours();
+    const sal = h < 12 ? '¡Buenos días' : h < 19 ? '¡Buenas tardes' : '¡Buenas noches';
+    const first = (u.name || '').split(' ')[0];
+
+    if ($('#greeting')) $('#greeting').textContent = first ? `${sal}, ${first}!` : `${sal}!`;
+    if ($('#sidebarName')) $('#sidebarName').textContent = u.name || 'Invitado';
+    if ($('#sidebarLevel')) $('#sidebarLevel').textContent = `Nivel ${u.level}`;
+    if ($('#sidebarAvatar')) $('#sidebarAvatar').textContent = (Array.from(u.name || '🌱')[0] || 'S').toUpperCase();
+    if ($('#sidebarGuardianMini')) $('#sidebarGuardianMini').textContent = guardian();
+
+    if ($('#dashDrops')) $('#dashDrops').textContent = state.biome.drops;
+    if ($('#dropsCount')) $('#dropsCount').textContent = state.biome.drops;
+    if ($('#earthCount')) $('#earthCount').textContent = state.biome.earth;
+    if ($('#streakDays')) $('#streakDays').textContent = u.streak;
+    if ($('#shieldsCount')) $('#shieldsCount').textContent = u.shields;
+    if ($('#levelTag')) $('#levelTag').textContent = `Nivel ${u.level} · ${levelTitle(u.level)}`;
+    if ($('#xpText')) $('#xpText').textContent = `${u.xp} / 300 XP`;
+    if ($('#xpFill')) $('#xpFill').style.width = `${Math.min(100, Math.round((u.xp / 300) * 100))}%`;
+
+    const schedTip = $('#scheduleTip');
     if (schedTip) {
       const map = {
-        manana: "\u{1F305} Tu mejor energ\xEDa suele estar en la ma\xF1ana. Protege tu primer bloque.",
-        tarde: "\u2600\uFE0F Tu pico cognitivo est\xE1 en la tarde. Reserva ah\xED tu misi\xF3n principal.",
-        noche: "\u{1F319} Te concentras mejor de noche. Usa pausas 20-20-20 para cuidar tu vista."
+        manana: '🌅 Tu mejor energía suele estar en la mañana. Protege tu primer bloque.',
+        tarde: '☀️ Tu pico cognitivo está en la tarde. Reserva ahí tu misión principal.',
+        noche: '🌙 Te concentras mejor de noche. Usa pausas 20-20-20 para cuidar tu vista.',
       };
-      schedTip.textContent = map[state.profile.schedule] || "";
+      schedTip.textContent = map[state.profile.schedule] || '';
     }
-    if ($("#previewFlower")) $("#previewFlower").textContent = seed().stages[3];
-    if ($("#previewGuardian")) $("#previewGuardian").textContent = guardian();
+
+    if ($('#previewFlower')) $('#previewFlower').textContent = seed().stages[3];
+    if ($('#previewGuardian')) $('#previewGuardian').textContent = guardian();
+
+    // Inyección dinámica de convenio institucional (B2B)
     const inst = resolveActiveInstitution();
-    const wbHeading = $("#wellbeingHeading");
+    const wbHeading = $('#wellbeingHeading');
     if (wbHeading) wbHeading.textContent = inst.wellbeingLabel;
-    const wbBadge = $("#institutionBadge");
+    const wbBadge = $('#institutionBadge');
     if (wbBadge) {
       if (inst.name) {
-        wbBadge.textContent = `\u{1F3DB}\uFE0F Convenio: ${inst.name}`;
-        wbBadge.classList.remove("hidden");
+        wbBadge.textContent = `🏛️ Convenio: ${inst.name}`;
+        wbBadge.classList.remove('hidden');
       } else {
-        wbBadge.classList.add("hidden");
+        wbBadge.classList.add('hidden');
       }
     }
   }
+
+  // ============ MISIONES (CRUD COMPLETO EN DASHBOARD) ============
   function renderActiveMission() {
     const m = state.missions.find((x) => x.id === state.focus.activeMission && !x.done);
-    const lbl = $("#activeMissionLabel");
+    const lbl = $('#activeMissionLabel');
     if (lbl) {
-      lbl.textContent = m ? `\u{1F3AF} Misi\xF3n activa: ${m.title}` : "Sin misi\xF3n vinculada: el bloque suma XP igual.";
+      lbl.textContent = m ? `🎯 Misión activa: ${m.title}` : 'Sin misión vinculada: el bloque suma XP igual.';
     }
   }
+
   function renderMissions() {
-    const list = $("#missionsList");
+    const list = $('#missionsList');
     if (!list) return;
-    const dur = state.checkIn.lowEnergy ? "15 min (adaptado)" : "25 min";
-    list.innerHTML = state.missions.map(
-      (m) => `
-      <div class="mission ${m.done ? "done" : ""}" data-id="${m.id}">
-        <button type="button" class="mission-check" aria-label="Completar: ${esc(m.title)}" aria-pressed="${m.done}">\u2713</button>
-        <div class="mission-info">
-          <div class="mission-title">${esc(m.title)}</div>
-          <div class="mission-meta">
-            <span class="pill violet">+${m.xp} XP</span>
-            <span class="pill emerald">+${m.drops} Gotas</span>
-            <span class="pill">${m.target > 1 ? `${m.progress}/${m.target} bloques` : dur}</span>
+    const dur = state.checkIn.lowEnergy ? '15 min (adaptado)' : '25 min';
+    list.innerHTML =
+      state.missions
+        .map(
+          (m) => `
+        <div class="mission ${m.done ? 'done' : ''}" data-id="${m.id}">
+          <button type="button" class="mission-check" aria-label="Completar: ${esc(m.title)}" aria-pressed="${m.done}">✓</button>
+          <div class="mission-info">
+            <div class="mission-title">${esc(m.title)}</div>
+            <div class="mission-meta">
+              <span class="pill violet">+${m.xp} XP</span>
+              <span class="pill emerald">+${m.drops} Gotas</span>
+              <span class="pill">${m.target > 1 ? `${m.progress}/${m.target} bloques` : dur}</span>
+            </div>
           </div>
-        </div>
-        <div class="mission-actions">
-          <button type="button" class="btn ghost sm" data-start="${m.id}" ${m.done ? "disabled" : ""}>${state.focus.activeMission === m.id ? "Activa" : "Iniciar"}</button>
-          <button type="button" class="icon-btn mission-edit" data-edit="${m.id}" title="Editar misi\xF3n" aria-label="Editar: ${esc(m.title)}">\u270E</button>
-          <button type="button" class="icon-btn mission-del" data-del="${m.id}" title="Eliminar misi\xF3n" aria-label="Eliminar: ${esc(m.title)}">\u2715</button>
-        </div>
-      </div>`
-    ).join("") || '<p class="muted small" style="margin:4px 2px">No tienes misiones hoy. A\xF1ade una abajo o usa el desglosador guiado.</p>';
-    const count = $("#missionsCount");
+          <div class="mission-actions">
+            <button type="button" class="btn ghost sm" data-start="${m.id}" ${m.done ? 'disabled' : ''}>${
+              state.focus.activeMission === m.id ? 'Activa' : 'Iniciar'
+            }</button>
+            <button type="button" class="icon-btn mission-edit" data-edit="${m.id}" title="Editar misión" aria-label="Editar: ${esc(m.title)}">✎</button>
+            <button type="button" class="icon-btn mission-del" data-del="${m.id}" title="Eliminar misión" aria-label="Eliminar: ${esc(m.title)}">✕</button>
+          </div>
+        </div>`
+        )
+        .join('') ||
+      '<p class="muted small" style="margin:4px 2px">No tienes misiones hoy. Añade una abajo o usa el desglosador guiado.</p>';
+
+    const count = $('#missionsCount');
     if (count) count.textContent = `${state.missions.filter((m) => m.done).length} / ${state.missions.length}`;
     renderActiveMission();
   }
+
   function editMission(id) {
     const m = state.missions.find((x) => x.id === id);
     if (!m) return;
     openInfo(
-      "Editar misi\xF3n",
-      `<label class="field-label" for="missionEditInput">Nombre de la misi\xF3n</label>
-     <input class="input" id="missionEditInput" maxlength="80" value="${esc(m.title)}" />`,
-      "Guardar",
+      'Editar misión',
+      `<label class="field-label" for="missionEditInput">Nombre de la misión</label>
+       <input class="input" id="missionEditInput" maxlength="80" value="${esc(m.title)}" />`,
+      'Guardar',
       () => {
-        const title = $("#missionEditInput")?.value.trim();
+        const title = $('#missionEditInput')?.value.trim();
         if (!title) {
-          toast("La misi\xF3n necesita un nombre.");
+          toast('La misión necesita un nombre.');
           return false;
         }
         m.title = title;
@@ -3684,29 +4003,30 @@
         saveState();
         renderMissions();
         renderCalTray();
-        if ($("#view-calendar")?.classList.contains("active")) renderCalendar();
-        toast("Misi\xF3n actualizada.");
+        if ($('#view-calendar')?.classList.contains('active')) renderCalendar();
+        toast('Misión actualizada.');
       }
     );
     requestAnimationFrame(() => {
-      const inp = $("#missionEditInput");
+      const inp = $('#missionEditInput');
       if (inp) {
         inp.focus();
         inp.select();
-        inp.addEventListener("keydown", (ev) => {
-          if (ev.key === "Enter") {
+        inp.addEventListener('keydown', (ev) => {
+          if (ev.key === 'Enter') {
             ev.preventDefault();
-            $("#closeInfo")?.click();
+            $('#closeInfo')?.click();
           }
         });
       }
     });
   }
+
   function deleteMission(id) {
     const m = state.missions.find((x) => x.id === id);
     if (!m) return;
     if (T.running && state.focus.activeMission === id) {
-      toast("Esta misi\xF3n est\xE1 vinculada a un bloque en curso. Pausa el bloque para eliminarla.");
+      toast('Esta misión está vinculada a un bloque en curso. Pausa el bloque para eliminarla.');
       return;
     }
     state.missions = state.missions.filter((x) => x.id !== id);
@@ -3716,9 +4036,10 @@
     renderMissions();
     renderCalTray();
     renderDashboard();
-    if ($("#view-calendar")?.classList.contains("active")) renderCalendar();
-    toast("Misi\xF3n eliminada.");
+    if ($('#view-calendar')?.classList.contains('active')) renderCalendar();
+    toast('Misión eliminada.');
   }
+
   function completeMission(id) {
     const m = state.missions.find((x) => x.id === id);
     if (!m || m.done) return;
@@ -3735,123 +4056,151 @@
     renderProgress();
     checkAchievements();
     celebrate(
-      "\xA1Misi\xF3n completada!",
-      `+${m.xp} XP \xB7 +${m.drops} Gotas de riego${ups ? ` \xB7 \xA1Nivel ${state.user.level}!` : ""}`
+      '¡Misión completada!',
+      `+${m.xp} XP · +${m.drops} Gotas de riego${ups ? ` · ¡Nivel ${state.user.level}!` : ''}`
     );
   }
+
+  // ============ CHECK-IN EMOCIONAL ============
   function initCheckIn() {
-    const range = $("#energyRange");
-    const valEl = $("#energyValue");
+    const range = $('#energyRange');
+    const valEl = $('#energyValue');
     if (range) {
       range.value = String(state.checkIn.energy || 5);
       if (valEl) valEl.textContent = String(state.checkIn.energy || 5);
-      range.addEventListener("input", (e) => {
+      range.addEventListener('input', (e) => {
         state.checkIn.energy = Number(e.target.value);
         if (valEl) valEl.textContent = String(state.checkIn.energy);
       });
     }
-    $$("#moodChips .chip").forEach((chip) => {
-      chip.classList.toggle("active", chip.dataset.mood === state.checkIn.mood);
-      chip.addEventListener("click", () => {
+
+    $$('#moodChips .chip').forEach((chip) => {
+      chip.classList.toggle('active', chip.dataset.mood === state.checkIn.mood);
+      chip.addEventListener('click', () => {
         state.checkIn.mood = chip.dataset.mood;
-        $$("#moodChips .chip").forEach((c) => c.classList.toggle("active", c === chip));
+        $$('#moodChips .chip').forEach((c) => c.classList.toggle('active', c === chip));
       });
     });
-    $("#saveCheckIn")?.addEventListener("click", async () => {
-      const energy = Number($("#energyRange")?.value || 5);
-      const mood = state.checkIn.mood || "tranquilo";
-      const note = ($("#journalText")?.value || "").trim();
-      const lowEnergy = energy <= 4 || mood === "agobiado" || mood === "cansado";
+
+    $('#saveCheckIn')?.addEventListener('click', async () => {
+      const energy = Number($('#energyRange')?.value || 5);
+      const mood = state.checkIn.mood || 'tranquilo';
+      const note = ($('#journalText')?.value || '').trim();
+      const lowEnergy = energy <= 4 || mood === 'agobiado' || mood === 'cansado';
+
       state.checkIn = { energy, mood, lowEnergy, date: keyOf() };
       state.stats.checkIns = (state.stats.checkIns || 0) + 1;
       state.moodLogs = (state.moodLogs || []).concat({ date: keyOf(), energy, mood }).slice(-30);
+
       if (note && Journal.ok()) {
         try {
           await Journal.add({ text: note, energy, mood });
-          if ($("#journalText")) $("#journalText").value = "";
+          if ($('#journalText')) $('#journalText').value = '';
           state.achievements.journal_1 = state.achievements.journal_1 || Date.now();
         } catch {
+          // ignore
         }
       }
-      const m1 = state.missions.find((m) => m.id === "m1" && !m.done);
+
+      const m1 = state.missions.find((m) => m.id === 'm1' && !m.done);
       if (m1) {
         m1.done = true;
         m1.progress = 1;
         addXP(m1.xp);
         addDrops(m1.drops);
       }
+
       markActive();
       saveState();
+      dbService.logMood({ energy, mood, loggedDate: keyOf() });
       updateTimerDuration();
       renderDashboard();
       renderMissions();
       checkAchievements();
-      analyticsService.trackOnce("first_checkin", { energy, mood, low_energy: lowEnergy });
-      analyticsService.track("checkin_saved", { energy, mood, low_energy: lowEnergy });
-      const banner = $("#checkInBanner");
+
+      analyticsService.trackOnce('first_checkin', { energy, mood, low_energy: lowEnergy });
+      analyticsService.track('checkin_saved', { energy, mood, low_energy: lowEnergy });
+
+      const banner = $('#checkInBanner');
       if (banner) {
-        banner.classList.remove("hidden");
-        banner.textContent = lowEnergy ? "\u{1F33F} Modo ligero activado: ajustamos tus bloques a 15 min y priorizamos micro-pasos sin culpa." : "\u2728 Check-in guardado. Tu espacio est\xE1 calibrado para tu nivel de energ\xEDa actual.";
+        banner.classList.remove('hidden');
+        banner.textContent = lowEnergy
+          ? '🌿 Modo ligero activado: ajustamos tus bloques a 15 min y priorizamos micro-pasos sin culpa.'
+          : '✨ Check-in guardado. Tu espacio está calibrado para tu nivel de energía actual.';
       }
-      toast("Check-in guardado \u2713");
+      toast('Check-in guardado ✓');
     });
   }
+
+  // ============ DESGLOSADOR GUIADO & SINCROPLAN (con aiService) ============
   function initBreakdownAndPlan() {
     const updateIllusion = () => {
-      const est = Math.max(1, Number($("#estHours")?.value || 10));
-      const real = Math.max(0, Number($("#realHours")?.value || 6));
-      const pct = Math.min(100, Math.round(real / est * 100));
-      if ($("#illusionFill")) $("#illusionFill").style.width = `${pct}%`;
-      if ($("#illusionPill")) {
-        $("#illusionPill").textContent = pct < 60 ? "Ilusi\xF3n de tiempo alta" : pct < 85 ? "Estimaci\xF3n moderada" : "Estimaci\xF3n realista";
+      const est = Math.max(1, Number($('#estHours')?.value || 10));
+      const real = Math.max(0, Number($('#realHours')?.value || 6));
+      const pct = Math.min(100, Math.round((real / est) * 100));
+      if ($('#illusionFill')) $('#illusionFill').style.width = `${pct}%`;
+      if ($('#illusionPill')) {
+        $('#illusionPill').textContent = pct < 60 ? 'Ilusión de tiempo alta' : pct < 85 ? 'Estimación moderada' : 'Estimación realista';
       }
-      if ($("#illusionText")) {
-        $("#illusionText").textContent = `Crees tener ${est} h, pero realmente tienes ${real} h (${pct}%). Planifica con ${real} h.`;
+      if ($('#illusionText')) {
+        $('#illusionText').textContent = `Crees tener ${est} h, pero realmente tienes ${real} h (${pct}%). Planifica con ${real} h.`;
       }
     };
-    $("#estHours")?.addEventListener("input", updateIllusion);
-    $("#realHours")?.addEventListener("input", updateIllusion);
+
+    $('#estHours')?.addEventListener('input', updateIllusion);
+    $('#realHours')?.addEventListener('input', updateIllusion);
     updateIllusion();
-    $("#openBreakdownBtn")?.addEventListener("click", () => openOverlay($("#breakdownModal")));
-    $("#closeBreakdownModal")?.addEventListener("click", () => closeOverlay($("#breakdownModal")));
-    $("#cancelBreakdownModal")?.addEventListener("click", () => closeOverlay($("#breakdownModal")));
-    $("#applyBreakdownBtn")?.addEventListener("click", async () => {
-      const title = ($("#bdTaskTitle")?.value || "").trim();
+
+    $('#openBreakdownBtn')?.addEventListener('click', () => openOverlay($('#breakdownModal')));
+    $('#closeBreakdownModal')?.addEventListener('click', () => closeOverlay($('#breakdownModal')));
+    $('#cancelBreakdownModal')?.addEventListener('click', () => closeOverlay($('#breakdownModal')));
+
+    $('#applyBreakdownBtn')?.addEventListener('click', async () => {
+      const title = ($('#bdTaskTitle')?.value || '').trim();
       if (!title) {
-        toast("Escribe el nombre de la tarea grande.");
-        $("#bdTaskTitle")?.focus();
+        toast('Escribe el nombre de la tarea grande.');
+        $('#bdTaskTitle')?.focus();
         return;
       }
-      const tplKey = $('input[name="bdTemplate"]:checked')?.value || "estudio";
+      const tplKey = $('input[name="bdTemplate"]:checked')?.value || 'estudio';
       const res = await aiService.breakdownTask({ task: title, days: 7, lowEnergy: state.checkIn.lowEnergy });
+
       if (res.quotaExceeded) {
         toast(res.message);
         return;
       }
-      const steps = res.source === "edge-ai" ? res.steps.map((s) => s.title) : (BREAKDOWN_TEMPLATES[tplKey] || BREAKDOWN_TEMPLATES.estudio).map((s) => `${s} \xB7 ${title}`);
+
+      const steps =
+        res.source === 'edge-ai'
+          ? res.steps.map((s) => s.title)
+          : (BREAKDOWN_TEMPLATES[tplKey] || BREAKDOWN_TEMPLATES.estudio).map((s) => `${s} · ${title}`);
+
       steps.slice(0, 3).forEach((stTitle, idx) => {
         state.missions.push({
-          id: "bd_" + Date.now().toString(36) + idx,
+          id: 'bd_' + Date.now().toString(36) + idx,
           title: stTitle.slice(0, 80),
           xp: 25,
           drops: 6,
           target: 1,
           progress: 0,
-          done: false
+          done: false,
         });
       });
-      if ($("#bdTaskTitle")) $("#bdTaskTitle").value = "";
+
+      if ($('#bdTaskTitle')) $('#bdTaskTitle').value = '';
       saveState();
       renderMissions();
       renderCalTray();
-      closeOverlay($("#breakdownModal"));
-      toast(`\u2728 A\xF1adimos ${Math.min(3, steps.length)} micro-pasos a tus misiones de hoy.`);
+      closeOverlay($('#breakdownModal'));
+      toast(`✨ Añadimos ${Math.min(3, steps.length)} micro-pasos a tus misiones de hoy.`);
     });
-    $("#breakdownBtn")?.addEventListener("click", async () => {
-      const task = ($("#taskInput")?.value || "").trim();
-      const days = Math.max(1, Number($("#dateInput")?.value || 10));
+
+    // SincroPlan vista completa (si el usuario navega a ella)
+    $('#breakdownBtn')?.addEventListener('click', async () => {
+      const task = ($('#taskInput')?.value || '').trim();
+      const days = Math.max(1, Number($('#dateInput')?.value || 10));
       if (!task) {
-        toast("Describe la tarea que deseas desglosar.");
+        toast('Describe la tarea que deseas desglosar.');
         return;
       }
       const res = await aiService.breakdownTask({ task, days, lowEnergy: state.checkIn.lowEnergy });
@@ -3861,128 +4210,154 @@
       }
       state.plan.steps = res.steps;
       saveState();
-      const list = $("#subtasksList");
+      const list = $('#subtasksList');
       if (list) {
-        list.innerHTML = res.steps.map((s, i) => `<div class="subtask-row"><span>D\xEDa ${s.day}: ${esc(s.title)}</span><button type="button" class="btn ghost sm" data-add-step="${i}">+ Hoy</button></div>`).join("");
+        list.innerHTML = res.steps
+          .map((s, i) => `<div class="subtask-row"><span>Día ${s.day}: ${esc(s.title)}</span><button type="button" class="btn ghost sm" data-add-step="${i}">+ Hoy</button></div>`)
+          .join('');
       }
     });
-    $("#subtasksList")?.addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-add-step]");
+
+    $('#subtasksList')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-add-step]');
       if (!btn) return;
       const step = state.plan.steps[Number(btn.dataset.addStep)];
       if (!step) return;
-      state.missions.push({ id: "sp_" + Date.now().toString(36), title: step.title.slice(0, 80), xp: 25, drops: 6, target: 1, progress: 0, done: false });
+      state.missions.push({ id: 'sp_' + Date.now().toString(36), title: step.title.slice(0, 80), xp: 25, drops: 6, target: 1, progress: 0, done: false });
       saveState();
       renderMissions();
-      toast("Paso a\xF1adido a Misiones de hoy.");
+      toast('Paso añadido a Misiones de hoy.');
     });
-    $("#mentalDumpBtn")?.addEventListener("click", async () => {
-      const txt = ($("#mentalDump")?.value || "").trim();
+
+    $('#mentalDumpBtn')?.addEventListener('click', async () => {
+      const txt = ($('#mentalDump')?.value || '').trim();
       const reply = await aiService.validateMentalDump(txt);
-      const box = $("#mentalDumpReply");
+      const box = $('#mentalDumpReply');
       if (box) {
-        box.classList.remove("hidden");
+        box.classList.remove('hidden');
         box.textContent = reply;
       }
     });
   }
+
+  // ============ PROGRESO Y LOGROS ============
   function checkAchievements() {
     const unlock = (id) => {
       if (!state.achievements[id]) state.achievements[id] = Date.now();
     };
-    if (state.stats.blocks >= 1) unlock("first_block");
-    if (state.stats.checkIns >= 1) unlock("first_checkin");
-    if (state.stats.noPerfBlocks >= 1) unlock("no_perf");
-    if (state.stats.blocks >= 3) unlock("blocks_3");
-    if (state.user.streak >= 3) unlock("streak_3");
-    if (state.user.streak >= 7) unlock("streak_7");
-    if (unlockedSpeciesCount() >= 4) unlock("species_4");
-    if ((state.biome.waters || 0) >= 3) unlock("water_3");
+    if (state.stats.blocks >= 1) unlock('first_block');
+    if (state.stats.checkIns >= 1) unlock('first_checkin');
+    if (state.stats.noPerfBlocks >= 1) unlock('no_perf');
+    if (state.stats.blocks >= 3) unlock('blocks_3');
+    if (state.user.streak >= 3) unlock('streak_3');
+    if (state.user.streak >= 7) unlock('streak_7');
+    if (unlockedSpeciesCount() >= 4) unlock('species_4');
+    if ((state.biome.waters || 0) >= 3) unlock('water_3');
     saveState();
   }
+
   function renderProgress() {
-    const chart = $("#weeklyChart");
-    const totalEl = $("#weeklyTotal");
+    const chart = $('#weeklyChart');
+    const totalEl = $('#weeklyTotal');
     if (chart) {
-      const max = Math.max(1, ...state.weekly || [0]);
-      chart.innerHTML = (state.weekly || [0, 0, 0, 0, 0, 0, 0]).map((h) => `<div class="chart-bar-wrap"><div class="chart-bar" style="height:${Math.max(8, Math.round(h / max * 100))}%" title="${h} h"></div></div>`).join("");
+      const max = Math.max(1, ...(state.weekly || [0]));
+      chart.innerHTML = (state.weekly || [0, 0, 0, 0, 0, 0, 0])
+        .map((h) => `<div class="chart-bar-wrap"><div class="chart-bar" style="height:${Math.max(8, Math.round((h / max) * 100))}%" title="${h} h"></div></div>`)
+        .join('');
       const total = (state.weekly || []).reduce((a, b) => a + b, 0);
       if (totalEl) totalEl.textContent = `${total.toFixed(1)} h esta semana`;
     }
-    const achList = $("#achList");
-    const achCount = $("#achCount");
+
+    const achList = $('#achList');
+    const achCount = $('#achCount');
     if (achList) {
       const unlocked = ACHIEVEMENTS.filter((a) => achUnlocked(a.id)).length;
       if (achCount) achCount.textContent = `${unlocked} / ${ACHIEVEMENTS.length}`;
       achList.innerHTML = ACHIEVEMENTS.map(
         (a) => `
-      <div class="ach-item ${achUnlocked(a.id) ? "unlocked" : "locked"}">
-        <span class="ach-ico">${a.icon}</span>
-        <div>
-          <strong>${esc(a.name)}</strong>
-          <p class="muted small">${esc(a.desc)}</p>
-        </div>
-      </div>`
-      ).join("");
+        <div class="ach-item ${achUnlocked(a.id) ? 'unlocked' : 'locked'}">
+          <span class="ach-ico">${a.icon}</span>
+          <div>
+            <strong>${esc(a.name)}</strong>
+            <p class="muted small">${esc(a.desc)}</p>
+          </div>
+        </div>`
+      ).join('');
     }
+
     renderJournalTimeline();
   }
+
+  // ============ PERFIL, SENSIBILIDAD MOUSELEAVE, OPT-IN IA Y GDPR ============
   function syncNotifUI() {
-    const granted = Notify.supported() && Notification.permission === "granted" && state.profile.notifications;
-    const t1 = $("#notifToggle");
-    const t2 = $("#pfNotif");
+    const granted = Notify.supported() && Notification.permission === 'granted' && state.profile.notifications;
+    const t1 = $('#notifToggle');
+    const t2 = $('#pfNotif');
     if (t1) t1.checked = granted;
     if (t2) t2.checked = granted;
   }
+
   function renderProfile() {
     const u = state.user;
     const p = state.profile;
     const ses = authService.getSession() || {};
-    if ($("#pfAvatar")) $("#pfAvatar").textContent = (Array.from(u.name || "\u{1F331}")[0] || "S").toUpperCase();
-    if ($("#pfGuardian")) $("#pfGuardian").textContent = guardian();
-    if ($("#pfName")) $("#pfName").textContent = u.name || "Estudiante";
-    if ($("#pfHandle")) $("#pfHandle").textContent = ses.username ? `@${ses.username} \xB7 ${ses.email}` : ses.email || "Modo prueba local";
-    if ($("#pfMeta")) {
-      $("#pfMeta").textContent = [ROLE_LABEL[p.role], p.ageRange && `${p.ageRange} a\xF1os`, p.institution].filter(Boolean).join(" \xB7 ") || "Completa tu perfil para personalizar SYNCRO.";
+
+    if ($('#pfAvatar')) $('#pfAvatar').textContent = (Array.from(u.name || '🌱')[0] || 'S').toUpperCase();
+    if ($('#pfGuardian')) $('#pfGuardian').textContent = guardian();
+    if ($('#pfName')) $('#pfName').textContent = u.name || 'Estudiante';
+    if ($('#pfHandle')) $('#pfHandle').textContent = ses.username ? `@${ses.username} · ${ses.email}` : ses.email || 'Modo prueba local';
+    if ($('#pfMeta')) {
+      $('#pfMeta').textContent =
+        [ROLE_LABEL[p.role], p.ageRange && `${p.ageRange} años`, p.institution].filter(Boolean).join(' · ') ||
+        'Completa tu perfil para personalizar SYNCRO.';
     }
-    if ($("#pfLevel")) $("#pfLevel").textContent = `Nivel ${u.level} \xB7 ${levelTitle(u.level)}`;
-    if ($("#pfStreak")) $("#pfStreak").textContent = `\u{1F525} ${u.streak} d\xEDas`;
-    if ($("#pfAch")) $("#pfAch").textContent = `\u{1F3C5} ${ACHIEVEMENTS.filter((a) => achUnlocked(a.id)).length}/${ACHIEVEMENTS.length} logros`;
-    if ($("#pfBlocks")) $("#pfBlocks").textContent = state.stats.blocks;
-    if ($("#pfHours")) $("#pfHours").textContent = (state.stats.minutes / 60).toFixed(1);
-    if ($("#pfBest")) $("#pfBest").textContent = bestStreak();
-    if ($("#pfDrops")) $("#pfDrops").textContent = (state.stats.dropsEarned || 0).toLocaleString("es-PE");
-    if ($("#pfNameInput")) $("#pfNameInput").value = u.name || "";
-    if ($("#pfUserInput")) $("#pfUserInput").value = ses.username || "";
-    if ($("#pfEmailInput")) $("#pfEmailInput").value = ses.email || "";
-    if ($("#pfRole")) $("#pfRole").value = p.role || "";
-    if ($("#pfAge")) $("#pfAge").value = p.ageRange || "";
-    if ($("#pfInstitution")) $("#pfInstitution").value = p.institution || "";
-    if ($("#pfGoal")) $("#pfGoal").value = p.goal || "";
-    if ($("#pfTrigger")) $("#pfTrigger").value = p.trigger || "";
-    if ($("#pfSchedule")) $("#pfSchedule").value = p.schedule || "";
-    if ($("#pfBlock")) $("#pfBlock").value = p.blockPref || "classic";
-    if ($("#pfSeed")) $("#pfSeed").value = p.seed || "cantuta";
-    if ($("#pfMouseLeave")) $("#pfMouseLeave").value = p.mouseleaveSensitivity || "normal";
-    if ($("#pfBienestar")) $("#pfBienestar").checked = Boolean(p.bienestarConsent);
-    if ($("#pfJournalAiOptIn")) $("#pfJournalAiOptIn").checked = Boolean(p.journalAiOptIn);
-    if ($("#pfReminder")) $("#pfReminder").checked = p.reminder !== false;
-    const gSel = $("#pfGuardianSel");
+    if ($('#pfLevel')) $('#pfLevel').textContent = `Nivel ${u.level} · ${levelTitle(u.level)}`;
+    if ($('#pfStreak')) $('#pfStreak').textContent = `🔥 ${u.streak} días`;
+    if ($('#pfAch')) $('#pfAch').textContent = `🏅 ${ACHIEVEMENTS.filter((a) => achUnlocked(a.id)).length}/${ACHIEVEMENTS.length} logros`;
+
+    if ($('#pfBlocks')) $('#pfBlocks').textContent = state.stats.blocks;
+    if ($('#pfHours')) $('#pfHours').textContent = (state.stats.minutes / 60).toFixed(1);
+    if ($('#pfBest')) $('#pfBest').textContent = bestStreak();
+    if ($('#pfDrops')) $('#pfDrops').textContent = (state.stats.dropsEarned || 0).toLocaleString('es-PE');
+
+    if ($('#pfNameInput')) $('#pfNameInput').value = u.name || '';
+    if ($('#pfUserInput')) $('#pfUserInput').value = ses.username || '';
+    if ($('#pfEmailInput')) $('#pfEmailInput').value = ses.email || '';
+    if ($('#pfRole')) $('#pfRole').value = p.role || '';
+    if ($('#pfAge')) $('#pfAge').value = p.ageRange || '';
+    if ($('#pfInstitution')) $('#pfInstitution').value = p.institution || '';
+    if ($('#pfGoal')) $('#pfGoal').value = p.goal || '';
+    if ($('#pfTrigger')) $('#pfTrigger').value = p.trigger || '';
+    if ($('#pfSchedule')) $('#pfSchedule').value = p.schedule || '';
+    if ($('#pfBlock')) $('#pfBlock').value = p.blockPref || 'classic';
+    if ($('#pfSeed')) $('#pfSeed').value = p.seed || 'cantuta';
+    if ($('#pfMouseLeave')) $('#pfMouseLeave').value = p.mouseleaveSensitivity || 'normal';
+    if ($('#pfBienestar')) $('#pfBienestar').checked = Boolean(p.bienestarConsent);
+    if ($('#pfJournalAiOptIn')) $('#pfJournalAiOptIn').checked = Boolean(p.journalAiOptIn);
+    if ($('#pfReminder')) $('#pfReminder').checked = p.reminder !== false;
+
+    const gSel = $('#pfGuardianSel');
     if (gSel) {
-      gSel.innerHTML = Object.keys(GUARDIANS).map((k) => {
-        const lock = guardianLocked(k);
-        const need = lock ? ACHIEVEMENTS.find((a) => a.id === GUARDIAN_LOCK[k])?.name || "" : "";
-        return `<option value="${k}" ${lock ? "disabled" : ""}>${GUARDIANS[k]} ${GUARDIAN_NAMES[k]}${lock ? ` \xB7 \u{1F512} logro \u201C${need}\u201D` : ""}</option>`;
-      }).join("");
-      gSel.value = p.guardian || "alpaca";
+      gSel.innerHTML = Object.keys(GUARDIANS)
+        .map((k) => {
+          const lock = guardianLocked(k);
+          const need = lock ? ACHIEVEMENTS.find((a) => a.id === GUARDIAN_LOCK[k])?.name || '' : '';
+          return `<option value="${k}" ${lock ? 'disabled' : ''}>${GUARDIANS[k]} ${GUARDIAN_NAMES[k]}${
+            lock ? ` · 🔒 logro “${need}”` : ''
+          }</option>`;
+        })
+        .join('');
+      gSel.value = p.guardian || 'alpaca';
     }
-    const accInfo = $("#accountInfo");
+
+    const accInfo = $('#accountInfo');
     if (accInfo) {
-      const planLbl = ses.plan === "pro" ? "SYNCRO Pro" : ses.plan === "b2b" ? "Licencia Institucional" : "Plan Gratis (Esencial)";
-      accInfo.textContent = ses.mode === "guest" ? "Sesi\xF3n en modo prueba (almacenamiento local)" : `${ses.email || "Cuenta activa"} \xB7 ${planLbl}`;
+      const planLbl = ses.plan === 'pro' ? 'SYNCRO Pro' : ses.plan === 'b2b' ? 'Licencia Institucional' : 'Plan Gratis (Esencial)';
+      accInfo.textContent = ses.mode === 'guest' ? 'Sesión en modo prueba (almacenamiento local)' : `${ses.email || 'Cuenta activa'} · ${planLbl}`;
     }
     syncNotifUI();
   }
+
   function initProfile() {
     const toggleNotif = async (checked) => {
       if (!checked) {
@@ -3992,331 +4367,378 @@
         return;
       }
       const perm = await Notify.request();
-      state.profile.notifications = perm === "granted";
+      state.profile.notifications = perm === 'granted';
       saveState();
       syncNotifUI();
-      toast(perm === "granted" ? "\u{1F514} Notificaciones activadas." : "Tu navegador bloque\xF3 las notificaciones.");
+      toast(perm === 'granted' ? '🔔 Notificaciones activadas.' : 'Tu navegador bloqueó las notificaciones.');
     };
-    $("#notifToggle")?.addEventListener("change", (e) => toggleNotif(e.target.checked));
-    $("#pfNotif")?.addEventListener("change", (e) => toggleNotif(e.target.checked));
-    $("#profileForm")?.addEventListener("submit", (e) => {
+
+    $('#notifToggle')?.addEventListener('change', (e) => toggleNotif(e.target.checked));
+    $('#pfNotif')?.addEventListener('change', (e) => toggleNotif(e.target.checked));
+
+    $('#profileForm')?.addEventListener('submit', (e) => {
       e.preventDefault();
       const p = state.profile;
-      const name = ($("#pfNameInput")?.value || "").trim();
+      const name = ($('#pfNameInput')?.value || '').trim();
       if (!name) {
-        $("#pfNameInput")?.focus();
-        toast("Escribe tu nombre.");
+        $('#pfNameInput')?.focus();
+        toast('Escribe tu nombre.');
         return;
       }
       const oldBlock = p.blockPref;
-      const goal = ($("#pfGoal")?.value || "").trim();
+      const goal = ($('#pfGoal')?.value || '').trim();
       state.user.name = name;
+
       Object.assign(p, {
-        role: $("#pfRole")?.value || null,
-        ageRange: $("#pfAge")?.value || "",
-        institution: ($("#pfInstitution")?.value || "").trim(),
+        role: $('#pfRole')?.value || null,
+        ageRange: $('#pfAge')?.value || '',
+        institution: ($('#pfInstitution')?.value || '').trim(),
         goal,
-        trigger: $("#pfTrigger")?.value || null,
-        schedule: $("#pfSchedule")?.value || null,
-        blockPref: $("#pfBlock")?.value || "classic",
-        seed: $("#pfSeed")?.value || "cantuta",
-        guardian: guardianLocked($("#pfGuardianSel")?.value) ? p.guardian : $("#pfGuardianSel")?.value || "alpaca",
-        mouseleaveSensitivity: $("#pfMouseLeave")?.value || "normal",
-        bienestarConsent: Boolean($("#pfBienestar")?.checked),
-        journalAiOptIn: Boolean($("#pfJournalAiOptIn")?.checked),
-        reminder: Boolean($("#pfReminder")?.checked)
+        trigger: $('#pfTrigger')?.value || null,
+        schedule: $('#pfSchedule')?.value || null,
+        blockPref: $('#pfBlock')?.value || 'classic',
+        seed: $('#pfSeed')?.value || 'cantuta',
+        guardian: guardianLocked($('#pfGuardianSel')?.value) ? p.guardian : $('#pfGuardianSel')?.value || 'alpaca',
+        mouseleaveSensitivity: $('#pfMouseLeave')?.value || 'normal',
+        bienestarConsent: Boolean($('#pfBienestar')?.checked),
+        journalAiOptIn: Boolean($('#pfJournalAiOptIn')?.checked),
+        reminder: Boolean($('#pfReminder')?.checked),
       });
+
       if (p.blockPref !== oldBlock && !T.running) {
         state.focus.mode = p.blockPref;
-        $$('input[name="mode"]').forEach((r) => r.checked = r.value === p.blockPref);
+        $$('input[name="mode"]').forEach((r) => (r.checked = r.value === p.blockPref));
         updateTimerDuration();
       }
-      const gm = state.missions.find((m) => m.id === "goal");
+
+      const gm = state.missions.find((m) => m.id === 'goal');
       if (goal && gm) gm.title = `Dar el primer paso en: ${goal}`;
       else if (goal) {
         state.missions.unshift({
-          id: "goal",
+          id: 'goal',
           base: true,
           title: `Dar el primer paso en: ${goal}`,
           xp: 40,
           drops: 10,
           target: 1,
           progress: 0,
-          done: false
+          done: false,
         });
       } else if (gm && !gm.done) {
-        state.missions = state.missions.filter((m) => m.id !== "goal");
+        state.missions = state.missions.filter((m) => m.id !== 'goal');
       }
+
       saveState();
       renderDashboard();
       renderMissions();
       renderProfile();
       renderCalTray();
       renderJournalTimeline();
-      const savedMsg = $("#pfSaved");
+
+      const savedMsg = $('#pfSaved');
       if (savedMsg) {
-        savedMsg.textContent = "Cambios guardados \u2713";
-        setTimeout(() => savedMsg.textContent = "", 2500);
+        savedMsg.textContent = 'Cambios guardados ✓';
+        setTimeout(() => (savedMsg.textContent = ''), 2500);
       }
     });
-    $("#pfExport")?.addEventListener("click", async () => {
+
+    // Exportación JSON (portabilidad GDPR / LPDP)
+    $('#pfExport')?.addEventListener('click', async () => {
       const ses = authService.getSession() || {};
       let journal = [];
       if (Journal.ok()) {
         try {
           journal = (await Journal.all()).map(({ iv, ct, ...rest }) => rest);
         } catch {
+          // ignore
         }
       }
       const payload = JSON.stringify(
         {
-          exportadoEl: (/* @__PURE__ */ new Date()).toISOString(),
+          exportadoEl: new Date().toISOString(),
           cuenta: { nombre: ses.name, usuario: ses.username, correo: ses.email, proveedor: ses.provider },
           estado: state,
-          diario: journal
+          diario: journal,
         },
         null,
         2
       );
-      const blob = new Blob([payload], { type: "application/json" });
-      const a = document.createElement("a");
+      const blob = new Blob([payload], { type: 'application/json' });
+      const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = `syncro-mis-datos-${keyOf()}.json`;
       a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
-      toast("Tus datos se descargaron como JSON.");
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      toast('Tus datos se descargaron como JSON.');
     });
+
+    // Restaurar respaldo JSON
     let pendingRestore = null;
-    $("#pfImportBtn")?.addEventListener("click", () => $("#pfImportInput")?.click());
-    $("#pfImportInput")?.addEventListener("change", (e) => {
+    $('#pfImportBtn')?.addEventListener('click', () => $('#pfImportInput')?.click());
+    $('#pfImportInput')?.addEventListener('change', (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = (ev) => {
         try {
-          const parsed = JSON.parse(String(ev.target?.result || "{}"));
+          const parsed = JSON.parse(String(ev.target?.result || '{}'));
           const candidate = parsed.estado || parsed.state || (parsed.user && parsed.focus ? parsed : null);
           if (!candidate) {
-            toast("El archivo no parece ser un respaldo v\xE1lido de SYNCRO.");
+            toast('El archivo no parece ser un respaldo válido de SYNCRO.');
             return;
           }
           pendingRestore = candidate;
-          if ($("#rstUserName")) $("#rstUserName").textContent = candidate.user?.name || "Usuario";
-          if ($("#rstUserLevel")) $("#rstUserLevel").textContent = `Nivel ${candidate.user?.level || 1} \xB7 \u{1F525} ${candidate.user?.streak || 0} d\xEDas`;
-          if ($("#rstBlocks")) $("#rstBlocks").textContent = String(candidate.stats?.blocks || 0);
-          if ($("#rstDate")) $("#rstDate").textContent = parsed.exportadoEl ? new Date(parsed.exportadoEl).toLocaleDateString("es-PE") : "Reciente";
-          openOverlay($("#restoreConfirmModal"));
+          if ($('#rstUserName')) $('#rstUserName').textContent = candidate.user?.name || 'Usuario';
+          if ($('#rstUserLevel')) $('#rstUserLevel').textContent = `Nivel ${candidate.user?.level || 1} · 🔥 ${candidate.user?.streak || 0} días`;
+          if ($('#rstBlocks')) $('#rstBlocks').textContent = String(candidate.stats?.blocks || 0);
+          if ($('#rstDate')) $('#rstDate').textContent = parsed.exportadoEl ? new Date(parsed.exportadoEl).toLocaleDateString('es-PE') : 'Reciente';
+          openOverlay($('#restoreConfirmModal'));
         } catch {
-          toast("Error al leer el archivo JSON.");
+          toast('Error al leer el archivo JSON.');
         } finally {
-          e.target.value = "";
+          e.target.value = '';
         }
       };
       reader.readAsText(file);
     });
-    $("#cancelRestoreBtn")?.addEventListener("click", () => {
+
+    $('#cancelRestoreBtn')?.addEventListener('click', () => {
       pendingRestore = null;
-      closeOverlay($("#restoreConfirmModal"));
+      closeOverlay($('#restoreConfirmModal'));
     });
-    $("#confirmRestoreBtn")?.addEventListener("click", () => {
+    $('#confirmRestoreBtn')?.addEventListener('click', () => {
       if (!pendingRestore) return;
       replaceState(pendingRestore);
       pendingRestore = null;
-      closeOverlay($("#restoreConfirmModal"));
+      closeOverlay($('#restoreConfirmModal'));
       renderDashboard();
       renderMissions();
       renderProfile();
       renderBiome();
-      toast("Copia de seguridad restaurada \u2713");
+      toast('Copia de seguridad restaurada ✓');
     });
-    $("#pfClearJournal")?.addEventListener("click", () => {
+
+    // Borrado de diario y derecho al olvido (borrado total de cuenta)
+    $('#pfClearJournal')?.addEventListener('click', () => {
       openInfo(
-        "Borrar diario emocional",
-        "<p>Esta acci\xF3n eliminar\xE1 permanentemente todas las notas cifradas de tu diario en este dispositivo.</p>",
-        "S\xED, borrar diario",
+        'Borrar diario emocional',
+        '<p>Esta acción eliminará permanentemente todas las notas cifradas de tu diario en este dispositivo.</p>',
+        'Sí, borrar diario',
         async () => {
           await Journal.clear();
           renderJournalTimeline();
-          toast("Tu diario emocional fue borrado.");
+          toast('Tu diario emocional fue borrado.');
         }
       );
     });
-    $("#pfDeleteAccount")?.addEventListener("click", () => {
+
+    $('#pfDeleteAccount')?.addEventListener('click', () => {
       openInfo(
-        "Eliminar cuenta y todos tus datos",
-        "<p>Se eliminar\xE1n permanentemente tu progreso, misiones, diario cifrado y cuenta local/remota (derecho al olvido). Esta acci\xF3n no se puede deshacer.</p>",
-        "Eliminar todo",
+        'Eliminar cuenta y todos tus datos',
+        '<p>Se eliminarán permanentemente tu progreso, misiones, diario cifrado y cuenta local/remota (derecho al olvido). Esta acción no se puede deshacer.</p>',
+        'Eliminar todo',
         async () => {
           await Journal.clear();
           await dbService.deleteAccountData();
           authService.deleteLocalAccount();
-          location.href = "index.html";
+          location.href = 'index.html';
         }
       );
     });
-    $("#bienestarBtn")?.addEventListener("click", () => {
+
+    $('#bienestarBtn')?.addEventListener('click', () => {
       const inst = resolveActiveInstitution();
       openInfo(
         inst.wellbeingLabel,
-        `<p>Si atraviesas d\xEDas de sobrecarga sostenida, pedir apoyo es un acto de cuidado. Puedes contactar a un profesional de salud mental o a la l\xEDnea de orientaci\xF3n gratuita de tu pa\xEDs.</p>
-       <p class="muted small">SYNCRO es una herramienta de productividad y regulaci\xF3n cotidiana; no reemplaza atenci\xF3n psicol\xF3gica profesional.</p>`
+        `<p>Si atraviesas días de sobrecarga sostenida, pedir apoyo es un acto de cuidado. Puedes contactar a un profesional de salud mental o a la línea de orientación gratuita de tu país.</p>
+         <p class="muted small">SYNCRO es una herramienta de productividad y regulación cotidiana; no reemplaza atención psicológica profesional.</p>`
       );
     });
   }
+
+  // ============ ONBOARDING & RESCATE ============
   function initOnboarding() {
-    const modal = $("#onboarding");
+    const modal = $('#onboarding');
     if (!modal) return;
+
     const completeOnboarding = (directFive = false) => {
-      const name = ($("#nameInput")?.value || "").trim();
-      const sched = $('input[name="schedule"]:checked')?.value || "manana";
-      const blockPref = directFive ? "noPerfection" : $('input[name="blockPref"]:checked')?.value || "classic";
+      const name = ($('#nameInput')?.value || '').trim();
+      const sched = $('input[name="schedule"]:checked')?.value || 'manana';
+      const blockPref = directFive ? 'noPerfection' : $('input[name="blockPref"]:checked')?.value || 'classic';
+
       if (name) state.user.name = name;
       state.profile.schedule = sched;
       state.profile.blockPref = blockPref;
       state.focus.mode = blockPref;
       state.user.onboarded = true;
       saveState();
-      $$('input[name="mode"]').forEach((r) => r.checked = r.value === blockPref);
+
+      $$('input[name="mode"]').forEach((r) => (r.checked = r.value === blockPref));
       updateTimerDuration();
       closeOverlay(modal);
       renderDashboard();
-      analyticsService.trackOnce("onboarding_completed", { direct_five: directFive, block_pref: blockPref });
+      analyticsService.trackOnce('onboarding_completed', { direct_five: directFive, block_pref: blockPref });
+
       if (directFive) {
-        switchView("focus", true);
+        switchView('focus', true);
         startTimer();
-        toast("\u2728 Modo Avance sin Perfecci\xF3n iniciado (5 min).");
+        toast('✨ Modo Avance sin Perfección iniciado (5 min).');
       }
     };
-    $("#finishOnboarding")?.addEventListener("click", () => completeOnboarding(false));
-    $("#onbDirectStartBtn")?.addEventListener("click", () => completeOnboarding(true));
+
+    $('#finishOnboarding')?.addEventListener('click', () => completeOnboarding(false));
+    $('#onbDirectStartBtn')?.addEventListener('click', () => completeOnboarding(true));
+
     if (!state.user.onboarded) {
-      if ($("#nameInput") && state.user.name) $("#nameInput").value = state.user.name;
+      if ($('#nameInput') && state.user.name) $('#nameInput').value = state.user.name;
       openOverlay(modal);
     }
   }
+
   function checkRescueModal() {
     if (!state.user.lastActive) return;
-    const last = /* @__PURE__ */ new Date(state.user.lastActive + "T12:00:00");
-    const diffDays = Math.floor((Date.now() - last.getTime()) / 864e5);
+    const last = new Date(state.user.lastActive + 'T12:00:00');
+    const diffDays = Math.floor((Date.now() - last.getTime()) / 86400000);
     if (diffDays >= 3) {
-      if ($("#rescueGuardian")) $("#rescueGuardian").textContent = guardian();
-      if ($("#rescueSub")) $("#rescueSub").textContent = `Han pasado ${diffDays} d\xEDas. Sin culpa: tu progreso sigue intacto.`;
-      openOverlay($("#rescueModal"));
+      if ($('#rescueGuardian')) $('#rescueGuardian').textContent = guardian();
+      if ($('#rescueSub')) $('#rescueSub').textContent = `Han pasado ${diffDays} días. Sin culpa: tu progreso sigue intacto.`;
+      openOverlay($('#rescueModal'));
     }
-    $("#rescueGo")?.addEventListener("click", () => {
-      closeOverlay($("#rescueModal"));
-      state.focus.mode = "noPerfection";
+    $('#rescueGo')?.addEventListener('click', () => {
+      closeOverlay($('#rescueModal'));
+      state.focus.mode = 'noPerfection';
       updateTimerDuration();
-      switchView("focus", true);
+      switchView('focus', true);
       startTimer();
     });
-    $("#rescueLook")?.addEventListener("click", () => {
-      closeOverlay($("#rescueModal"));
-      switchView("biome", true);
+    $('#rescueLook')?.addEventListener('click', () => {
+      closeOverlay($('#rescueModal'));
+      switchView('biome', true);
     });
   }
-  function bootstrap() {
+
+  // ============ ARRANQUE PRINCIPAL ============
+  async function bootstrap() {
     initModals();
-    const splash = $("#appSplash");
+    await authService.handleOAuthCallback();
+
+    // Ocultar splash tras carga inicial
+    const splash = $('#appSplash');
     if (splash) {
-      setTimeout(() => {
-        splash.classList.add("done");
-        splash.style.display = "none";
-      }, 220);
+      setTimeout(() => { splash.classList.add('done'); splash.style.display = 'none'; }, 220);
     }
+
+    // Banner de modo invitado
     const ses = authService.ensureGuestSession();
-    if (ses.mode === "guest") {
-      $("#guestModeBanner")?.classList.remove("hidden");
+    if (ses.mode === 'guest') {
+      $('#guestModeBanner')?.classList.remove('hidden');
     } else {
       analyticsService.checkRetention(ses.since);
     }
-    $$(".nav-item, .bn-item").forEach((btn) => {
-      btn.addEventListener("click", () => switchView(btn.dataset.view));
+
+    // Navegación principal (sidebar + bottom nav + data-goto)
+    $$('.nav-item, .bn-item').forEach((btn) => {
+      btn.addEventListener('click', () => switchView(btn.dataset.view));
     });
-    $$("[data-goto]").forEach((btn) => {
-      btn.addEventListener("click", () => switchView(btn.dataset.goto));
+    $$('[data-goto]').forEach((btn) => {
+      btn.addEventListener('click', () => switchView(btn.dataset.goto));
     });
+
+    // Contraer/expandir barra lateral
     const applySidebar = () => {
-      document.body.classList.toggle("sidebar-collapsed", Boolean(state.ui.sidebarCollapsed));
-      $("#sidebarToggle")?.setAttribute("aria-expanded", String(!state.ui.sidebarCollapsed));
+      document.body.classList.toggle('sidebar-collapsed', Boolean(state.ui.sidebarCollapsed));
+      $('#sidebarToggle')?.setAttribute('aria-expanded', String(!state.ui.sidebarCollapsed));
     };
     applySidebar();
-    $("#sidebarToggle")?.addEventListener("click", () => {
+    $('#sidebarToggle')?.addEventListener('click', () => {
       state.ui.sidebarCollapsed = !state.ui.sidebarCollapsed;
       saveState();
       applySidebar();
     });
-    document.addEventListener("keydown", (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b") {
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
         e.preventDefault();
         state.ui.sidebarCollapsed = !state.ui.sidebarCollapsed;
         saveState();
         applySidebar();
       }
     });
+
+    // Monitor Online/Offline
     const updateOnline = () => {
-      $("#sidebarOfflineBadge")?.classList.toggle("hidden", navigator.onLine);
-      $("#mobileOfflineBadge")?.classList.toggle("hidden", navigator.onLine);
+      $('#sidebarOfflineBadge')?.classList.toggle('hidden', navigator.onLine);
+      $('#mobileOfflineBadge')?.classList.toggle('hidden', navigator.onLine);
     };
-    window.addEventListener("online", updateOnline);
-    window.addEventListener("offline", updateOnline);
+    window.addEventListener('online', updateOnline);
+    window.addEventListener('offline', updateOnline);
     updateOnline();
-    $("#missionsList")?.addEventListener("click", (e) => {
-      const row = e.target.closest(".mission");
+
+    // Eventos de Misiones (CRUD en Dashboard)
+    $('#missionsList')?.addEventListener('click', (e) => {
+      const row = e.target.closest('.mission');
       if (!row) return;
       const id = row.dataset.id;
-      if (e.target.closest(".mission-check")) return completeMission(id);
-      if (e.target.closest("[data-edit]")) return editMission(id);
-      if (e.target.closest("[data-del]")) return deleteMission(id);
-      if (e.target.closest("[data-start]")) {
+      if (e.target.closest('.mission-check')) return completeMission(id);
+      if (e.target.closest('[data-edit]')) return editMission(id);
+      if (e.target.closest('[data-del]')) return deleteMission(id);
+      if (e.target.closest('[data-start]')) {
         state.focus.activeMission = id;
         saveState();
         renderMissions();
-        switchView("focus");
-        toast("Misi\xF3n vinculada al temporizador \u{1F3AF}");
+        switchView('focus');
+        toast('Misión vinculada al temporizador 🎯');
       }
     });
-    $("#missionForm")?.addEventListener("submit", (e) => {
+
+    $('#missionForm')?.addEventListener('submit', (e) => {
       e.preventDefault();
-      const inp = $("#missionNew");
-      const title = (inp?.value || "").trim();
+      const inp = $('#missionNew');
+      const title = (inp?.value || '').trim();
       if (!title) {
-        toast("Escribe qu\xE9 quieres lograr hoy.");
+        toast('Escribe qué quieres lograr hoy.');
         inp?.focus();
         return;
       }
       state.missions.push({
-        id: "c" + Date.now().toString(36),
+        id: 'c' + Date.now().toString(36),
         title,
         xp: 20,
         drops: 5,
         target: 1,
         progress: 0,
-        done: false
+        done: false,
       });
-      inp.value = "";
+      inp.value = '';
       saveState();
       renderMissions();
       renderCalTray();
       renderDashboard();
-      toast("Misi\xF3n a\xF1adida.");
+      toast('Misión añadida.');
       inp.focus();
     });
-    $("#antiParalysisBtn")?.addEventListener("click", () => {
-      state.focus.mode = "noPerfection";
-      $$('input[name="mode"]').forEach((r) => r.checked = r.value === "noPerfection");
+
+    // Botón Anti-Parálisis 5 min
+    $('#antiParalysisBtn')?.addEventListener('click', () => {
+      state.focus.mode = 'noPerfection';
+      $$('input[name="mode"]').forEach((r) => (r.checked = r.value === 'noPerfection'));
       updateTimerDuration();
-      switchView("focus", true);
+      switchView('focus', true);
       startTimer();
-      toast("\u2728 \xA15 minutos sin perfecci\xF3n! El reloj est\xE1 oculto para quitar presi\xF3n.");
+      toast('✨ ¡5 minutos sin perfección! El reloj está oculto para quitar presión.');
     });
+
+    // Tutorial contextual por sección
     initSectionTutorial();
-    $$("[data-logout]").forEach((btn) => {
-      btn.addEventListener("click", () => {
+
+    // Cerrar sesión
+    $$('[data-logout]').forEach((btn) => {
+      btn.addEventListener('click', () => {
         authService.signOut();
-        location.href = "index.html";
+        location.href = 'index.html';
       });
     });
+
+    // Inicializar módulos
     initTimerModule({
       onComplete: () => {
         renderDashboard();
@@ -4325,19 +4747,20 @@
         renderProgress();
         checkAchievements();
       },
-      onSwitchView: switchView
+      onSwitchView: switchView,
     });
     initBiomeModule({
       onWatered: () => {
         renderDashboard();
         checkAchievements();
-      }
+      },
     });
     initTheme();
     initCalendarModule();
     initCheckIn();
     initBreakdownAndPlan();
     initProfile();
+
     renderDashboard();
     renderMissions();
     renderBiome();
@@ -4346,16 +4769,36 @@
     checkRescueModal();
     if (state.user.onboarded) setTimeout(() => showSectionTutorial('dashboard', { manual: false }), 450);
     initChatbot({
-      surface: "app",
-      getView: () => document.querySelector(".view.active")?.id?.replace("view-", "") || ""
+      surface: 'app',
+      getView: () => document.querySelector('.view.active')?.id?.replace('view-', '') || '',
     });
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./sw.js").catch(() => {
-        });
+
+    // Sincronización inicial desde Supabase (si hay sesión autenticada)
+    if (ses.mode !== 'guest' && ses.accessToken) {
+      dbService.loadStateFromCloud().then((res) => {
+        if (!res?.ok || res.empty || !res.state) return;
+        const localUpdated = Number(state.updatedAt || 0);
+        const localHasProgress = (state.stats?.minutes || 0) > 0 || (state.stats?.checkIns || 0) > 0;
+        if (res.updatedAt > localUpdated || !localHasProgress) {
+          replaceStateSilent(res.state);
+          renderDashboard();
+          renderMissions();
+          renderBiome();
+          renderProgress();
+          renderCalendar();
+        }
+      }).catch(() => {});
+    }
+
+    // Registrar Service Worker PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
       });
     }
   }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bootstrap);
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootstrap);
   else bootstrap();
+
 })();

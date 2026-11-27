@@ -57,6 +57,7 @@ create table if not exists public.biome_progress (
   earth_points integer not null default 0,
   streak integer not null default 0,
   total_minutes integer not null default 0,
+  state_json jsonb,
   updated_at timestamptz not null default now()
 );
 

@@ -146,6 +146,19 @@ export function replaceState(next) {
   return state;
 }
 
+export function replaceStateSilent(next) {
+  state = deepMerge(defaultState(), next);
+  dbService.saveLocalState(state);
+  listeners.forEach((fn) => {
+    try {
+      fn(state);
+    } catch {
+      // ignore
+    }
+  });
+  return state;
+}
+
 export function subscribe(fn) {
   listeners.add(fn);
   return () => listeners.delete(fn);
@@ -153,6 +166,7 @@ export function subscribe(fn) {
 
 let cloudSyncTimer = null;
 export function saveState() {
+  state.updatedAt = Date.now();
   dbService.saveLocalState(state);
   listeners.forEach((fn) => {
     try {

@@ -8,6 +8,7 @@ import {
   state,
   saveState,
   replaceState,
+  replaceStateSilent,
   seed,
   guardian,
   GUARDIANS,
@@ -298,6 +299,7 @@ function initCheckIn() {
 
     markActive();
     saveState();
+    dbService.logMood({ energy, mood, loggedDate: keyOf() });
     updateTimerDuration();
     renderDashboard();
     renderMissions();
@@ -803,8 +805,9 @@ function checkRescueModal() {
 }
 
 // ============ ARRANQUE PRINCIPAL ============
-function bootstrap() {
+async function bootstrap() {
   initModals();
+  await authService.handleOAuthCallback();
 
   // Ocultar splash tras carga inicial
   const splash = $('#appSplash');
@@ -956,6 +959,23 @@ function bootstrap() {
     surface: 'app',
     getView: () => document.querySelector('.view.active')?.id?.replace('view-', '') || '',
   });
+
+  // Sincronización inicial desde Supabase (si hay sesión autenticada)
+  if (ses.mode !== 'guest' && ses.accessToken) {
+    dbService.loadStateFromCloud().then((res) => {
+      if (!res?.ok || res.empty || !res.state) return;
+      const localUpdated = Number(state.updatedAt || 0);
+      const localHasProgress = (state.stats?.minutes || 0) > 0 || (state.stats?.checkIns || 0) > 0;
+      if (res.updatedAt > localUpdated || !localHasProgress) {
+        replaceStateSilent(res.state);
+        renderDashboard();
+        renderMissions();
+        renderBiome();
+        renderProgress();
+        renderCalendar();
+      }
+    }).catch(() => {});
+  }
 
   // Registrar Service Worker PWA
   if ('serviceWorker' in navigator) {

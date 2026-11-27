@@ -1,6 +1,6 @@
 /**
  * SYNCRO — Servicio de Autenticación
- * Preparado para Supabase Auth (JWT + Google OAuth real + verificación por correo)
+ * Conectado a Supabase Auth (JWT + refresh token + Google OAuth + recuperación por correo)
  * con respaldo local cifrado (SHA-256) cuando no hay backend configurado.
  */
 
@@ -100,16 +100,19 @@ export const authService = {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.msg || data.error_description || 'No se pudo crear la cuenta.');
+      if (!res.ok) throw new Error(data.msg || data.error_description || data.message || 'No se pudo crear la cuenta.');
       const { name, username } = deriveUserIdentity(cleanEmail);
+      const userObj = data.user || data;
       const sessionObj = {
-        id: data.user?.id || 'u' + Date.now().toString(36),
-        name,
+        id: userObj?.id || 'u' + Date.now().toString(36),
+        name: userObj?.user_metadata?.name || name,
         username,
         email: cleanEmail,
         provider: 'email',
         plan: resolveInstitutionFromEmail(cleanEmail)?.plan || 'free',
         accessToken: data.access_token || null,
+        refreshToken: data.refresh_token || null,
+        expiresAt: data.expires_in ? Date.now() + Number(data.expires_in) * 1000 : null,
         since: Date.now(),
       };
       this._persistSession(sessionObj, { fresh: true, diagnostic });
@@ -164,7 +167,7 @@ export const authService = {
         body: JSON.stringify({ email: id, password }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error('Correo o contraseña incorrectos.');
+      if (!res.ok) throw new Error(data.error_description || data.msg || 'Correo o contraseña incorrectos.');
       const { name, username } = deriveUserIdentity(id);
       const sessionObj = {
         id: data.user?.id || 'u' + Date.now().toString(36),
@@ -174,6 +177,8 @@ export const authService = {
         provider: 'email',
         plan: resolveInstitutionFromEmail(id)?.plan || 'free',
         accessToken: data.access_token || null,
+        refreshToken: data.refresh_token || null,
+        expiresAt: data.expires_in ? Date.now() + Number(data.expires_in) * 1000 : null,
         since: Date.now(),
       };
       this._persistSession(sessionObj, { fresh: false });
@@ -199,9 +204,92 @@ export const authService = {
   },
 
   /**
+   * Renueva silenciosamente el JWT de Supabase antes de expirar.
+   */
+  async refreshSessionIfNeeded() {
+    if (!CONFIG.supabase.enabled) return this.getSession();
+    const ses = this.getSession();
+    if (!ses || ses.mode === 'guest' || !ses.refreshToken) return ses;
+    if (ses.accessToken && ses.expiresAt && Date.now() < ses.expiresAt - 5 * 60 * 1000) {
+      return ses;
+    }
+    try {
+      const res = await fetch(`${CONFIG.supabase.url}/auth/v1/token?grant_type=refresh_token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: CONFIG.supabase.anonKey,
+        },
+        body: JSON.stringify({ refresh_token: ses.refreshToken }),
+      });
+      if (!res.ok) return ses;
+      const data = await res.json();
+      if (data.access_token) {
+        const updated = {
+          ...ses,
+          accessToken: data.access_token,
+          refreshToken: data.refresh_token || ses.refreshToken,
+          expiresAt: data.expires_in ? Date.now() + Number(data.expires_in) * 1000 : ses.expiresAt,
+        };
+        writeJSON(SESSION_KEY, updated);
+        return updated;
+      }
+    } catch {
+      // mantener sesión actual offline
+    }
+    return ses;
+  },
+
+  /**
+   * Procesa el hash #access_token=... devuelto por Supabase tras Google OAuth.
+   */
+  async handleOAuthCallback() {
+    if (!CONFIG.supabase.enabled || typeof window === 'undefined') return null;
+    const rawHash = window.location.hash || '';
+    if (!rawHash.includes('access_token=')) return null;
+    try {
+      const params = new URLSearchParams(rawHash.replace(/^#/, ''));
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+      const expiresIn = Number(params.get('expires_in') || 3600);
+      if (!accessToken) return null;
+
+      const res = await fetch(`${CONFIG.supabase.url}/auth/v1/user`, {
+        headers: {
+          apikey: CONFIG.supabase.anonKey,
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      if (!res.ok) return null;
+      const user = await res.json();
+      const email = (user.email || '').toLowerCase();
+      const { name, username } = deriveUserIdentity(email || 'usuario');
+      const sessionObj = {
+        id: user.id,
+        name: user.user_metadata?.full_name || user.user_metadata?.name || name,
+        username,
+        email,
+        provider: user.app_metadata?.provider || 'google',
+        plan: resolveInstitutionFromEmail(email)?.plan || 'free',
+        accessToken,
+        refreshToken: refreshToken || null,
+        expiresAt: Date.now() + expiresIn * 1000,
+        since: Date.now(),
+      };
+      this._persistSession(sessionObj, { fresh: false });
+      try {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      } catch {
+        // ignore
+      }
+      return sessionObj;
+    } catch {
+      return null;
+    }
+  },
+
+  /**
    * Inicia Google OAuth real vía Supabase cuando está configurado.
-   * Si el proyecto se ejecuta sin backend configurado, indica al flujo de UI
-   * que solicite acceso directo con correo sin banners de simulación.
    */
   signInWithGoogle() {
     if (CONFIG.supabase.enabled) {
